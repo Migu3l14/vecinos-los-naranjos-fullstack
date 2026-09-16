@@ -90,8 +90,42 @@ WHATSAPP_PHONE_NUMBER_ID=                # número de WhatsApp oficial de la adm
 - `WHATSAPP_API_TOKEN` + `WHATSAPP_PHONE_NUMBER_ID`: si están vacíos, el envío
   de comunicados por WhatsApp solo sale en la consola (modo demo). Al configurarlos,
   el envío es real a los residentes registrados de la manzana.
+- Modelo `.env.example` con todas las variables (incluidas las de Vercel/Upstash).
 
-## 6) Dónde está cada cosa en el servidor
+## 6) Cómo desplegar en Vercel (gratis, 24/7, sin tarjeta)
+
+La app se despliega como **un servidor Express** (`api/index.js`) con datos en
+**Upstash Redis** y archivos subidos en **Vercel Blob** (ambos con plan gratuito).
+
+1. Crea la cuenta en https://vercel.com → **Login with GitHub** → connecta el repo.
+2. En Upstash (https://console.upstash.com/redis) crea una base **gratuita** y copia
+   `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN`.
+3. En Vercel → proyecto → **Settings → Environment Variables**:
+   ```
+   NODE_ENV=production
+   JWT_SECRET=<genera uno aleatorio y largo>
+   APP_URL=https://<tu-proyecto>.vercel.app
+   UPSTASH_REDIS_REST_URL=...
+   UPSTASH_REDIS_REST_TOKEN=...
+   SUPPORT_WHATSAPP=573001234501
+   WHATSAPP_API_TOKEN=          # opcional
+   WHATSAPP_PHONE_NUMBER_ID=    # opcional
+   ```
+   (`BLOB_READ_WRITE_TOKEN` con la `vercel blob` la crea Vercel automáticamente.)
+4. **Migra los datos actuales** una sola vez (desde tu PC, con las variables de
+   Upstash en el entorno):
+   ```bash
+   UPSTASH_REDIS_REST_URL=... UPSTASH_REDIS_REST_TOKEN=... node scripts/seed-upstash.mjs
+   ```
+   Esto **copia** `backend/data/*.json` a Redis; tus archivos locales no se tocan.
+5. En Vercel haz **Deploy** (o cada push a `main` redeploya solo).
+6. El **código OTP del admin** aparece en **Vercel → Logs** (Function Logs) y en la
+   respuesta de la API (`data.code`), mientras no configures el envío por WhatsApp.
+
+> Estándar de datos: con `UPSTASH_REDIS_REST_URL` activa la app usa Redis; sin esas
+> variables usa tus archivos `backend/data/*.json` (modo local/dev). Nunca se borra nada.
+
+## 7) Dónde está cada cosa en el servidor
 
 - Datos: `backend/data/*.json` (`businesses.json`, `adminUsers.json`,
   `residents.json`, `towers.json`, `announcements.json`, ...)
@@ -101,10 +135,10 @@ WHATSAPP_PHONE_NUMBER_ID=                # número de WhatsApp oficial de la adm
   `POST/GET/DELETE /api/announcements`, subida de archivo `POST /api/uploads/document`
 - Valoraciones: `POST /api/businesses/:id/ratings`
 
-## 7) Cómo arrancar la plataforma
+## 8) Cómo arrancar la plataforma
 
 ```bash
-node backend/server.js
+npm start   # = bootstrap de datos + node backend/server.js
 ```
 
 Se escucha en `http://localhost:4000`.

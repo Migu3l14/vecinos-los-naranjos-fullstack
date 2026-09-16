@@ -11,8 +11,8 @@ export const normalizePhone = (value) => {
 };
 
 // Construye el map { torreId: manzana } a partir de towers.json
-export const towerManzanaMap = () => {
-  const config = Storage.read('towers') || {};
+export const towerManzanaMap = async () => {
+  const config = await Storage.read('towers') || {};
   const towers = Array.isArray(config.towers) ? config.towers : [];
   const map = {};
   for (const t of towers) {
@@ -22,8 +22,8 @@ export const towerManzanaMap = () => {
 };
 
 // Devuelve la manzana (string "1".."6") de una torre, o null si no está mapeada
-export const towerToManzana = (towerId) => {
-  const map = towerManzanaMap();
+export const towerToManzana = async (towerId) => {
+  const map = await towerManzanaMap();
   if (!towerId) return null;
   const key = String(towerId).trim();
   if (map[key]) return map[key];

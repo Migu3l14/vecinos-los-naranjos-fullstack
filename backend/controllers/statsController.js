@@ -12,17 +12,17 @@ const dateKey = (offsetDays) => {
 export const getTodayISODate = () => dateKey(0);
 
 // POST /api/stats/visit — registra una visita (con dedupe desde el frontend)
-export const registerVisit = (req, res) => {
+export const registerVisit = async (req, res) => {
   try {
     const today = getTodayISODate();
-    const stats = Storage.read('stats');
+    const stats = await Storage.read('stats');
     const row = stats.find(s => s.date === today);
     if (row) {
       row.visits = (row.visits || 0) + 1;
-      Storage.write('stats', stats);
+      await Storage.write('stats', stats);
     } else {
       stats.push({ date: today, visits: 1 });
-      Storage.write('stats', stats);
+      await Storage.write('stats', stats);
     }
     res.json({ success: true, message: 'Visita registrada.' });
   } catch (error) {
@@ -31,10 +31,10 @@ export const registerVisit = (req, res) => {
 };
 
 // GET /api/stats — portada: visitas + emprendedores (dinámico de la BD)
-export const getStats = (req, res) => {
+export const getStats = async (req, res) => {
   try {
-    const stats = Storage.read('stats');
-    const businesses = Storage.read('businesses');
+    const stats = await Storage.read('stats');
+    const businesses = await Storage.read('businesses');
 
     const last7Days = [];
     for (let i = 6; i >= 0; i--) {

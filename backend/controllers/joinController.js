@@ -1,6 +1,6 @@
 import Storage from '../db/storage.js';
 
-export const registerJoinRequest = (req, res) => {
+export const registerJoinRequest = async (req, res) => {
   try {
     const { name, manzana, category, phone, description } = req.body;
 
@@ -19,7 +19,7 @@ export const registerJoinRequest = (req, res) => {
       status: 'pending'
     };
 
-    Storage.insert('joinRequests', newRequest);
+    await Storage.insert('joinRequests', newRequest);
 
     res.status(201).json({
       success: true,

@@ -7,15 +7,15 @@ const ESTADOS = ['Pendiente', 'En Proceso', 'Resuelto'];
 const pad = (n) => String(n).padStart(2, '0');
 
 // Genera un número de radicado legible: PQRS-AAAA-####
-const generateTicketId = () => {
-  const count = Storage.read('pqrs').length + 1;
+const generateTicketId = async () => {
+  const count = (await Storage.read('pqrs')).length + 1;
   const now = new Date();
   const date = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
   return `PQRS-${date}-${pad(count)}`;
 };
 
 // POST /api/pqrs (público) — formulario simplificado del residente
-export const createPqrs = (req, res) => {
+export const createPqrs = async (req, res) => {
   try {
     const { tipo, descripcion, nombre, telefono, email } = req.body;
 
@@ -35,7 +35,7 @@ export const createPqrs = (req, res) => {
 
     const ticket = {
       id: `pqrs-${Date.now()}`,
-      ticketId: generateTicketId(),
+      ticketId: await generateTicketId(),
       tipo,
       descripcion,
       nombre,
@@ -47,7 +47,7 @@ export const createPqrs = (req, res) => {
       updatedAt: new Date().toISOString()
     };
 
-    Storage.insert('pqrs', ticket);
+    await Storage.insert('pqrs', ticket);
     res.status(201).json({
       success: true,
       message: 'Tu PQRS fue radicada. El equipo de administración dará seguimiento.',
@@ -59,10 +59,10 @@ export const createPqrs = (req, res) => {
 };
 
 // GET /api/pqrs (admin) — listar, con filtro opcional por estado
-export const getAllPqrs = (req, res) => {
+export const getAllPqrs = async (req, res) => {
   try {
     const { estado, tipo } = req.query;
-    let tickets = Storage.read('pqrs');
+    let tickets = await Storage.read('pqrs');
 
     if (estado) {
       tickets = tickets.filter(t => t.estado === estado);
@@ -81,7 +81,7 @@ export const getAllPqrs = (req, res) => {
 };
 
 // PUT /api/pqrs/:id/status (admin) — cambiar estado
-export const updatePqrsStatus = (req, res) => {
+export const updatePqrsStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { estado } = req.body;
@@ -90,12 +90,12 @@ export const updatePqrsStatus = (req, res) => {
       return res.status(400).json({ success: false, message: `Estado inválido. Opciones: ${ESTADOS.join(', ')}` });
     }
 
-    const ticket = Storage.findById('pqrs', id);
+    const ticket = await Storage.findById('pqrs', id);
     if (!ticket) {
       return res.status(404).json({ success: false, message: 'PQRS no encontrada.' });
     }
 
-    const updated = Storage.updateById('pqrs', id, {
+    const updated = await Storage.updateById('pqrs', id, {
       estado,
       updatedAt: new Date().toISOString()
     });
@@ -107,7 +107,7 @@ export const updatePqrsStatus = (req, res) => {
 };
 
 // POST /api/pqrs/:id/notes (admin) — agregar nota interna de seguimiento
-export const addPqrsNote = (req, res) => {
+export const addPqrsNote = async (req, res) => {
   try {
     const { id } = req.params;
     const { nota } = req.body;
@@ -116,7 +116,7 @@ export const addPqrsNote = (req, res) => {
       return res.status(400).json({ success: false, message: 'La nota es obligatoria.' });
     }
 
-    const ticket = Storage.findById('pqrs', id);
+    const ticket = await Storage.findById('pqrs', id);
     if (!ticket) {
       return res.status(404).json({ success: false, message: 'PQRS no encontrada.' });
     }
@@ -128,7 +128,7 @@ export const addPqrsNote = (req, res) => {
       createdAt: new Date().toISOString()
     }];
 
-    const updated = Storage.updateById('pqrs', id, {
+    const updated = await Storage.updateById('pqrs', id, {
       notas,
       updatedAt: new Date().toISOString()
     });

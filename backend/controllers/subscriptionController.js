@@ -7,8 +7,8 @@ import { WhatsAppService } from '../services/whatsappService.js';
 // Función interna para activar membresía por 30 días, emitir recibo y
 // ENVIAR AUTOMÁTICAMENTE POR WHATSAPP. (Usada por el fallback simulado
 // y por el flujo real al llegar un webhook APPROVED.)
-const activateBusinessMembership = (businessId, paymentMethod = 'Nequi / PSE', payerData = {}) => {
-  const businesses = Storage.read('businesses');
+const activateBusinessMembership = async (businessId, paymentMethod = 'Nequi / PSE', payerData = {}) => {
+  const businesses = await Storage.read('businesses');
   const businessIndex = businesses.findIndex(b => b.id === businessId);
   if (businessIndex === -1) return null;
 
@@ -30,7 +30,7 @@ const activateBusinessMembership = (businessId, paymentMethod = 'Nequi / PSE', p
   business.daysRemaining = 30;
 
   businesses[businessIndex] = business;
-  Storage.write('businesses', businesses);
+  await Storage.write('businesses', businesses);
 
   const receiptId = `REC-LN-${Date.now().toString().slice(-6)}`;
   const transactionId = `TRX-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -57,7 +57,7 @@ const activateBusinessMembership = (businessId, paymentMethod = 'Nequi / PSE', p
     verificationCode: `VDLN-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
   };
 
-  Storage.insert('receipts', newReceipt);
+  await Storage.insert('receipts', newReceipt);
 
   // Envío automático al WhatsApp del emprendedor
   WhatsAppService.sendAutomatedReceipt(newReceipt);
@@ -70,14 +70,14 @@ const activateBusinessMembership = (businessId, paymentMethod = 'Nequi / PSE', p
 //   y devuelve los datos del Widget. La activación real ocurre vía webhook APPROVED.
 // - Si NO hay llaves de Wompi: usa el flujo simulado actual (activa al instante)
 //   para mantener compatibilidad en desarrollo / hosting sin credenciales.
-export const processSubscriptionPayment = (req, res) => {
+export const processSubscriptionPayment = async (req, res) => {
   try {
     const { businessId, paymentMethod, payerName, payerPhone, payerEmail } = req.body;
     if (!businessId) {
       return res.status(400).json({ success: false, message: 'El ID de la vitrina es obligatorio.' });
     }
 
-    const businesses = Storage.read('businesses');
+    const businesses = await Storage.read('businesses');
     const business = businesses.find(b => b.id === businessId);
     if (!business) {
       return res.status(404).json({ success: false, message: 'Vitrina no encontrada.' });
@@ -85,7 +85,7 @@ export const processSubscriptionPayment = (req, res) => {
 
     // MODO 1: Wompi real configurado -> preparar transacción (widget)
     if (hasRealWompi) {
-      const checkout = WompiService.prepareCheckout(business, { payerName, payerPhone, payerEmail });
+      const checkout = await WompiService.prepareCheckout(business, { payerName, payerPhone, payerEmail });
       return res.status(200).json({
         success: true,
         message: 'Preparando pago seguro con Wompi. Completa la transacción en el widget.',
@@ -95,7 +95,7 @@ export const processSubscriptionPayment = (req, res) => {
     }
 
     // MODO 2: Sin llaves -> flujo simulado (compatibilidad)
-    const result = activateBusinessMembership(businessId, paymentMethod, { payerName, payerPhone, payerEmail });
+    const result = await activateBusinessMembership(businessId, paymentMethod, { payerName, payerPhone, payerEmail });
     if (!result) {
       return res.status(404).json({ success: false, message: 'Vitrina no encontrada.' });
     }
@@ -114,14 +114,14 @@ export const processSubscriptionPayment = (req, res) => {
 // POST /api/subscriptions/webhook-wompi
 // Mantenido para compatibilidad con la ruta anterior, pero delega la lógica
 // principal de verificación/activación al servicio Wompi (ver paymentRoutes).
-export const handleWompiWebhook = (req, res) => {
+export const handleWompiWebhook = async (req, res) => {
   try {
     const event = req.body;
     if (event && event.event === 'transaction.updated' && event.data?.transaction) {
       const trx = event.data.transaction;
       const { reference, status, id, payment_method_type } = trx;
 
-      const tx = WompiService.updateTransaction({
+      const tx = await WompiService.updateTransaction({
         reference,
         wompiTransactionId: id,
         status,
@@ -133,7 +133,7 @@ export const handleWompiWebhook = (req, res) => {
         const businessId = tx.businessId
           || (reference ? reference.replace(/^LN-/, '').split('-')[0] : null);
         if (businessId) {
-          activateBusinessMembership(businessId, payment_method_type || 'Nequi / Wompi', {
+          await activateBusinessMembership(businessId, payment_method_type || 'Nequi / Wompi', {
             payerName: tx.payerName,
             payerPhone: tx.payerPhone,
             payerEmail: tx.payerEmail,
@@ -150,10 +150,10 @@ export const handleWompiWebhook = (req, res) => {
 };
 
 // GET /api/subscriptions/receipt/:id
-export const getReceiptById = (req, res) => {
+export const getReceiptById = async (req, res) => {
   try {
     const { id } = req.params;
-    const receipts = Storage.read('receipts');
+    const receipts = await Storage.read('receipts');
     const receipt = receipts.find(r => r.receiptId === id || r.transactionId === id);
     if (!receipt) {
       return res.status(404).json({ success: false, message: 'Recibo no encontrado.' });

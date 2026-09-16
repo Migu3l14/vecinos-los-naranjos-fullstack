@@ -20,7 +20,7 @@ export const getSupportChannels = (req, res) => {
 
 // POST /api/support/request (público) — el emprendedor deja su número
 // para que el equipo lo contacte (sin email).
-export const createSupportRequest = (req, res) => {
+export const createSupportRequest = async (req, res) => {
   try {
     const telefono = String(req.body.telefono || '').trim();
     if (!/^\d{7,15}$/.test(telefono.replace(/[^0-9]/g, ''))) {
@@ -36,7 +36,7 @@ export const createSupportRequest = (req, res) => {
       createdAt: new Date().toISOString()
     };
 
-    Storage.insert('supportRequests', request);
+    await Storage.insert('supportRequests', request);
     res.status(201).json({
       success: true,
       message: '¡Listo! Te contactaremos lo antes posible.',
@@ -48,9 +48,9 @@ export const createSupportRequest = (req, res) => {
 };
 
 // GET /api/support/requests (authAdmin) — solicitudes para contactar al emprendedor
-export const getSupportRequests = (req, res) => {
+export const getSupportRequests = async (req, res) => {
   try {
-    const requests = Storage.read('supportRequests')
+    const requests = (await Storage.read('supportRequests'))
       .slice()
       .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     res.json({ success: true, count: requests.length, data: requests });

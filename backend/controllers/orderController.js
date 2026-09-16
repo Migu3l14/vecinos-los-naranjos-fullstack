@@ -15,7 +15,7 @@ const generateOrderId = () => `ORD-${Date.now().toString().slice(-6)}`;
  *   resident: { fullName, phone, tower, apartment, birthDate?, email?, authType? }
  * }
  */
-export const createOrder = (req, res) => {
+export const createOrder = async (req, res) => {
   try {
     const { businessId, products, resident } = req.body;
 
@@ -29,7 +29,7 @@ export const createOrder = (req, res) => {
       return res.status(400).json({ success: false, message: 'Datos de identidad del residente incompletos.' });
     }
 
-    const business = Storage.findById('businesses', businessId);
+    const business = await Storage.findById('businesses', businessId);
 
     const order = {
       id: `order-${Date.now()}`,
@@ -55,7 +55,7 @@ export const createOrder = (req, res) => {
       updatedAt: new Date().toISOString()
     };
 
-    Storage.insert('orders', order);
+    await Storage.insert('orders', order);
     res.status(201).json({
       success: true,
       message: 'Pedido registrado. Se abrirá WhatsApp para coordinarlo.',
@@ -67,10 +67,10 @@ export const createOrder = (req, res) => {
 };
 
 // GET /api/orders (admin) — listar pedidos para trazabilidad
-export const getAllOrders = (req, res) => {
+export const getAllOrders = async (req, res) => {
   try {
     const { estado } = req.query;
-    let orders = Storage.read('orders');
+    let orders = await Storage.read('orders');
     if (estado && ESTADOS.includes(estado)) {
       orders = orders.filter(o => o.estado === estado);
     }
@@ -82,17 +82,17 @@ export const getAllOrders = (req, res) => {
 };
 
 // PUT /api/orders/:id/status (admin) — actualizar estado del pedido
-export const updateOrderStatus = (req, res) => {
+export const updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { estado } = req.body;
     if (!ESTADOS.includes(estado)) {
       return res.status(400).json({ success: false, message: `Estado inválido. Opciones: ${ESTADOS.join(', ')}` });
     }
-    const order = Storage.findById('orders', id);
+    const order = await Storage.findById('orders', id);
     if (!order) return res.status(404).json({ success: false, message: 'Pedido no encontrado.' });
 
-    const updated = Storage.updateById('orders', id, { estado, updatedAt: new Date().toISOString() });
+    const updated = await Storage.updateById('orders', id, { estado, updatedAt: new Date().toISOString() });
     res.json({ success: true, message: `Pedido marcado como "${estado}".`, data: updated });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al actualizar pedido', error: error.message });

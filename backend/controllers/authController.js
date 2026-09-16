@@ -18,9 +18,9 @@ const normalizePhone = (phone) => {
   return clean;
 };
 
-const findResidentByPhone = (phone) => {
+const findResidentByPhone = async (phone) => {
   const clean = normalizePhone(phone);
-  const residents = Storage.read('residents');
+  const residents = await Storage.read('residents');
   return residents.find(r => (r.phone || '').replace(/\D/g, '').endsWith(clean)
     || clean.endsWith((r.phone || '').replace(/\D/g, ''))) || null;
 };
@@ -48,9 +48,9 @@ const clearSessionCookie = (res) => {
 // administración registrado en adminUsers.json. Nada de correos.
 const ADMIN_SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 
-const findAdminByPhone = (phone) => {
+const findAdminByPhone = async (phone) => {
   const clean = normalizePhone(phone);
-  const admins = Storage.read('adminUsers');
+  const admins = await Storage.read('adminUsers');
   return (admins || []).find(a =>
     a.active === true && (normalizePhone(a.phone) === clean ||
       String(a.phone || '').replace(/\D/g, '').endsWith(clean.slice(-10)) ||
@@ -59,7 +59,7 @@ const findAdminByPhone = (phone) => {
 };
 
 // POST /api/auth/admin/otp/request — valida el teléfono de administración y genera el código
-export const requestAdminOtp = (req, res) => {
+export const requestAdminOtp = async (req, res) => {
   try {
     const { phone } = req.body;
     if (!phone) {
@@ -68,7 +68,7 @@ export const requestAdminOtp = (req, res) => {
     const vPhone = validatePhone(phone);
     if (vPhone) return res.status(400).json({ success: false, message: vPhone });
 
-    const admin = findAdminByPhone(phone);
+    const admin = await findAdminByPhone(phone);
     if (!admin) {
       return res.status(404).json({ success: false, message: 'Este teléfono no está registrado como administración de una manzana.' });
     }
@@ -76,14 +76,14 @@ export const requestAdminOtp = (req, res) => {
     const clean = normalizePhone(phone);
 
     // Espera mínima entre envíos (anti-spam) y una sola vigencia por teléfono
-    const last = latestPendingOtp(clean);
+    const last = await latestPendingOtp(clean);
     if (last) {
       const elapsed = Date.now() - new Date(last.createdAt).getTime();
       if (elapsed < OTP_RESEND_COOLDOWN_MS) {
         const wait = Math.ceil((OTP_RESEND_COOLDOWN_MS - elapsed) / 1000);
         return res.status(429).json({ success: false, message: `Espera ${wait}s para solicitar un nuevo código.` });
       }
-      expirePendingOtpsForPhone(clean);
+      await expirePendingOtpsForPhone(clean);
     }
 
     const code = generateOtpCode();
@@ -97,7 +97,7 @@ export const requestAdminOtp = (req, res) => {
       status: 'pending',
       createdAt: new Date().toISOString()
     };
-    Storage.insert('otp_verifications', record);
+    await Storage.insert('otp_verifications', record);
 
     res.json({
       success: true,
@@ -113,7 +113,7 @@ export const requestAdminOtp = (req, res) => {
 };
 
 // POST /api/auth/admin/otp/verify — valida el código y abre la sesión del administrador
-export const verifyAdminOtp = (req, res) => {
+export const verifyAdminOtp = async (req, res) => {
   try {
     const { phone, code } = req.body;
     if (!phone || !code) {
@@ -126,21 +126,21 @@ export const verifyAdminOtp = (req, res) => {
     }
 
     const clean = normalizePhone(phone);
-    const otp = latestPendingOtp(clean);
+    const otp = await latestPendingOtp(clean);
     if (!otp) {
       return res.status(401).json({ success: false, message: 'No hay un código vigente para este teléfono. Solicita uno nuevo.' });
     }
 
     // Vigencia de 5 minutos
     if (new Date(otp.expiresAt).getTime() < Date.now()) {
-      Storage.updateById('otp_verifications', otp.id, { status: 'expired', expiredAt: new Date().toISOString() });
+      await Storage.updateById('otp_verifications', otp.id, { status: 'expired', expiredAt: new Date().toISOString() });
       return res.status(401).json({ success: false, message: 'El código expiró. Solicita uno nuevo.' });
     }
 
     if (String(otp.code) !== String(code)) {
       const attempts = (otp.attempts || 0) + 1;
       const maxed = attempts >= OTP_MAX_ATTEMPTS;
-      Storage.updateById('otp_verifications', otp.id, maxed
+      await Storage.updateById('otp_verifications', otp.id, maxed
         ? { attempts, status: 'expired', expiredAt: new Date().toISOString() }
         : { attempts });
       return res.status(401).json({
@@ -150,9 +150,9 @@ export const verifyAdminOtp = (req, res) => {
     }
 
     // Código correcto: se marca como usado (una sola vez)
-    Storage.updateById('otp_verifications', otp.id, { status: 'used', usedAt: new Date().toISOString() });
+    await Storage.updateById('otp_verifications', otp.id, { status: 'used', usedAt: new Date().toISOString() });
 
-    const admin = findAdminByPhone(clean);
+    const admin = await findAdminByPhone(clean);
     if (!admin) {
       return res.status(404).json({ success: false, message: 'Administración no encontrada para este teléfono.' });
     }
@@ -171,7 +171,7 @@ export const verifyAdminOtp = (req, res) => {
 
 // ---------- RESIDENTE (Registro) ----------
 // POST /api/auth/resident/register
-export const registerResident = (req, res) => {
+export const registerResident = async (req, res) => {
   try {
     const { fullName, phone, email, tower, apartment, birthDate, password } = req.body;
 
@@ -192,13 +192,13 @@ export const registerResident = (req, res) => {
     if (vBirth) return res.status(400).json({ success: false, message: vBirth });
 
     // Validar estructura torre/apartamento
-    const check = validateApartment(tower, apartment);
+    const check = await validateApartment(tower, apartment);
     if (!check.valid) {
       return res.status(400).json({ success: false, message: check.error });
     }
 
     const cleanPhone = normalizePhone(phone);
-    if (findResidentByPhone(cleanPhone)) {
+    if (await findResidentByPhone(cleanPhone)) {
       return res.status(409).json({ success: false, message: 'Ya existe una cuenta con este teléfono.' });
     }
 
@@ -219,7 +219,7 @@ export const registerResident = (req, res) => {
       lastLoginAt: null
     };
 
-    Storage.insert('residents', resident);
+    await Storage.insert('residents', resident);
 
     const token = signToken({ role: 'resident', residentId: resident.id, phone: cleanPhone });
     setSessionCookie(res, token, 7 * 24 * 60 * 60 * 1000);
@@ -235,14 +235,14 @@ export const registerResident = (req, res) => {
 
 // POST /api/auth/resident/login
 // Autocompleta torre, apartamento y teléfono guardados en el perfil.
-export const residentLogin = (req, res) => {
+export const residentLogin = async (req, res) => {
   try {
     const { phone, password } = req.body;
     if (!phone || !password) {
       return res.status(400).json({ success: false, message: 'Teléfono y contraseña requeridos.' });
     }
 
-    const resident = findResidentByPhone(phone);
+    const resident = await findResidentByPhone(phone);
     if (!resident || !resident.passwordHash) {
       return res.status(401).json({ success: false, message: 'No se encontró una cuenta registrada con este teléfono.' });
     }
@@ -253,7 +253,7 @@ export const residentLogin = (req, res) => {
     }
 
     resident.lastLoginAt = new Date().toISOString();
-    Storage.updateById('residents', resident.id, { lastLoginAt: resident.lastLoginAt });
+    await Storage.updateById('residents', resident.id, { lastLoginAt: resident.lastLoginAt });
 
     const token = signToken({ role: 'resident', residentId: resident.id, phone: resident.phone });
     setSessionCookie(res, token, 7 * 24 * 60 * 60 * 1000);
@@ -268,9 +268,9 @@ export const residentLogin = (req, res) => {
 };
 
 // GET /api/auth/resident/profile (protegido)
-export const getResidentProfile = (req, res) => {
+export const getResidentProfile = async (req, res) => {
   try {
-    const resident = Storage.findById('residents', req.user.residentId);
+    const resident = await Storage.findById('residents', req.user.residentId);
     if (!resident) {
       return res.status(404).json({ success: false, message: 'Residente no encontrado.' });
     }
@@ -281,7 +281,7 @@ export const getResidentProfile = (req, res) => {
 };
 
 // GET /api/auth/me (protegido por authAny) — Valida la sesión y devuelve rol + perfil
-export const getMe = (req, res) => {
+export const getMe = async (req, res) => {
   try {
     if (req.user.role === 'admin') {
       return res.json({
@@ -290,7 +290,7 @@ export const getMe = (req, res) => {
       });
     }
 
-    const resident = Storage.findById('residents', req.user.residentId);
+    const resident = await Storage.findById('residents', req.user.residentId);
     if (!resident) {
       return res.status(404).json({ success: false, message: 'Residente no encontrado.' });
     }
@@ -305,7 +305,7 @@ export const getMe = (req, res) => {
 
 // ---------- INVITADO (Checkout rápido, sin contraseña) ----------
 // POST /api/auth/guest/checkout
-export const guestCheckout = (req, res) => {
+export const guestCheckout = async (req, res) => {
   try {
     const { fullName, phone, tower, apartment, birthDate, email } = req.body;
 
@@ -322,7 +322,7 @@ export const guestCheckout = (req, res) => {
     const vBirth = validateBirthDate(birthDate);
     if (vBirth) return res.status(400).json({ success: false, message: vBirth });
 
-    const check = validateApartment(tower, apartment);
+    const check = await validateApartment(tower, apartment);
     if (!check.valid) {
       return res.status(400).json({ success: false, message: check.error });
     }
@@ -330,10 +330,10 @@ export const guestCheckout = (req, res) => {
     const cleanPhone = normalizePhone(phone);
 
     // Reutilizar si el mismo teléfono ya está en la base comunal
-    let resident = findResidentByPhone(cleanPhone);
+    let resident = await findResidentByPhone(cleanPhone);
     if (resident) {
       // Actualizar datos del invitado
-      resident = Storage.updateById('residents', resident.id, {
+      resident = await Storage.updateById('residents', resident.id, {
         fullName,
         tower: check.normalized.tower,
         towerId: check.normalized.towerId,
@@ -359,7 +359,7 @@ export const guestCheckout = (req, res) => {
         guestCheckouts: 1,
         lastGuestCheckoutAt: new Date().toISOString()
       };
-      Storage.insert('residents', resident);
+      await Storage.insert('residents', resident);
     }
 
     const token = signToken({ role: 'resident', residentId: resident.id, phone: resident.phone });
@@ -383,22 +383,22 @@ const OTP_RESEND_COOLDOWN_MS = 60 * 1000;
 
 const generateOtpCode = () => String(Math.floor(1000 + Math.random() * 9000));
 
-const findOtpRecordsForPhone = (phone) => {
+const findOtpRecordsForPhone = async (phone) => {
   const clean = normalizePhone(phone);
-  return (Storage.read('otp_verifications') || []).filter(o => o.phone === clean);
+  return (await Storage.read('otp_verifications') || []).filter(o => o.phone === clean);
 };
 
-const latestPendingOtp = (phone) => {
-  return findOtpRecordsForPhone(phone)
+const latestPendingOtp = async (phone) => {
+  return (await findOtpRecordsForPhone(phone))
     .filter(o => o.status === 'pending')
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0] || null;
 };
 
 // Al generar un nuevo código, se invalidan los pendientes del MISMO teléfono
 // para que nunca coexistan dos códigos válidos para el mismo vendedor.
-const expirePendingOtpsForPhone = (phone) => {
+const expirePendingOtpsForPhone = async (phone) => {
   const clean = normalizePhone(phone);
-  const all = Storage.read('otp_verifications');
+  const all = await Storage.read('otp_verifications');
   let changed = false;
   const updated = (all || []).map(o => {
     if (o.phone === clean && o.status === 'pending') {
@@ -407,20 +407,20 @@ const expirePendingOtpsForPhone = (phone) => {
     }
     return o;
   });
-  if (changed) Storage.write('otp_verifications', updated);
+  if (changed) await Storage.write('otp_verifications', updated);
 };
 
 // ¿El teléfono tiene al menos una vitrina (ownerPhone o phone)?
-const hasBusinessForPhone = (phone) => {
+const hasBusinessForPhone = async (phone) => {
   const clean = normalizePhone(phone);
-  const businesses = Storage.read('businesses');
+  const businesses = await Storage.read('businesses');
   return (businesses || []).some(b =>
     normalizePhone(b.ownerPhone) === clean || normalizePhone(b.phone) === clean
   );
 };
 
 // POST /api/auth/otp/request — genera y persiste el código de verificación
-export const requestOtp = (req, res) => {
+export const requestOtp = async (req, res) => {
   try {
     const { phone } = req.body;
     if (!phone) {
@@ -432,19 +432,19 @@ export const requestOtp = (req, res) => {
     const clean = normalizePhone(phone);
 
     // Solo vendedores que ya tienen vitrina pueden autenticarse con el código
-    if (!hasBusinessForPhone(clean)) {
+    if (!(await hasBusinessForPhone(clean))) {
       return res.status(404).json({ success: false, message: 'No encontramos una vitrina con ese teléfono.' });
     }
 
     // Espera mínima entre envíos (anti-spam) y una sola vigencia por teléfono
-    const last = latestPendingOtp(clean);
+    const last = await latestPendingOtp(clean);
     if (last) {
       const elapsed = Date.now() - new Date(last.createdAt).getTime();
       if (elapsed < OTP_RESEND_COOLDOWN_MS) {
         const wait = Math.ceil((OTP_RESEND_COOLDOWN_MS - elapsed) / 1000);
         return res.status(429).json({ success: false, message: `Espera ${wait}s para solicitar un nuevo código.` });
       }
-      expirePendingOtpsForPhone(clean);
+      await expirePendingOtpsForPhone(clean);
     }
 
     const code = generateOtpCode();
@@ -457,7 +457,7 @@ export const requestOtp = (req, res) => {
       status: 'pending',
       createdAt: new Date().toISOString()
     };
-    Storage.insert('otp_verifications', record);
+    await Storage.insert('otp_verifications', record);
 
     res.json({
       success: true,
@@ -473,7 +473,7 @@ export const requestOtp = (req, res) => {
 };
 
 // POST /api/auth/otp/verify — valida el código contra la base de datos
-export const verifyOtp = (req, res) => {
+export const verifyOtp = async (req, res) => {
   try {
     const { phone, code } = req.body;
     if (!phone || !code) {
@@ -486,21 +486,21 @@ export const verifyOtp = (req, res) => {
     }
 
     const clean = normalizePhone(phone);
-    const otp = latestPendingOtp(clean);
+    const otp = await latestPendingOtp(clean);
     if (!otp) {
       return res.status(401).json({ success: false, message: 'No hay un código vigente para este teléfono. Solicita uno nuevo.' });
     }
 
     // Vigencia de 5 minutos
     if (new Date(otp.expiresAt).getTime() < Date.now()) {
-      Storage.updateById('otp_verifications', otp.id, { status: 'expired', expiredAt: new Date().toISOString() });
+      await Storage.updateById('otp_verifications', otp.id, { status: 'expired', expiredAt: new Date().toISOString() });
       return res.status(401).json({ success: false, message: 'El código expiró. Solicita uno nuevo.' });
     }
 
     if (String(otp.code) !== String(code)) {
       const attempts = (otp.attempts || 0) + 1;
       const maxed = attempts >= OTP_MAX_ATTEMPTS;
-      Storage.updateById('otp_verifications', otp.id, maxed
+      await Storage.updateById('otp_verifications', otp.id, maxed
         ? { attempts, status: 'expired', expiredAt: new Date().toISOString() }
         : { attempts });
       return res.status(401).json({
@@ -510,10 +510,10 @@ export const verifyOtp = (req, res) => {
     }
 
     // Código correcto: se marca como usado (una sola vez)
-    Storage.updateById('otp_verifications', otp.id, { status: 'used', usedAt: new Date().toISOString() });
+    await Storage.updateById('otp_verifications', otp.id, { status: 'used', usedAt: new Date().toISOString() });
 
     // Crear o reutilizar el vecino por teléfono (authType 'otp') y abrir sesión
-    let resident = findResidentByPhone(clean);
+    let resident = await findResidentByPhone(clean);
     if (!resident) {
       resident = {
         id: `res-${Date.now()}`,
@@ -529,9 +529,9 @@ export const verifyOtp = (req, res) => {
         createdAt: new Date().toISOString(),
         lastLoginAt: new Date().toISOString()
       };
-      Storage.insert('residents', resident);
+      await Storage.insert('residents', resident);
     } else {
-      resident = Storage.updateById('residents', resident.id, {
+      resident = await Storage.updateById('residents', resident.id, {
         lastLoginAt: new Date().toISOString(),
         authType: resident.authType || 'otp'
       });
@@ -539,12 +539,12 @@ export const verifyOtp = (req, res) => {
 
     // Guardar en el registro la vigencia de la membrecía (30 días por vitrina):
     // el registro del vendedor queda ligado a la duración de su membresía.
-    const ownedMembership = findMembershipEnd(clean);
+    const ownedMembership = await findMembershipEnd(clean);
     if (ownedMembership) {
-      resident = Storage.updateById('residents', resident.id, {
+      resident = (await Storage.updateById('residents', resident.id, {
         membershipExpiresAt: ownedMembership.membershipExpiresAt,
         sessionDays: ownedMembership.sessionDays
-      }) || resident;
+      })) || resident;
     }
 
     // La sesión del vendedor dura lo mismo que su membrecía (30 días), sin
@@ -563,9 +563,9 @@ export const verifyOtp = (req, res) => {
 };
 
 // Calcula el fin de membrecía del vendedor según sus vitrinas activas (30 días)
-const findMembershipEnd = (phone) => {
+const findMembershipEnd = async (phone) => {
   const clean = normalizePhone(phone);
-  const businesses = Storage.read('businesses') || [];
+  const businesses = await Storage.read('businesses') || [];
   const now = Date.now();
   const ends = businesses
     .filter(b => normalizePhone(b.ownerPhone) === clean || normalizePhone(b.phone) === clean)
@@ -591,9 +591,9 @@ export const logout = (req, res) => {
 };
 
 // GET /api/auth/towers
-export const getTowers = (req, res) => {
+export const getTowers = async (req, res) => {
   try {
-    const config = Storage.read('towers');
+    const config = await Storage.read('towers');
     res.json({ success: true, data: config });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al obtener configuración de torres', error: error.message });
@@ -601,10 +601,10 @@ export const getTowers = (req, res) => {
 };
 
 // POST /api/auth/validate-apartment
-export const validateApartmentEndpoint = (req, res) => {
+export const validateApartmentEndpoint = async (req, res) => {
   try {
     const { tower, apartment } = req.body;
-    const check = validateApartment(tower, apartment);
+    const check = await validateApartment(tower, apartment);
     res.json({ success: check.valid, data: check });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al validar apartamento', error: error.message });

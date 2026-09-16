@@ -74,7 +74,7 @@ export const WompiService = {
    * @param {Object} business - Negocio que se está pagando
    * @param {Object} payerData - Datos del pagador (name, phone, email)
    */
-  prepareCheckout(business, payerData = {}) {
+  async prepareCheckout(business, payerData = {}) {
     const reference = this.generateReference(business.id);
     const amountInCents = WompiConfig.membershipAmountCOP * 100; // $31.600 -> 3.160.000
 
@@ -98,7 +98,7 @@ export const WompiService = {
       updatedAt: new Date().toISOString(),
       eventHistory: [],
     };
-    Storage.insert('transactions', transaction);
+    await Storage.insert('transactions', transaction);
 
     // Firma de integridad para el widget (solo si hay llaves reales)
     const integritySignature = hasRealWompi
@@ -123,8 +123,8 @@ export const WompiService = {
    * id de transacción de Wompi. Si no existe la crea (idempotencia).
    * Retorna la transacción encontrada/creada.
    */
-  updateTransaction({ reference, wompiTransactionId, status, paymentMethod, event }) {
-    let transactions = Storage.read('transactions');
+  async updateTransaction({ reference, wompiTransactionId, status, paymentMethod, event }) {
+    let transactions = await Storage.read('transactions');
     let tx = transactions.find(t => t.reference === reference
       || (wompiTransactionId && t.wompiTransactionId === wompiTransactionId));
 
@@ -152,7 +152,7 @@ export const WompiService = {
     tx.updatedAt = new Date().toISOString();
     if (event) tx.eventHistory.push({ at: new Date().toISOString(), ...event });
 
-    Storage.write('transactions', transactions);
+    await Storage.write('transactions', transactions);
     return tx;
   },
 
@@ -160,8 +160,8 @@ export const WompiService = {
    * Consulta una transacción de Wompi en la API (si hay llaves).
    * Útil para confirmar estado en tiempo real desde el frontend.
    */
-  getTransaction(transactionId) {
-    return Storage.findById('transactions', transactionId);
+  async getTransaction(transactionId) {
+    return await Storage.findById('transactions', transactionId);
   },
 
   /**

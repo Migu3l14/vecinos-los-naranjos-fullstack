@@ -9,8 +9,8 @@ import { WhatsAppService } from '../services/whatsappService.js';
 const router = express.Router();
 
 // Auxiliares de membresía (activación por 30 días)
-const activateMembership = (businessId, paymentMethod, payerData = {}) => {
-  const businesses = Storage.read('businesses');
+const activateMembership = async (businessId, paymentMethod, payerData = {}) => {
+  const businesses = await Storage.read('businesses');
   const index = businesses.findIndex(b => b.id === businessId);
   if (index === -1) return null;
 
@@ -29,7 +29,7 @@ const activateMembership = (businessId, paymentMethod, payerData = {}) => {
   business.pausedReason = null;
   business.daysRemaining = 30;
 
-  Storage.write('businesses', businesses);
+  await Storage.write('businesses', businesses);
 
   const receiptId = `REC-LN-${Date.now().toString().slice(-6)}`;
   const transactionId = `TRX-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -54,7 +54,7 @@ const activateMembership = (businessId, paymentMethod, payerData = {}) => {
     status: 'Aprobado y Activo',
     verificationCode: `VDLN-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
   };
-  Storage.insert('receipts', receipt);
+  await Storage.insert('receipts', receipt);
 
   WhatsAppService.sendAutomatedReceipt(receipt);
 
@@ -66,20 +66,20 @@ const activateMembership = (businessId, paymentMethod, payerData = {}) => {
 // - Con llaves: devuelve publicKey + signature para abrir el widget real.
 // - Sin llaves: devuelve widgetActive=false para que el frontend use el
 //   fallback simulado (compatible con desarrollo / hosting sin configurar).
-router.post('/wompi-checkout', (req, res) => {
+router.post('/wompi-checkout', async (req, res) => {
   try {
     const { businessId, payerName, payerPhone, payerEmail } = req.body;
     if (!businessId) {
       return res.status(400).json({ success: false, message: 'El ID de la vitrina es obligatorio.' });
     }
 
-    const businesses = Storage.read('businesses');
+    const businesses = await Storage.read('businesses');
     const business = businesses.find(b => b.id === businessId);
     if (!business) {
       return res.status(404).json({ success: false, message: 'Vitrina no encontrada.' });
     }
 
-    const checkout = WompiService.prepareCheckout(business, { payerName, payerPhone, payerEmail });
+    const checkout = await WompiService.prepareCheckout(business, { payerName, payerPhone, payerEmail });
     res.json({ success: true, data: checkout });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al preparar el pago', error: error.message });
@@ -89,7 +89,7 @@ router.post('/wompi-checkout', (req, res) => {
 // POST /api/payments/wompi-webhook
 // Recibe notificaciones asíncronas de Wompi. Verifica la firma checksum.
 // Body se lee en raw para poder validar el header X-Event-Checksum.
-router.post('/wompi-webhook', expressRaw.json({ type: 'application/json' }), (req, res) => {
+router.post('/wompi-webhook', expressRaw.json({ type: 'application/json' }), async (req, res) => {
   try {
     const event = req.body;
 
@@ -111,7 +111,7 @@ router.post('/wompi-webhook', expressRaw.json({ type: 'application/json' }), (re
       const { reference, status, id, payment_method_type } = trx;
 
       // Actualizar transacción local (con idempotencia por referencia/wompiId)
-      const tx = WompiService.updateTransaction({
+      const tx = await WompiService.updateTransaction({
         reference,
         wompiTransactionId: id,
         status,
@@ -124,7 +124,7 @@ router.post('/wompi-webhook', expressRaw.json({ type: 'application/json' }), (re
           // Localizar negocio por referencia (o por el businessId registrado en la transacción)
           const businessId = tx.businessId || (reference ? reference.replace(/^LN-/, '').split('-')[0] : null);
           if (businessId) {
-            const result = activateMembership(businessId, payment_method_type || 'Nequi / Wompi', {
+            const result = await activateMembership(businessId, payment_method_type || 'Nequi / Wompi', {
               payerName: tx.payerName,
               payerPhone: tx.payerPhone,
               payerEmail: tx.payerEmail,
@@ -159,10 +159,10 @@ router.post('/wompi-webhook', expressRaw.json({ type: 'application/json' }), (re
 
 // GET /api/payments/receipt-by-business/:businessId
 // Obtiene el recibo aprobado más reciente de un negocio (tras pago exitoso).
-router.get('/receipt-by-business/:businessId', (req, res) => {
+router.get('/receipt-by-business/:businessId', async (req, res) => {
   try {
     const { businessId } = req.params;
-    const receipts = Storage.read('receipts');
+    const receipts = await Storage.read('receipts');
     const receipt = receipts
       .filter(r => r.businessId === businessId)
       .sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate))[0] || null;
@@ -177,10 +177,10 @@ router.get('/receipt-by-business/:businessId', (req, res) => {
 
 // GET /api/payments/transaction/:id
 // Consulta el estado de una transacción local (pago) en tiempo real.
-router.get('/transaction/:id', (req, res) => {
+router.get('/transaction/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const transaction = WompiService.getTransaction(id);
+    const transaction = await WompiService.getTransaction(id);
     if (!transaction) {
       return res.status(404).json({ success: false, message: 'Transacción no encontrada.' });
     }

@@ -2,8 +2,8 @@ import Storage from '../db/storage.js';
 import { validateFullName, validatePhone, enforceMaxLength } from '../utils/validation.js';
 
 // Función auxiliar para leer y verificar vigencias (Auto-pausa a los 30 días)
-const loadAndValidateBusinesses = () => {
-  let businesses = Storage.read('businesses');
+const loadAndValidateBusinesses = async () => {
+  let businesses = await Storage.read('businesses');
   const now = new Date();
   let modified = false;
 
@@ -28,15 +28,15 @@ const loadAndValidateBusinesses = () => {
   });
 
   if (modified) {
-    Storage.write('businesses', businesses);
+    await Storage.write('businesses', businesses);
   }
 
   return businesses;
 };
 
 // Guardar negocios
-const saveBusinesses = (businesses) => {
-  Storage.write('businesses', businesses);
+const saveBusinesses = async (businesses) => {
+  await Storage.write('businesses', businesses);
 };
 
 // Normaliza teléfonos para comparar (10 dígitos => prefijo Colombia 57)
@@ -57,10 +57,10 @@ export const businessOwnedBy = (business, residentId, phone) => {
 };
 
 // GET /api/businesses (Directorio público: Solo vitrinas activas)
-export const getBusinesses = (req, res) => {
+export const getBusinesses = async (req, res) => {
   try {
     const { category, manzana, q, includeAll } = req.query;
-    let businesses = loadAndValidateBusinesses();
+    let businesses = await loadAndValidateBusinesses();
 
     // Por defecto el público solo ve vitrinas activas
     if (includeAll !== 'true') {
@@ -100,10 +100,10 @@ export const getBusinesses = (req, res) => {
 };
 
 // GET /api/businesses/:id
-export const getBusinessById = (req, res) => {
+export const getBusinessById = async (req, res) => {
   try {
     const { id } = req.params;
-    const businesses = loadAndValidateBusinesses();
+    const businesses = await loadAndValidateBusinesses();
     const business = businesses.find(b => b.id === id);
 
     if (!business) {
@@ -117,11 +117,11 @@ export const getBusinessById = (req, res) => {
 };
 
 // GET /api/businesses/manage/:phone (Buscar vitrina por WhatsApp para consultar estado / renovar)
-export const getBusinessByPhone = (req, res) => {
+export const getBusinessByPhone = async (req, res) => {
   try {
     let { phone } = req.params;
     phone = phone.replace(/\D/g, ''); // Limpiar caracteres no numéricos
-    const businesses = loadAndValidateBusinesses();
+    const businesses = await loadAndValidateBusinesses();
     
     // Buscar coincidencia en los últimos 10 dígitos o con código de país
     const business = businesses.find(b => {
@@ -140,7 +140,7 @@ export const getBusinessByPhone = (req, res) => {
 };
 
 // POST /api/businesses/:id/ratings (público) — Clientes valoran la vitrina
-export const rateBusiness = (req, res) => {
+export const rateBusiness = async (req, res) => {
   try {
     const { id } = req.params;
     const stars = Math.round(Number(req.body.stars));
@@ -148,7 +148,7 @@ export const rateBusiness = (req, res) => {
       return res.status(400).json({ success: false, message: 'La calificación debe ser un número entre 1 y 5 estrellas.' });
     }
 
-    const businesses = loadAndValidateBusinesses();
+    const businesses = await loadAndValidateBusinesses();
     const index = businesses.findIndex(b => b.id === id);
     if (index === -1) return res.status(404).json({ success: false, message: 'Vitrina no encontrada.' });
 
@@ -179,7 +179,7 @@ export const rateBusiness = (req, res) => {
     biz.updatedAt = new Date().toISOString();
 
     businesses[index] = biz;
-    saveBusinesses(businesses);
+    await saveBusinesses(businesses);
 
     res.json({
       success: true,
@@ -192,7 +192,7 @@ export const rateBusiness = (req, res) => {
 };
 
 // POST /api/businesses/register (Crear vitrina y dejar lista para activación)
-export const registerBusiness = (req, res) => {
+export const registerBusiness = async (req, res) => {
   try {
     const {
       name,
@@ -225,7 +225,7 @@ export const registerBusiness = (req, res) => {
       cleanPhone = `57${cleanPhone}`;
     }
 
-    const businesses = loadAndValidateBusinesses();
+    const businesses = await loadAndValidateBusinesses();
 
     const newBusiness = {
       id: `biz-${Date.now()}`,
@@ -262,7 +262,7 @@ export const registerBusiness = (req, res) => {
     };
 
     businesses.push(newBusiness);
-    saveBusinesses(businesses);
+    await saveBusinesses(businesses);
 
     res.status(201).json({
       success: true,
@@ -302,18 +302,18 @@ const normalizeProducts = (products) => {
 };
 
 // Devuelve las vitrinas propiedad de un residente (modelo único Residente/Vendedor)
-const findOwnedBusinesses = (reqUser) => {
+const findOwnedBusinesses = async (reqUser) => {
   const residentId = reqUser && reqUser.residentId;
   const phone = reqUser && reqUser.phone;
-  const businesses = loadAndValidateBusinesses();
+  const businesses = await loadAndValidateBusinesses();
   return businesses.filter(b => businessOwnedBy(b, residentId, phone));
 };
 
 // PUT /api/businesses/:id (admin) — Editar perfil de vendedor
-export const updateBusiness = (req, res) => {
+export const updateBusiness = async (req, res) => {
   try {
     const { id } = req.params;
-    const businesses = loadAndValidateBusinesses();
+    const businesses = await loadAndValidateBusinesses();
     const index = businesses.findIndex(b => b.id === id);
 
     if (index === -1) {
@@ -344,7 +344,7 @@ export const updateBusiness = (req, res) => {
 
     const updated = { ...current, ...updates, updatedAt: new Date().toISOString() };
     businesses[index] = updated;
-    saveBusinesses(businesses);
+    await saveBusinesses(businesses);
 
     res.json({ success: true, message: 'Vitrina actualizada correctamente.', data: updated });
   } catch (error) {
@@ -353,10 +353,10 @@ export const updateBusiness = (req, res) => {
 };
 
 // DELETE /api/businesses/:id (admin) — Eliminar perfil de vendedor
-export const deleteBusiness = (req, res) => {
+export const deleteBusiness = async (req, res) => {
   try {
     const { id } = req.params;
-    const businesses = loadAndValidateBusinesses();
+    const businesses = await loadAndValidateBusinesses();
     const index = businesses.findIndex(b => b.id === id);
 
     if (index === -1) {
@@ -364,7 +364,7 @@ export const deleteBusiness = (req, res) => {
     }
 
     const [removed] = businesses.splice(index, 1);
-    saveBusinesses(businesses);
+    await saveBusinesses(businesses);
 
     res.json({ success: true, message: 'Vitrina eliminada correctamente.', data: { id: removed.id } });
   } catch (error) {
@@ -373,13 +373,13 @@ export const deleteBusiness = (req, res) => {
 };
 
 // GET /api/businesses/mine (authResident) — Mis vitrinas
-export const getMyBusinesses = (req, res) => {
+export const getMyBusinesses = async (req, res) => {
   try {
     const residentId = req.user && req.user.residentId;
     if (!residentId) {
       return res.status(401).json({ success: false, message: 'Sesión de residente requerida.' });
     }
-    const mine = findOwnedBusinesses(req.user);
+    const mine = await findOwnedBusinesses(req.user);
     res.json({ success: true, count: mine.length, data: mine });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al consultar tus vitrinas', error: error.message });
@@ -387,14 +387,14 @@ export const getMyBusinesses = (req, res) => {
 };
 
 // PUT /api/businesses/mine/:id (authResident) — Editar perfil de mi vitrina
-export const updateMyBusiness = (req, res) => {
+export const updateMyBusiness = async (req, res) => {
   try {
     const residentId = req.user && req.user.residentId;
     if (!residentId) {
       return res.status(401).json({ success: false, message: 'Sesión de residente requerida.' });
     }
     const { id } = req.params;
-    const businesses = loadAndValidateBusinesses();
+    const businesses = await loadAndValidateBusinesses();
     const index = businesses.findIndex(b => b.id === id && businessOwnedBy(b, residentId, req.user.phone));
 
     if (index === -1) {
@@ -422,7 +422,7 @@ export const updateMyBusiness = (req, res) => {
 
     const updated = { ...businesses[index], ...updates, updatedAt: new Date().toISOString() };
     businesses[index] = updated;
-    saveBusinesses(businesses);
+    await saveBusinesses(businesses);
 
     res.json({ success: true, message: 'Vitrina actualizada correctamente.', data: updated });
   } catch (error) {
@@ -431,14 +431,14 @@ export const updateMyBusiness = (req, res) => {
 };
 
 // POST /api/businesses/mine/:id/products (authResident) — Agregar producto
-export const addMyProduct = (req, res) => {
+export const addMyProduct = async (req, res) => {
   try {
     const residentId = req.user && req.user.residentId;
     if (!residentId) {
       return res.status(401).json({ success: false, message: 'Sesión de residente requerida.' });
     }
     const { id } = req.params;
-    const businesses = loadAndValidateBusinesses();
+    const businesses = await loadAndValidateBusinesses();
     const index = businesses.findIndex(b => b.id === id && businessOwnedBy(b, residentId, req.user.phone));
 
     if (index === -1) {
@@ -452,7 +452,7 @@ export const addMyProduct = (req, res) => {
 
     businesses[index].products.push(product);
     businesses[index].updatedAt = new Date().toISOString();
-    saveBusinesses(businesses);
+    await saveBusinesses(businesses);
 
     res.status(201).json({ success: true, message: 'Producto agregado correctamente.', data: product });
   } catch (error) {
@@ -461,14 +461,14 @@ export const addMyProduct = (req, res) => {
 };
 
 // PUT /api/businesses/mine/:id/products/:pid (authResident) — Editar producto
-export const updateMyProduct = (req, res) => {
+export const updateMyProduct = async (req, res) => {
   try {
     const residentId = req.user && req.user.residentId;
     if (!residentId) {
       return res.status(401).json({ success: false, message: 'Sesión de residente requerida.' });
     }
     const { id, pid } = req.params;
-    const businesses = loadAndValidateBusinesses();
+    const businesses = await loadAndValidateBusinesses();
     const index = businesses.findIndex(b => b.id === id && businessOwnedBy(b, residentId, req.user.phone));
 
     if (index === -1) {
@@ -485,7 +485,7 @@ export const updateMyProduct = (req, res) => {
     const merged = { ...current, ...req.body, id: current.id };
     biz.products[pIndex] = normalizeProduct(merged, pIndex);
     biz.updatedAt = new Date().toISOString();
-    saveBusinesses(businesses);
+    await saveBusinesses(businesses);
 
     res.json({ success: true, message: 'Producto actualizado correctamente.', data: biz.products[pIndex] });
   } catch (error) {
@@ -494,14 +494,14 @@ export const updateMyProduct = (req, res) => {
 };
 
 // DELETE /api/businesses/mine/:id/products/:pid (authResident) — Eliminar producto
-export const deleteMyProduct = (req, res) => {
+export const deleteMyProduct = async (req, res) => {
   try {
     const residentId = req.user && req.user.residentId;
     if (!residentId) {
       return res.status(401).json({ success: false, message: 'Sesión de residente requerida.' });
     }
     const { id, pid } = req.params;
-    const businesses = loadAndValidateBusinesses();
+    const businesses = await loadAndValidateBusinesses();
     const index = businesses.findIndex(b => b.id === id && businessOwnedBy(b, residentId, req.user.phone));
 
     if (index === -1) {
@@ -515,7 +515,7 @@ export const deleteMyProduct = (req, res) => {
       return res.status(404).json({ success: false, message: 'Producto no encontrado.' });
     }
     biz.updatedAt = new Date().toISOString();
-    saveBusinesses(businesses);
+    await saveBusinesses(businesses);
 
     res.json({ success: true, message: 'Producto eliminado correctamente.' });
   } catch (error) {

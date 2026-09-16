@@ -11,14 +11,14 @@ export const getTodayISODate = () => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
-const loadOffers = () => Storage.read('offers');
-const saveOffers = (offers) => Storage.write('offers', offers);
+const loadOffers = async () => await Storage.read('offers');
+const saveOffers = async (offers) => await Storage.write('offers', offers);
 
 // GET /api/offers (público) — solo ofertas ACTIVAS del día de hoy
-export const getOffers = (req, res) => {
+export const getOffers = async (req, res) => {
   try {
     const today = getTodayISODate();
-    const offers = loadOffers()
+    const offers = (await loadOffers())
       .filter(o => o.status === 'active' && o.date === today)
       .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     res.json({ success: true, count: offers.length, data: offers });
@@ -28,15 +28,16 @@ export const getOffers = (req, res) => {
 };
 
 // GET /api/offers/mine (authResident) — ofertas de mi vitrina (cualquier fecha/estado)
-export const getMyOffers = (req, res) => {
+export const getMyOffers = async (req, res) => {
   try {
     const residentId = req.user && req.user.residentId;
     if (!residentId) {
       return res.status(401).json({ success: false, message: 'Sesión de vendedor requerida.' });
     }
-    const mine = loadOffers()
+    const businesses = await Storage.read('businesses');
+    const mine = (await loadOffers())
       .filter(o => {
-        const business = Storage.read('businesses').find(b => b.id === o.bizId);
+        const business = businesses.find(b => b.id === o.bizId);
         return business && businessOwnedBy(business, residentId, req.user.phone);
       })
       .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
@@ -47,16 +48,16 @@ export const getMyOffers = (req, res) => {
 };
 
 // Busca una oferta que pertenezca al vendedor autenticado
-const findOwnedOfferIndex = (offers, offerId, reqUser) => {
+const findOwnedOfferIndex = async (offers, offerId, reqUser) => {
   const index = offers.findIndex(o => o.id === offerId);
   if (index === -1) return -2; // no encontrada
-  const business = Storage.read('businesses').find(b => b.id === offers[index].bizId);
+  const business = (await Storage.read('businesses')).find(b => b.id === offers[index].bizId);
   if (!business || !businessOwnedBy(business, reqUser.residentId, reqUser.phone)) return -1; // sin permisos
   return index;
 };
 
 // POST /api/offers (authResident) — crear oferta para mi vitrina
-export const createOffer = (req, res) => {
+export const createOffer = async (req, res) => {
   try {
     const residentId = req.user && req.user.residentId;
     if (!residentId) {
@@ -66,7 +67,7 @@ export const createOffer = (req, res) => {
     if (!bizId || !title) {
       return res.status(400).json({ success: false, message: 'La oferta necesita la vitrina y un título.' });
     }
-    const business = Storage.read('businesses').find(b => b.id === bizId && businessOwnedBy(b, residentId, req.user.phone));
+    const business = (await Storage.read('businesses')).find(b => b.id === bizId && businessOwnedBy(b, residentId, req.user.phone));
     if (!business) {
       return res.status(404).json({ success: false, message: 'No tienes permisos sobre esta vitrina.' });
     }
@@ -91,7 +92,7 @@ export const createOffer = (req, res) => {
       updatedAt: new Date().toISOString()
     };
 
-    Storage.insert('offers', offer);
+    await Storage.insert('offers', offer);
     res.status(201).json({ success: true, message: 'Oferta publicada correctamente.', data: offer });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al crear la oferta', error: error.message });
@@ -99,15 +100,15 @@ export const createOffer = (req, res) => {
 };
 
 // PUT /api/offers/:id (authResident) — editar oferta propia
-export const updateOffer = (req, res) => {
+export const updateOffer = async (req, res) => {
   try {
     const residentId = req.user && req.user.residentId;
     if (!residentId) {
       return res.status(401).json({ success: false, message: 'Sesión de vendedor requerida.' });
     }
     const { id } = req.params;
-    const offers = loadOffers();
-    const index = findOwnedOfferIndex(offers, id, req.user);
+    const offers = await loadOffers();
+    const index = await findOwnedOfferIndex(offers, id, req.user);
     if (index === -2) return res.status(404).json({ success: false, message: 'Oferta no encontrada.' });
     if (index === -1) return res.status(403).json({ success: false, message: 'No tienes permisos sobre esta oferta.' });
 
@@ -128,7 +129,7 @@ export const updateOffer = (req, res) => {
 
     const updated = { ...offers[index], ...updates, updatedAt: new Date().toISOString() };
     offers[index] = updated;
-    saveOffers(offers);
+    await saveOffers(offers);
 
     res.json({ success: true, message: 'Oferta actualizada correctamente.', data: updated });
   } catch (error) {
@@ -137,7 +138,7 @@ export const updateOffer = (req, res) => {
 };
 
 // PUT /api/offers/:id/status (authResident) — activar/desactivar oferta propia
-export const toggleOfferStatus = (req, res) => {
+export const toggleOfferStatus = async (req, res) => {
   try {
     const residentId = req.user && req.user.residentId;
     if (!residentId) {
@@ -148,14 +149,14 @@ export const toggleOfferStatus = (req, res) => {
     if (!['active', 'inactive'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Estado inválido. Usa "active" o "inactive".' });
     }
-    const offers = loadOffers();
-    const index = findOwnedOfferIndex(offers, id, req.user);
+    const offers = await loadOffers();
+    const index = await findOwnedOfferIndex(offers, id, req.user);
     if (index === -2) return res.status(404).json({ success: false, message: 'Oferta no encontrada.' });
     if (index === -1) return res.status(403).json({ success: false, message: 'No tienes permisos sobre esta oferta.' });
 
     offers[index].status = status;
     offers[index].updatedAt = new Date().toISOString();
-    saveOffers(offers);
+    await saveOffers(offers);
 
     res.json({ success: true, message: status === 'active' ? 'Oferta activada.' : 'Oferta desactivada.', data: offers[index] });
   } catch (error) {
@@ -164,20 +165,20 @@ export const toggleOfferStatus = (req, res) => {
 };
 
 // DELETE /api/offers/:id (authResident) — eliminar oferta propia
-export const deleteOffer = (req, res) => {
+export const deleteOffer = async (req, res) => {
   try {
     const residentId = req.user && req.user.residentId;
     if (!residentId) {
       return res.status(401).json({ success: false, message: 'Sesión de vendedor requerida.' });
     }
     const { id } = req.params;
-    const offers = loadOffers();
-    const index = findOwnedOfferIndex(offers, id, req.user);
+    const offers = await loadOffers();
+    const index = await findOwnedOfferIndex(offers, id, req.user);
     if (index === -2) return res.status(404).json({ success: false, message: 'Oferta no encontrada.' });
     if (index === -1) return res.status(403).json({ success: false, message: 'No tienes permisos sobre esta oferta.' });
 
     const [removed] = offers.splice(index, 1);
-    saveOffers(offers);
+    await saveOffers(offers);
 
     res.json({ success: true, message: 'Oferta eliminada correctamente.', data: { id: removed.id } });
   } catch (error) {

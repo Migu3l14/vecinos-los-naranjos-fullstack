@@ -15,8 +15,8 @@ import Storage from '../db/storage.js';
  *
  * @returns {{ valid: boolean, error?: string, normalized?: {tower, towerId, apartment} }}
  */
-export const validateApartment = (tower, apartment) => {
-  const config = Storage.read('towers');
+export const validateApartment = async (tower, apartment) => {
+  const config = await Storage.read('towers');
   const towers = Array.isArray(config.towers) ? config.towers : [];
   const total = config.totalApartments ?? (towers.length ? 2160 : 0);
 

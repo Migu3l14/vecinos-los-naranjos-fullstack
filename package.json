@@ -8,6 +8,9 @@
     "start": "node scripts/bootstrap-data.mjs && node backend/server.js",
     "dev": "node --watch backend/server.js"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "keywords": [
     "marketplace",
     "jamundi",
@@ -19,6 +22,8 @@
   "author": "Antigravity & Equipo Los Naranjos",
   "license": "MIT",
   "dependencies": {
+    "@upstash/redis": "^1.38.4",
+    "@vercel/blob": "^2.8.0",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",

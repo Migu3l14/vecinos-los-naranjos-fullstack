@@ -39,14 +39,14 @@ export const createAnnouncement = async (req, res) => {
       updatedAt: new Date().toISOString()
     };
 
-    Storage.insert('announcements', anuncio);
+    await Storage.insert('announcements', anuncio);
 
     // Envío masivo por WhatsApp a los residentes de esa manzana (si se pidió)
     if (req.body.sendWhatsApp === true || req.body.sendWhatsApp === 'true') {
       await runBroadcast(anuncio);
     }
 
-    const final = Storage.findById('announcements', anuncio.id);
+    const final = await Storage.findById('announcements', anuncio.id);
     res.status(201).json({ success: true, message: 'Comunicado publicado.', data: final });
   } catch (error) {
     console.error('[ANNOUNCEMENT] Error al crear:', error.message);
@@ -55,10 +55,10 @@ export const createAnnouncement = async (req, res) => {
 };
 
 // GET /api/announcements (público) — solo publicados, segmentado por manzana
-export const getPublicAnnouncements = (req, res) => {
+export const getPublicAnnouncements = async (req, res) => {
   try {
     const { manzana } = req.query;
-    let items = Storage.read('announcements');
+    let items = await Storage.read('announcements');
     items = items.filter(a => a.status === 'published');
     if (manzana && manzana !== 'all') {
       items = items.filter(a => String(a.manzana) === String(manzana));
@@ -71,10 +71,10 @@ export const getPublicAnnouncements = (req, res) => {
 };
 
 // GET /api/announcements/admin (authAdmin) — los de la manzana del admin
-export const getAdminAnnouncements = (req, res) => {
+export const getAdminAnnouncements = async (req, res) => {
   try {
     const adminManzana = req.user && req.user.manzana;
-    let items = Storage.read('announcements');
+    let items = await Storage.read('announcements');
     if (adminManzana) {
       items = items.filter(a => String(a.manzana) === String(adminManzana));
     }
@@ -86,11 +86,11 @@ export const getAdminAnnouncements = (req, res) => {
 };
 
 // DELETE /api/announcements/:id (authAdmin)
-export const deleteAnnouncement = (req, res) => {
+export const deleteAnnouncement = async (req, res) => {
   try {
     const { id } = req.params;
     const adminManzana = req.user && req.user.manzana;
-    let items = Storage.read('announcements');
+    let items = await Storage.read('announcements');
     const target = items.find(a => a.id === id);
 
     if (!target) return res.status(404).json({ success: false, message: 'Comunicado no encontrado.' });
@@ -99,7 +99,7 @@ export const deleteAnnouncement = (req, res) => {
     }
 
     items = items.filter(a => a.id !== id);
-    Storage.write('announcements', items);
+    await Storage.write('announcements', items);
     res.json({ success: true, message: 'Comunicado eliminado.' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al eliminar el comunicado', error: error.message });
@@ -111,7 +111,7 @@ export const broadcastAnnouncement = async (req, res) => {
   try {
     const { id } = req.params;
     const adminManzana = req.user && req.user.manzana;
-    const anuncio = Storage.findById('announcements', id);
+    const anuncio = await Storage.findById('announcements', id);
 
     if (!anuncio) return res.status(404).json({ success: false, message: 'Comunicado no encontrado.' });
     if (adminManzana && String(anuncio.manzana) !== String(adminManzana)) {
@@ -119,7 +119,7 @@ export const broadcastAnnouncement = async (req, res) => {
     }
 
     const result = await runBroadcast(anuncio);
-    const final = Storage.findById('announcements', id);
+    const final = await Storage.findById('announcements', id);
     res.json({ success: true, message: `Enviado a ${result.phones} residentes de la manzana ${anuncio.manzana}.`, data: final });
   } catch (error) {
     console.error('[ANNOUNCEMENT] Error en broadcast:', error.message);
@@ -128,18 +128,19 @@ export const broadcastAnnouncement = async (req, res) => {
 };
 
 // GET /api/announcements/recipients/count?manzana=N (authAdmin) — preview antes de publicar
-export const getRecipientsCount = (req, res) => {
+export const getRecipientsCount = async (req, res) => {
   try {
     const adminManzana = req.user && req.user.manzana;
     const manzana = adminManzana || String(req.query.manzana || '');
-    const residents = Storage.read('residents') || [];
+    const residents = (await Storage.read('residents')) || [];
     const phones = new Set();
-    residents.forEach(r => {
-      if (towerToManzana(r.towerId) === String(manzana)) {
+    for (const r of residents) {
+      const mz = await towerToManzana(r.towerId);
+      if (mz === String(manzana)) {
         const p = normalizePhone(r.phone);
         if (p) phones.add(p);
       }
-    });
+    }
     res.json({ success: true, data: { manzana: String(manzana), count: phones.size } });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al contar destinatarios', error: error.message });
@@ -163,16 +164,17 @@ const buildBroadcastText = (ann) => {
 };
 
 const runBroadcast = async (ann) => {
-  const residents = Storage.read('residents') || [];
+  const residents = (await Storage.read('residents')) || [];
   const phones = [];
   const seen = new Set();
-  residents.forEach(r => {
-    if (towerToManzana(r.towerId) !== ann.manzana) return;
+  for (const r of residents) {
+    const mz = await towerToManzana(r.towerId);
+    if (mz !== ann.manzana) continue;
     const p = normalizePhone(r.phone);
-    if (!p || seen.has(p)) return;
+    if (!p || seen.has(p)) continue;
     seen.add(p);
     phones.push(p);
-  });
+  }
 
   const result = await WhatsAppService.sendBroadcast({
     phones,
@@ -181,7 +183,7 @@ const runBroadcast = async (ann) => {
     mediaKind: ann.kind
   });
 
-  Storage.updateById('announcements', ann.id, {
+  await Storage.updateById('announcements', ann.id, {
     recipientsCount: phones.length,
     broadcastSent: true,
     broadcastAt: new Date().toISOString()

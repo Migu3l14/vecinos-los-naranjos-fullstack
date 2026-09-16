@@ -90,7 +90,7 @@ const writeLimiter = rateLimit({
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Imágenes subidas por los usuarios (portadas, productos y ofertas)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(process.env.UPLOADS_DIR || path.join(__dirname, 'uploads')));
 
 // Rutas de la API REST
 app.use('/api/categories', categoryRoutes);

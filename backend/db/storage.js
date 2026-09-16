@@ -4,7 +4,8 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DATA_DIR = path.join(__dirname, '../data');
+// Ruta configurable: en Railway se monta un volumen y se apunta con DATA_DIR
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '../data');
 
 /**
  * Capa de almacenamiento desacoplada.

@@ -1,0 +1,11 @@
+{
+  "totalApartments": 2160,
+  "towers": [
+    { "id": "torre-1", "name": "Torre 1", "manzana": "1", "floors": 30, "aptsPerFloor": 6 },
+    { "id": "torre-2", "name": "Torre 2", "manzana": "2", "floors": 30, "aptsPerFloor": 6 },
+    { "id": "torre-3", "name": "Torre 3", "manzana": "3", "floors": 30, "aptsPerFloor": 6 },
+    { "id": "torre-4", "name": "Torre 4", "manzana": "4", "floors": 30, "aptsPerFloor": 6 },
+    { "id": "torre-5", "name": "Torre 5", "manzana": "5", "floors": 30, "aptsPerFloor": 6 },
+    { "id": "torre-6", "name": "Torre 6", "manzana": "6", "floors": 30, "aptsPerFloor": 6 }
+  ]
+}

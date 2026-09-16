@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel Admin · Vitrina Digital Los Naranjos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen">
+  <div class="w-full max-w-2xl mx-auto bg-white min-h-screen shadow-2xl">
+
+    <!-- ============ LOGIN (teléfono de administración + OTP) ============ -->
+    <div id="adminLoginView" class="p-6 pt-16 max-w-sm mx-auto text-center">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center text-3xl">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <h1 class="text-xl font-extrabold mt-4">Panel de Administración</h1>
+      <p class="text-xs text-slate-500 mt-1">Acceso por teléfono de administración · Los Naranjos</p>
+
+      <div class="mt-6 text-left space-y-3">
+        <div>
+          <label class="font-bold text-xs text-slate-700 block mb-1">Número de administración</label>
+          <input type="tel" id="admPhone" placeholder="Ej: 315 123 4567" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+        </div>
+        <button id="admSendCodeBtn" class="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-sm rounded-xl shadow touch-btn">
+          Enviar código
+        </button>
+
+        <div id="admOtpSection" class="hidden space-y-3">
+          <div class="flex items-baseline justify-between">
+            <label class="font-bold text-xs text-slate-700">Código de verificación</label>
+            <span id="admResendTimer" class="text-[10px] text-slate-400 font-bold"></span>
+          </div>
+          <div class="flex justify-between" id="admOtpBoxes"></div>
+          <div id="admLoginError" class="hidden bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-2.5 rounded-xl"></div>
+          <button id="admVerifyBtn" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-sm rounded-xl shadow touch-btn">
+            Ingresar al panel
+          </button>
+        </div>
+
+        <a href="./index.html" class="block text-center text-xs font-bold text-orange-600 hover:underline">← Volver a la plataforma</a>
+      </div>
+    </div>
+
+    <!-- ============ DASHBOARD ============ -->
+    <div id="adminPanelView" class="hidden">
+      <header class="bg-slate-900 text-white p-4 flex items-center justify-between sticky top-0 z-20">
+        <div class="flex items-center space-x-2">
+          <span class="text-xl">🍊</span>
+          <div>
+            <h1 class="text-sm font-extrabold">Panel Admin</h1>
+            <p class="text-[10px] text-slate-300">Los Naranjos · Jamundí</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span id="admSessionEmail" class="text-[10px] text-slate-300 font-bold hidden sm:inline"></span>
+          <span id="admManzanaBadge" class="hidden bg-orange-500 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full"></span>
+          <button id="admLogoutBtn" class="bg-white/15 hover:bg-white/25 text-white text-xs font-bold px-3 py-1.5 rounded-xl">Salir</button>
+        </div>
+      </header>
+
+      <!-- Tabs -->
+      <div class="grid grid-cols-5 border-b border-slate-200">
+        <button data-panel="pqrs" class="adm-tab py-3 text-xs font-extrabold border-b-2 border-transparent">PQRS</button>
+        <button data-panel="orders" class="adm-tab py-3 text-xs font-extrabold border-b-2 border-transparent">Pedidos</button>
+        <button data-panel="businesses" class="adm-tab py-3 text-xs font-extrabold border-b-2 border-transparent">Vitrinas</button>
+        <button data-panel="support" class="adm-tab py-3 text-xs font-extrabold border-b-2 border-transparent">Soporte</button>
+        <button data-panel="announcements" class="adm-tab py-3 text-xs font-extrabold border-b-2 border-transparent">Comunicados</button>
+      </div>
+
+      <div class="p-4">
+
+        <!-- ==== PANEL PQRS ==== -->
+        <div id="panel-pqrs" class="adm-panel space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="font-extrabold text-sm">Solicitudes PQRS</h3>
+            <select id="pqrsFilterEstado" class="border border-slate-200 rounded-xl text-xs p-2">
+              <option value="">Todos</option>
+              <option>Pendiente</option>
+              <option>En Proceso</option>
+              <option>Resuelto</option>
+            </select>
+          </div>
+          <div id="pqrsListContainer" class="space-y-3"></div>
+        </div>
+
+        <!-- ==== PANEL PEDIDOS ==== -->
+        <div id="panel-orders" class="adm-panel hidden space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="font-extrabold text-sm">Pedidos de la comunidad</h3>
+            <button id="refreshOrdersBtn" class="text-xs font-bold text-orange-600">⟳ Actualizar</button>
+          </div>
+          <div id="ordersListContainer" class="space-y-3"></div>
+        </div>
+
+        <!-- ==== PANEL VITRINAS ==== -->
+        <div id="panel-businesses" class="adm-panel hidden space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="font-extrabold text-sm">Vitrinas registradas</h3>
+            <button id="refreshBusinessesBtn" class="text-xs font-bold text-orange-600">⟳ Actualizar</button>
+          </div>
+          <div id="businessesListContainer" class="space-y-3"></div>
+        </div>
+
+        <!-- ==== PANEL SOPORTE ==== -->
+        <div id="panel-support" class="adm-panel hidden space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="font-extrabold text-sm">Solicitudes de soporte</h3>
+            <button id="refreshSupportBtn" class="text-xs font-bold text-orange-600">⟳ Actualizar</button>
+          </div>
+          <div id="supportListContainer" class="space-y-3"></div>
+        </div>
+
+        <!-- ==== PANEL COMUNICADOS OFICIALES ==== -->
+        <div id="panel-announcements" class="adm-panel hidden space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-extrabold text-sm">Comunicados oficiales</h3>
+            <button id="refreshAnnBtn" class="text-xs font-bold text-orange-600">⟳ Actualizar</button>
+          </div>
+
+          <!-- Formulario de publicación -->
+          <div class="border border-slate-200 rounded-2xl p-3.5 space-y-3 bg-slate-50/60">
+            <p class="text-xs font-extrabold text-slate-700">📣 Publicar un comunicado</p>
+
+            <div id="annMzWrap" class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="font-bold text-xs text-slate-700 block mb-1">Manzana</label>
+                <select id="annMZ" class="w-full border border-slate-200 rounded-xl text-xs p-2.5">
+                  <option value="1">Manzana 1</option>
+                  <option value="2">Manzana 2</option>
+                  <option value="3">Manzana 3</option>
+                  <option value="4">Manzana 4</option>
+                  <option value="5">Manzana 5</option>
+                  <option value="6">Manzana 6</option>
+                </select>
+              </div>
+              <div id="annRecipientsBox" class="flex flex-col justify-end">
+                <span class="w-full text-[11px] font-bold text-slate-500 bg-white border border-slate-200 rounded-xl p-2.5 text-center" id="annRecipientsPreview">— destinatarios</span>
+              </div>
+            </div>
+
+            <div>
+              <label class="font-bold text-xs text-slate-700 block mb-1">Título *</label>
+              <input id="annTitle" maxlength="160" placeholder="Ej: Corte de agua este sábado 9:00 am" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+            </div>
+            <div>
+              <label class="font-bold text-xs text-slate-700 block mb-1">Mensaje</label>
+              <textarea id="annBody" rows="3" placeholder="Detalle del comunicado oficial..." class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none resize-none"></textarea>
+            </div>
+
+            <div>
+              <label class="font-bold text-xs text-slate-700 block mb-1">Adjuntar imagen o PDF (opcional)</label>
+              <input type="file" id="annFile" accept="image/*,.pdf" class="text-xs" />
+              <div id="annFilePreview" class="hidden mt-2 flex items-center gap-2 text-[11px] font-bold text-slate-600 bg-white border border-slate-200 rounded-xl p-2">
+                <i class="fa-solid fa-paperclip text-orange-600"></i>
+                <span id="annFileName" class="truncate"></span>
+                <button id="annFileClear" type="button" class="ml-auto text-slate-400 hover:text-red-500"><i class="fa-solid fa-circle-xmark"></i></button>
+              </div>
+            </div>
+
+            <label class="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+              <input type="checkbox" id="annSendWa" class="w-4 h-4 accent-emerald-600" />
+              Enviar por WhatsApp a los residentes de esta manzana
+            </label>
+
+            <div id="annFormError" class="hidden bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-2.5 rounded-xl"></div>
+            <button id="annPublishBtn" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-sm rounded-xl shadow touch-btn">
+              <i class="fa-solid fa-bullhorn"></i> Publicar
+            </button>
+          </div>
+
+          <div id="annListContainer" class="space-y-3"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============ MODAL DETALLE PQRS ============ -->
+    <div id="pqrsDetailModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <span id="pqrsDetailTicket" class="text-[10px] font-extrabold text-orange-600"></span>
+            <h4 id="pqrsDetailTipo" class="font-extrabold text-sm"></h4>
+          </div>
+          <button onclick="closeAdminModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        <div class="overflow-y-auto flex-1 p-4 space-y-3 text-xs" id="pqrsDetailBody"></div>
+        <div class="p-4 border-t border-slate-100 space-y-2">
+          <div class="flex space-x-2">
+            <select id="pqrsDetailNewStatus" class="flex-1 border border-slate-200 rounded-xl text-xs p-2.5">
+              <option>Pendiente</option>
+              <option>En Proceso</option>
+              <option>Resuelto</option>
+            </select>
+            <button id="pqrsDetailStatusBtn" class="px-3.5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs rounded-xl">Cambiar estado</button>
+          </div>
+          <div class="flex space-x-2">
+            <input id="pqrsDetailNewNote" placeholder="Agregar nota de seguimiento..." class="flex-1 border border-slate-200 rounded-xl text-xs p-2.5" />
+            <button id="pqrsDetailNoteBtn" class="px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl">Nota</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal vista previa de comunicado -->
+    <div id="annViewModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl w-full max-w-sm max-h-[85vh] overflow-y-auto p-5 space-y-2">
+        <div class="flex items-center justify-between sticky top-0 bg-white py-1">
+          <span class="text-[10px] font-extrabold text-orange-600 uppercase">🛡️ Comunicado oficial</span>
+          <button onclick="closeAdminAnnView()" class="text-slate-400 hover:text-red-500 text-xl"><i class="fa-solid fa-circle-xmark"></i></button>
+        </div>
+        <div id="annViewBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./js/admin.js"></script>
+</body>
+</html>

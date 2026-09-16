@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Recibo Oficial de Pago — Vitrina Digital Los Naranjos</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@700&display=swap" rel="stylesheet" />
+
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .mono { font-family: 'Space Mono', monospace; }
+    
+    .invoice-card {
+      background: #ffffff;
+      border-radius: 1.5rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      position: relative;
+      border: 1px dashed #cbd5e1;
+    }
+
+    .cutout-left, .cutout-right {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      background-color: #f1f5f9;
+      border-radius: 50%;
+      top: 58%;
+      transform: translateY(-50%);
+    }
+    .cutout-left { left: -12px; }
+    .cutout-right { right: -12px; }
+
+    .stamp-badge {
+      border: 2px solid #059669;
+      color: #059669;
+      font-weight: 900;
+      letter-spacing: 1px;
+      transform: rotate(-5deg);
+    }
+
+    @media print {
+      body { background: #fff; }
+      .no-print { display: none !important; }
+      .invoice-card { box-shadow: none; border: 1px solid #000; }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col items-center justify-center p-4">
+
+  <div class="w-full max-w-sm">
+
+    <!-- BOTONES DE NAVEGACIÓN SUPERIOR (NO IMPRIMIBLES) -->
+    <div class="flex items-center justify-between mb-4 no-print">
+      <a href="/" class="text-xs font-bold text-slate-600 hover:text-orange-600 flex items-center space-x-1 bg-white px-3 py-1.5 rounded-full shadow-sm">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Volver a la Vitrina</span>
+      </a>
+      <button onclick="window.print()" class="text-xs font-bold text-slate-700 hover:text-slate-900 flex items-center space-x-1 bg-white px-3 py-1.5 rounded-full shadow-sm">
+        <i class="fa-solid fa-print"></i>
+        <span>Imprimir / PDF</span>
+      </button>
+    </div>
+
+    <!-- TARJETA DEL RECIBO DIGITAL OFICIAL -->
+    <div class="invoice-card p-6 overflow-hidden relative">
+      <div class="cutout-left no-print"></div>
+      <div class="cutout-right no-print"></div>
+
+      <!-- Cabecera -->
+      <div class="text-center pb-4 border-b border-slate-200">
+        <div class="w-12 h-12 mx-auto rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center text-2xl mb-2">
+          🍊
+        </div>
+        <h1 class="text-lg font-extrabold text-slate-900 tracking-tight leading-tight">Vitrina Digital Los Naranjos</h1>
+        <p class="text-xs text-slate-500 font-medium mt-0.5">Jamundí, Valle del Cauca</p>
+        
+        <div class="mt-3 inline-block stamp-badge px-3 py-1 rounded-lg text-xs">
+          ✓ PAGO APROBADO & VIGENTE
+        </div>
+      </div>
+
+      <!-- Detalles del Pago -->
+      <div class="py-4 space-y-2.5 text-xs">
+        <div class="flex justify-between">
+          <span class="text-slate-400">Recibo N°:</span>
+          <span class="font-bold text-slate-800 mono" id="rNum">Cargando...</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Transacción:</span>
+          <span class="font-bold text-slate-700 mono text-[11px]" id="rTrx">--</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Emprendimiento:</span>
+          <span class="font-bold text-orange-600" id="rBizName">--</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Ubicación:</span>
+          <span class="font-bold text-slate-800" id="rLocation">Los Naranjos</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Medio de Pago:</span>
+          <span class="font-bold text-slate-800" id="rMethod">--</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Fecha de Pago:</span>
+          <span class="font-bold text-slate-800" id="rPayDate">--</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Vigencia Activa:</span>
+          <span class="font-bold text-emerald-700" id="rCoverage">--</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Duración:</span>
+          <span class="font-bold text-slate-800">30 Días Calendario</span>
+        </div>
+      </div>
+
+      <!-- Total -->
+      <div class="pt-4 border-t border-dashed border-slate-300 flex justify-between items-baseline">
+        <div>
+          <span class="text-xs text-slate-500 font-bold block">Total Pagado:</span>
+          <span class="text-[10px] text-slate-400">Membresía Mensual</span>
+        </div>
+        <span class="text-2xl font-extrabold text-slate-900 mono" id="rAmount">$31.600 <span class="text-xs font-normal text-slate-500">COP</span></span>
+      </div>
+
+      <!-- Código de Verificación y Seguridad -->
+      <div class="mt-5 p-3 rounded-xl bg-slate-50 border border-slate-200 text-center space-y-1">
+        <p class="text-[10px] text-slate-400">Código Oficial de Verificación:</p>
+        <p class="text-xs font-bold text-slate-800 mono tracking-widest" id="rCode">VDLN-XXXXXX</p>
+      </div>
+
+      <!-- Mensaje al Vecino -->
+      <div class="mt-4 text-center">
+        <p class="text-[11px] text-slate-500">
+          ¡Gracias por ser parte del comercio de Los Naranjos! Tu vitrina ya está visible para los 2.160 apartamentos.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- BOTONES DE COMPARTIR (NO IMPRIMIBLES) -->
+    <div class="mt-4 space-y-2 no-print">
+      <button id="btnShareWa" class="w-full py-3 bg-[#25D366] hover:bg-[#1ebd59] text-white font-extrabold text-xs rounded-2xl shadow flex items-center justify-center space-x-2 transition">
+        <i class="fa-brands fa-whatsapp text-base"></i>
+        <span>Reenviar comprobante por WhatsApp</span>
+      </button>
+      <a href="/" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-2xl shadow flex items-center justify-center space-x-1.5 transition">
+        <i class="fa-solid fa-store"></i>
+        <span>Ir a la Vitrina Digital</span>
+      </a>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { API } from './js/api.js';
+    import { WhatsAppHelper } from './js/whatsapp.js';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const params = new URLSearchParams(window.location.search);
+      const receiptId = params.get('id');
+
+      if (!receiptId) {
+        document.getElementById('rNum').innerText = 'No especificado';
+        return;
+      }
+
+      const receipt = await API.getReceipt(receiptId);
+
+      if (!receipt) {
+        document.getElementById('rNum').innerText = 'Recibo no encontrado';
+        return;
+      }
+
+      // Renderizar datos del recibo
+      document.getElementById('rNum').innerText = receipt.receiptId;
+      document.getElementById('rTrx').innerText = receipt.transactionId;
+      document.getElementById('rBizName').innerText = receipt.businessName;
+      document.getElementById('rLocation').innerText = `Manzana ${receipt.manzana} (Los Naranjos)`;
+      document.getElementById('rMethod').innerText = receipt.paymentMethod;
+      document.getElementById('rPayDate').innerText = new Date(receipt.paymentDate).toLocaleDateString('es-CO');
+      
+      const from = new Date(receipt.coverageStartDate).toLocaleDateString('es-CO');
+      const to = new Date(receipt.coverageEndDate).toLocaleDateString('es-CO');
+      document.getElementById('rCoverage').innerText = `${from} al ${to}`;
+      document.getElementById('rAmount').innerHTML = `$${receipt.amountCOP.toLocaleString('es-CO')} <span class="text-xs font-normal text-slate-500">COP</span>`;
+      document.getElementById('rCode').innerText = receipt.verificationCode;
+
+      // Configurar botón compartir por WhatsApp
+      document.getElementById('btnShareWa').onclick = () => {
+        const shareMsg = WhatsAppHelper.buildReceiptShareMessage(receipt);
+        const waUrl = WhatsAppHelper.createUrl(receipt.phone, shareMsg);
+        window.open(waUrl, '_blank');
+      };
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,21 @@
+[
+  {
+    "id": "trx-1788653718555",
+    "reference": "LN-biz-1788653665108-1788653718554",
+    "businessId": "biz-1788653665108",
+    "businessName": "Bonna Nona",
+    "manzana": "3",
+    "amountInCents": 3160000,
+    "amountCOP": 31600,
+    "currency": "COP",
+    "status": "PENDING",
+    "wompiTransactionId": null,
+    "paymentMethod": null,
+    "payerName": "Dora Aragon",
+    "payerPhone": "3184648857",
+    "payerEmail": "dlucia1905@gmail.com",
+    "initiatedAt": "2026-09-06T00:15:18.555Z",
+    "updatedAt": "2026-09-06T00:15:18.555Z",
+    "eventHistory": []
+  }
+]

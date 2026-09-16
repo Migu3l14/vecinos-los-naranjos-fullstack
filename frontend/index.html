@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Vitrina Digital Los Naranjos — El Comercio de tu Comunidad | Jamundí</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@700&display=swap" rel="stylesheet" />
+
+  <!-- Estilos Locales del Frontend -->
+  <link rel="stylesheet" href="./css/styles.css" />
+
+  <script src="https://checkout.wompi.co/widget.js" data-render="button"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"Space Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen flex flex-col items-center pb-12">
+
+  <!-- CONTENEDOR PRINCIPAL CON FORMATO MOBILE-FIRST -->
+  <div class="w-full max-w-6xl mx-auto bg-white min-h-screen shadow-2xl flex flex-col relative overflow-x-hidden">
+
+    <!-- HEADER / ENCABEZADO SUPERIOR -->
+    <header class="bg-gradient-to-r from-orange-500 to-amber-500 text-white p-4 sticky top-0 z-30 shadow-md">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="text-2xl">🍊</span>
+          <div>
+            <h1 class="text-lg font-extrabold tracking-tight leading-tight">Vitrina Digital</h1>
+            <p class="text-xs text-orange-100 font-medium">Los Naranjos • Jamundí</p>
+          </div>
+        </div>
+        
+        <!-- SELECTOR DE MANZANA Y ACCESO A GESTIÓN -->
+        <div class="flex items-center space-x-1.5">
+          <select id="manzanaFilter" class="bg-orange-600/80 border border-orange-300 text-white text-xs rounded-full px-2.5 py-1.5 font-bold focus:outline-none focus:ring-2 focus:ring-white">
+            <option value="all">📍 Todas las Mz</option>
+            <option value="1">Mz 1</option>
+            <option value="2">Mz 2</option>
+            <option value="3">Mz 3</option>
+            <option value="4">Mz 4</option>
+            <option value="5">Mz 5</option>
+            <option value="6">Mz 6</option>
+          </select>
+
+          <a id="myVitrinaBtn" href="./mi-vitrina.html" title="Mi Vitrina / Panel del Vendedor" class="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition">
+            <i class="fa-solid fa-store"></i>
+          </a>
+
+          <button id="openPqrsModalBtn" title="Radicar una PQRS" class="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition">
+            <i class="fa-solid fa-headset"></i>
+          </button>
+
+          <a href="./admin.html" title="Panel de Administración" class="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition">
+            <i class="fa-solid fa-lock"></i>
+          </a>
+
+          <button id="openManageModalBtn" title="Gestionar o Renovar mi Vitrina" class="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition">
+            <i class="fa-solid fa-key"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- BUSCADOR INTELIGENTE POR NECESIDAD -->
+      <div class="mt-3 relative">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+        <input 
+          type="text" 
+          id="searchInput"
+          placeholder="¿Qué necesitas hoy? (Ej: uñas, lasaña, plomero, torta...)" 
+          class="w-full pl-10 pr-10 py-2.5 rounded-xl bg-white text-slate-800 placeholder-slate-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-300 shadow-inner"
+        />
+        <button id="clearSearchBtn" class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-circle-xmark"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- BANNER DE CONFIANZA / COMUNIDAD -->
+    <div class="bg-amber-50 border-b border-amber-200/60 px-4 py-2 flex items-center justify-between text-xs text-amber-900 font-medium">
+      <div class="flex items-center space-x-1.5">
+        <i class="fa-solid fa-shield-heart text-amber-600 text-sm"></i>
+        <span>2.160 familias conectadas con talento local</span>
+      </div>
+      <span class="bg-amber-200/70 text-amber-800 px-2 py-0.5 rounded-full text-[10px] font-bold">100% Vecinos</span>
+    </div>
+
+    <!-- SECCIÓN: OFERTAS DEL DÍA (CARRUSEL VISUAL) -->
+    <section id="offersSection" class="p-4 border-b border-slate-100">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center space-x-2">
+          <span class="flex h-2.5 w-2.5 relative">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+          </span>
+          <h2 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider">🔥 Ofertas de Hoy</h2>
+        </div>
+        <span id="offersDateLabel" class="text-xs text-orange-600 font-bold">Hoy</span>
+      </div>
+
+      <!-- Carrusel horizontal de ofertas -->
+      <div class="flex space-x-3 overflow-x-auto no-scrollbar pb-2" id="offersContainer"></div>
+    </section>
+
+    <!-- SECCIÓN: CATEGORÍAS RÁPIDAS (BOTONES GRANDES VISUALES) -->
+    <section class="p-4 bg-slate-50/50">
+      <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Explorar por categoría</h2>
+      <div class="grid grid-cols-4 gap-2.5" id="categoriesGrid"></div>
+    </section>
+
+    <!-- SECCIÓN: LISTADO DE VITRINAS -->
+    <section class="p-4 flex-1">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h2 class="text-base font-extrabold text-slate-900" id="listTitle">⭐ Vitrinas en Los Naranjos</h2>
+          <p class="text-xs text-slate-500 font-medium" id="listSubtitle">Mostrando todas las vitrinas activas y verificadas</p>
+        </div>
+        <span id="businessCountBadge" class="bg-orange-100 text-orange-800 text-xs font-bold px-2.5 py-1 rounded-full">
+          Cargando...
+        </span>
+      </div>
+
+      <!-- SECCIÓN: COMUNICADOS OFICIALES (HISTORIAS TIPO INSTAGRAM) -->
+      <div class="mb-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">🛡️ Comunicados oficiales</h2>
+          <span id="annMzLabel" class="text-[10px] font-bold text-orange-600"></span>
+        </div>
+        <div id="annStoriesContainer" class="flex space-x-3 overflow-x-auto no-scrollbar mt-3 pb-1"></div>
+        <div id="annStoriesEmpty" class="hidden text-[11px] text-slate-500 bg-slate-50 border border-dashed border-slate-200 rounded-xl p-3 mt-3">
+          Selecciona tu manzana para ver los comunicados oficiales de tu administración.
+        </div>
+      </div>
+
+      <!-- LISTA DE TARJETAS DE VITRINA -->
+      <div id="businessList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-2"></div>
+    </section>
+
+    <!-- SECCIÓN: LA COMUNIDAD EN NÚMEROS -->
+    <section class="p-4 border-b border-slate-100">
+      <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">La comunidad en números</h2>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm text-center">
+          <span class="text-2xl">👁️</span>
+          <p class="text-2xl font-extrabold text-slate-900 mt-1 leading-none" id="statVisitsToday">—</p>
+          <p class="text-[11px] font-bold text-slate-500 mt-1">Visitas hoy</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm text-center">
+          <span class="text-2xl">🏪</span>
+          <p class="text-2xl font-extrabold text-slate-900 mt-1 leading-none" id="statEntrepreneurs">—</p>
+          <p class="text-[11px] font-bold text-slate-500 mt-1">Emprendedores registrados</p>
+        </div>
+      </div>
+      <div id="statsWeekPanel" class="hidden mt-3 bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+        <p class="text-[11px] font-bold text-slate-500 mb-2">Visitas · últimos 7 días</p>
+        <div class="flex items-end justify-between gap-1.5 h-20" id="statsWeekBars"></div>
+      </div>
+    </section>
+
+    <!-- BOTÓN / LLAMADO A LA ACCIÓN: ¿TIENES UN EMPRENDIMIENTO? -->
+    <div class="m-4 p-4 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-lg">
+      <div class="flex items-center space-x-3">
+        <div class="w-12 h-12 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center text-2xl flex-shrink-0">
+          <i class="fa-solid fa-store"></i>
+        </div>
+        <div class="flex-1">
+          <h3 class="font-bold text-sm leading-tight">¿Tienes un negocio en Los Naranjos?</h3>
+          <p class="text-xs text-slate-300 mt-0.5">Activa tu vitrina y llega a la comunidad Los Naranjos.</p>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-2 mt-3">
+        <button id="openRegisterModalBtn" class="py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs rounded-xl flex items-center justify-center space-x-1.5 transition shadow-md touch-btn">
+          <i class="fa-solid fa-rocket"></i>
+          <span>Publicar mi negocio</span>
+        </button>
+        <button onclick="document.getElementById('openManageModalBtn').click()" class="py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs rounded-xl flex items-center justify-center space-x-1.5 transition touch-btn">
+          <i class="fa-solid fa-rotate"></i>
+          <span>Renovar Vitrina</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- TARJETA DE SOPORTE PARA EMPRENDEDORES -->
+    <div class="m-4 p-4 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-between gap-3">
+      <div class="flex items-center space-x-3 min-w-0">
+        <div class="w-10 h-10 rounded-xl bg-orange-500/15 text-orange-600 flex items-center justify-center text-lg flex-shrink-0">
+          <i class="fa-solid fa-headset"></i>
+        </div>
+        <div class="min-w-0">
+          <h3 class="font-bold text-sm leading-tight text-slate-800">¿Necesitas ayuda?</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Asesórate para publicar o manejar tu vitrina.</p>
+        </div>
+      </div>
+      <button id="openSupportModalBtn" class="py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 shadow touch-btn flex-shrink-0">
+        <i class="fa-solid fa-comments"></i>
+        <span>Contactar Soporte</span>
+      </button>
+    </div>
+
+    <!-- PIE DE PÁGINA COMUNITARIO -->
+    <footer class="p-4 text-center text-xs text-slate-400 border-t border-slate-100">
+      <p class="font-semibold text-slate-600">Vitrina Digital Los Naranjos — Jamundí, Valle</p>
+      <p class="text-[11px] mt-1">Conectando vecinos de las Manzanas 1 a 6 • Renovación cada 30 días</p>
+    </footer>
+
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 1: PERFIL / VITRINA DEL EMPRENDEDOR -->
+  <!-- ======================================================== -->
+  <div id="profileModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full max-w-md max-h-[90vh] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up">
+      
+      <div class="relative h-48 bg-slate-100 flex-shrink-0">
+        <img id="modalCoverImg" src="" alt="Portada" class="w-full h-full object-cover" />
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+        <button onclick="closeProfileModal()" class="absolute top-4 right-4 bg-white/80 hover:bg-white text-slate-800 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div class="absolute bottom-4 left-4 right-4 text-white">
+          <span id="modalCategoryBadge" class="bg-orange-500 text-white text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full"></span>
+          <h2 id="modalBizName" class="text-xl font-extrabold leading-tight mt-1"></h2>
+          <div class="flex items-center space-x-2 text-xs text-slate-200 mt-0.5">
+            <span id="modalBizLocation" class="font-semibold"></span>
+            <span>•</span>
+            <span id="modalBizRating" class="text-amber-400 font-bold"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 overflow-y-auto space-y-4 flex-1">
+        <div>
+          <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Sobre el emprendimiento</h4>
+          <p id="modalBizDesc" class="text-sm text-slate-600 mt-1 leading-relaxed"></p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl text-xs">
+          <div>
+            <span class="text-slate-400 font-semibold block">🕒 Horario</span>
+            <span id="modalBizHours" class="font-bold text-slate-800"></span>
+          </div>
+          <div>
+            <span class="text-slate-400 font-semibold block">🛵 Domicilio</span>
+            <span id="modalBizDelivery" class="font-bold text-emerald-600"></span>
+          </div>
+        </div>
+
+        <div id="modalBizSocials" class="hidden space-y-2"></div>
+
+        <div>
+          <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5">Catálogo de Productos & Precios</h4>
+          <div class="space-y-2.5" id="modalProductsList"></div>
+        </div>
+
+        <div class="mt-3 border-t border-slate-200 pt-3">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">🌟 Valoraciones</h4>
+            <button id="modalRatingsToggle" class="text-[10px] font-extrabold text-orange-600">Ver detalle</button>
+          </div>
+
+          <!-- Rotulado promedio -->
+          <div id="modalRatingsSummary" class="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-xl p-3"></div>
+
+          <!-- Formulario para dejar una valoración -->
+          <div id="modalRatingForm" class="mt-2 space-y-2 bg-slate-50 border border-slate-100 rounded-xl p-3 hidden">
+            <p class="text-[11px] font-bold text-slate-600">¿Cómo fue tu experiencia?</p>
+            <div class="flex items-center justify-between">
+              <div id="ratingStarsInput" class="space-x-1">
+                <button type="button" data-star="1" class="rating-star text-2xl text-slate-300"><i class="fa-solid fa-star"></i></button>
+                <button type="button" data-star="2" class="rating-star text-2xl text-slate-300"><i class="fa-solid fa-star"></i></button>
+                <button type="button" data-star="3" class="rating-star text-2xl text-slate-300"><i class="fa-solid fa-star"></i></button>
+                <button type="button" data-star="4" class="rating-star text-2xl text-slate-300"><i class="fa-solid fa-star"></i></button>
+                <button type="button" data-star="5" class="rating-star text-2xl text-slate-300"><i class="fa-solid fa-star"></i></button>
+              </div>
+              <span id="ratingStarsLabel" class="text-xs font-extrabold text-slate-500">0/5</span>
+            </div>
+            <input id="ratingAuthor" maxlength="60" placeholder="Tu nombre (opcional)" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+            <textarea id="ratingComment" rows="2" maxlength="240" placeholder="Cuéntanos qué te pareció (opcional)" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none resize-none"></textarea>
+            <div id="ratingFormMsg" class="hidden text-[11px] font-bold p-2 rounded-xl"></div>
+            <button id="ratingSubmitBtn" class="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-extrabold rounded-xl shadow touch-btn">Publicar valoración</button>
+          </div>
+
+          <!-- Modal de detalle de valoraciones (reutiliza contenedor dentro del modal) -->
+          <div id="modalRatingsList" class="hidden mt-2 space-y-2"></div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-white border-t border-slate-100 flex-shrink-0">
+        <button id="modalMainWhatsAppBtn" class="w-full py-3 bg-[#25D366] hover:bg-[#1ebd59] text-white font-extrabold text-sm rounded-xl flex items-center justify-center space-x-2 shadow-lg touch-btn">
+          <i class="fa-brands fa-whatsapp text-lg"></i>
+          <span>Contactar por WhatsApp ahora</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 2: ASISTENTE DE REGISTRO, PAGO Y ACTIVACIÓN (4 PASOS) -->
+  <!-- ======================================================== -->
+  <div id="registerWizardModal" class="fixed inset-0 bg-slate-900/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
+      
+      <!-- Cabecera del modal -->
+      <div class="bg-slate-900 text-white p-4 flex items-center justify-between">
+        <div>
+          <span class="text-[10px] text-orange-400 font-extrabold uppercase tracking-wider">Activa tu Negocio</span>
+          <h3 class="text-base font-extrabold leading-tight">Vitrina Digital Los Naranjos</h3>
+        </div>
+        <button onclick="closeRegisterWizard()" class="text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Cuerpo con Scroll -->
+      <div class="p-4 overflow-y-auto flex-1">
+
+        <!-- PASO 1: DATOS DEL NEGOCIO -->
+        <div id="wizardStep1" class="space-y-3 text-xs">
+          <div class="flex items-center space-x-2 text-slate-500 font-bold mb-2">
+            <span class="w-5 h-5 rounded-full bg-orange-500 text-white flex items-center justify-center text-[11px]">1</span>
+            <span>Datos del Emprendimiento</span>
+          </div>
+
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Nombre de tu Negocio *:</label>
+            <input type="text" id="regName" placeholder="Ej: Delicias de Jamundí" class="w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">Manzana *:</label>
+              <select id="regMz" class="w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                <option value="1">Manzana 1</option>
+                <option value="2">Manzana 2</option>
+                <option value="3">Manzana 3</option>
+                <option value="4">Manzana 4</option>
+                <option value="5">Manzana 5</option>
+                <option value="6">Manzana 6</option>
+              </select>
+            </div>
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">Categoría *:</label>
+              <select id="regCat" class="w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                <option value="comida">Comidas</option>
+                <option value="belleza">Belleza/Uñas</option>
+                <option value="postres">Postres</option>
+                <option value="servicios">Técnicos</option>
+                <option value="mascotas">Mascotas</option>
+                <option value="hogar">Tiendas y minimarket</option>
+                <option value="clases">Otros</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">WhatsApp de Contacto *:</label>
+            <input type="tel" id="regPhone" placeholder="Ej: 315 123 4567" class="w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+          </div>
+
+          <div class="pt-1">
+            <div class="flex items-center space-x-1.5 mb-1">
+              <i class="fa-solid fa-share-nodes text-orange-500 text-xs"></i>
+              <label class="font-bold text-slate-700 text-xs">Redes Sociales (opcional)</label>
+            </div>
+            <p class="text-[10px] text-slate-400 mb-2">Estos enlaces aparecerán en tu perfil público.</p>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="font-bold text-slate-700 block mb-1">Instagram:</label>
+                <input type="text" id="regInstagram" placeholder="Ej: @tuemprendimiento" class="w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none text-[11px]" />
+              </div>
+              <div>
+                <label class="font-bold text-slate-700 block mb-1">Facebook:</label>
+                <input type="text" id="regFacebook" placeholder="URL o @página" class="w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-[11px]" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Descripción Corta:</label>
+            <input type="text" id="regShortDesc" placeholder="Ej: Lasañas horneadas al día con entrega directa." class="w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">Horario de Atención:</label>
+              <input type="text" id="regHours" placeholder="Lun a Sáb: 8am - 7pm" class="w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none text-[11px]" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">Foto de Portada (opcional):</label>
+              <input type="file" id="regCoverImg" accept="image/jpeg,image/png,image/webp" class="w-full p-2 border border-slate-200 rounded-xl bg-white text-[11px] focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+              <div id="regCoverImg_preview" class="hidden mt-2">
+                <img id="regCoverImg_img" alt="Vista previa de la portada" class="w-full h-28 object-cover rounded-xl border border-slate-200" />
+              </div>
+              <input type="hidden" id="regCoverImg_url" />
+              <p id="regCoverImg_err" class="hidden text-red-600 text-[10px] font-bold mt-1"></p>
+              <p class="text-[10px] text-slate-400 mt-0.5">Sube una imagen desde tu dispositivo (JPG, PNG o WebP, máx. 5MB).</p>
+            </div>
+          </div>
+
+          <button id="step1NextBtn" class="w-full mt-4 py-3 bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-xs rounded-xl shadow-lg touch-btn flex items-center justify-center space-x-2">
+            <span>Siguiente: Productos</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+
+        <!-- PASO 2: PRODUCTOS Y FOTOS -->
+        <div id="wizardStep2" class="space-y-3 text-xs hidden">
+          <div class="flex items-center space-x-2 text-slate-500 font-bold mb-2">
+            <span class="w-5 h-5 rounded-full bg-orange-500 text-white flex items-center justify-center text-[11px]">2</span>
+            <span>Agrega tus Productos Estrella</span>
+          </div>
+
+          <!-- Producto 1 -->
+          <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+            <span class="font-bold text-orange-600 block">Producto 1</span>
+            <input type="text" id="prod1Name" placeholder="Nombre (Ej: Semipermanente o Lasaña Familiar)" class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white" />
+            <div class="grid grid-cols-2 gap-2">
+              <input type="text" id="prod1Price" placeholder="Precio (Ej: $28.000)" class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white" />
+              <div>
+                <input type="file" id="prod1Img" accept="image/jpeg,image/png,image/webp" class="w-full p-1.5 border border-slate-200 rounded-lg bg-white text-[10px]" />
+                <div id="prod1Img_preview" class="hidden mt-1">
+                  <img id="prod1Img_img" alt="" class="w-full h-16 object-cover rounded-lg border border-slate-200" />
+                </div>
+                <input type="hidden" id="prod1Img_url" />
+                <p id="prod1Img_err" class="hidden text-red-600 text-[10px] font-bold"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Producto 2 -->
+          <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+            <span class="font-bold text-orange-600 block">Producto 2 (Opcional)</span>
+            <input type="text" id="prod2Name" placeholder="Nombre (Ej: Manicure tradicional)" class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white" />
+            <div class="grid grid-cols-2 gap-2">
+              <input type="text" id="prod2Price" placeholder="Precio (Ej: $18.000)" class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white" />
+              <div>
+                <input type="file" id="prod2Img" accept="image/jpeg,image/png,image/webp" class="w-full p-1.5 border border-slate-200 rounded-lg bg-white text-[10px]" />
+                <div id="prod2Img_preview" class="hidden mt-1">
+                  <img id="prod2Img_img" alt="" class="w-full h-16 object-cover rounded-lg border border-slate-200" />
+                </div>
+                <input type="hidden" id="prod2Img_url" />
+                <p id="prod2Img_err" class="hidden text-red-600 text-[10px] font-bold"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex space-x-2 pt-2">
+            <button id="step2BackBtn" class="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">
+              Atrás
+            </button>
+            <button id="step2NextBtn" class="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-xs rounded-xl shadow-lg touch-btn flex items-center justify-center space-x-1.5">
+              <span>Continuar al Pago</span>
+              <i class="fa-solid fa-credit-card"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- PASO 3: PAGO Y ACTIVACIÓN POR 30 DÍAS -->
+        <div id="wizardStep3" class="space-y-4 text-xs hidden">
+          <div class="flex items-center space-x-2 text-slate-500 font-bold">
+            <span class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[11px]">3</span>
+            <span>Membresía & Activación Inmediata</span>
+          </div>
+
+          <!-- Tarjeta de Resumen de Pago -->
+          <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-4 rounded-2xl shadow space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-xs text-orange-400 font-bold" id="checkoutBizName">Tu Negocio</span>
+              <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full" id="checkoutBizManzana">Manzana X</span>
+            </div>
+            <div class="pt-2 border-t border-slate-700 flex justify-between items-baseline">
+              <span class="text-slate-300">Membresía Mensual (30 días):</span>
+              <span class="text-xl font-extrabold text-emerald-400 font-mono">$31.600 <span class="text-xs text-slate-400 font-normal">COP</span></span>
+            </div>
+            <p class="text-[10px] text-slate-400 leading-tight">
+              ✓ Tu vitrina estará activa y visible durante 30 días calendario para más de 2.160 familias.
+            </p>
+          </div>
+
+          <!-- Datos del Pagador para la transacción -->
+          <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+            <label class="font-bold text-slate-700 block">Datos de contacto (para el recibo):</label>
+            <input type="text" id="wompiPayerName" placeholder="Nombre completo" class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white" />
+            <input type="tel" id="wompiPayerPhone" placeholder="WhatsApp (Ej: 315 123 4567)" class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white" />
+            <input type="email" id="wompiPayerEmail" placeholder="Correo (opcional)" class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white" />
+          </div>
+
+          <!-- Contenedor del Widget / Estado del pago -->
+          <div id="wompiWidgetContainer" class="hidden"></div>
+
+          <div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl text-emerald-800 text-[11px] flex items-center space-x-2">
+            <i class="fa-solid fa-lock text-emerald-600 text-sm"></i>
+            <span>Pago procesado de forma segura por Wompi (Nequi, PSE, tarjeta). Recibo digital con código de verificación.</span>
+          </div>
+
+          <!-- Botón: abre el widget Wompi (o fallback simulado en dev) -->
+          <button id="processPaymentBtn" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm rounded-xl shadow-lg touch-btn flex items-center justify-center space-x-2">
+            <i class="fa-solid fa-lock"></i>
+            <span>Pagar $31.600 con Wompi</span>
+          </button>
+        </div>
+
+        <!-- PASO 4: CONFIRMACIÓN Y RECIBO DIGITAL -->
+        <div id="wizardStep4" class="space-y-3.5 text-xs hidden">
+          <div class="text-center pt-1 pb-1">
+            <span class="text-2xl">🎉</span>
+            <h4 class="text-sm font-extrabold text-slate-900 mt-0.5">¡Tu Vitrina ya está Activa!</h4>
+            <p class="text-[11px] text-slate-500">Tu negocio ya es visible en Los Naranjos por 30 días.</p>
+          </div>
+
+          <!-- Contenedor del Recibo Digital -->
+          <div id="receiptDetailContainer"></div>
+
+          <!-- Botones de Acción Oficiales -->
+          <div class="space-y-2 pt-1">
+            <button id="downloadReceiptBtn" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl shadow touch-btn flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-file-invoice text-orange-400"></i>
+              <span>Ver Factura Oficial & Descargar PDF</span>
+            </button>
+            <button id="viewLiveStoreBtn" class="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-extrabold rounded-xl shadow touch-btn flex items-center justify-center space-x-1.5">
+              <i class="fa-solid fa-store"></i>
+              <span>Ver mi Vitrina en Vivo</span>
+            </button>
+            <button id="shareReceiptWaBtn" class="w-full py-2.5 bg-[#25D366] hover:bg-[#1ebd59] text-white font-bold rounded-xl shadow touch-btn flex items-center justify-center space-x-1.5">
+              <i class="fa-brands fa-whatsapp"></i>
+              <span>Reenviar Comprobante por WhatsApp</span>
+            </button>
+            <button onclick="closeRegisterWizard()" class="w-full py-1.5 text-slate-400 hover:text-slate-600 text-xs font-bold text-center">
+              Cerrar
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL CHECKOUT: RESULTADO DEL PAGO (ÉXITO / FALLO) -->
+  <!-- ======================================================== -->
+  <div id="paymentResultModal" class="fixed inset-0 bg-slate-900/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-slide-up">
+      <div class="p-6 text-center space-y-3">
+        <div id="paymentResultIcon" class="w-16 h-16 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl"></div>
+        <h3 id="paymentResultTitle" class="text-lg font-extrabold text-slate-900">Pago</h3>
+        <p id="paymentResultMsg" class="text-sm text-slate-600 leading-relaxed"></p>
+        <div class="bg-slate-50 rounded-xl p-3 text-left text-xs space-y-1.5" id="paymentResultDetails" class="hidden"></div>
+        <button id="paymentResultBtn" class="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-sm rounded-xl shadow-lg touch-btn">
+          Continuar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 3: GESTIONAR O RENOVAR VITRINA (CONSULTA DE VIGENCIA) -->
+  <!-- ======================================================== -->
+  <div id="manageModal" class="fixed inset-0 bg-slate-900/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-5 animate-slide-up space-y-4">
+      
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold">
+            <i class="fa-solid fa-key"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-sm text-slate-900">Gestionar mi Vitrina</h3>
+            <p class="text-[10px] text-slate-400">Consulta tus 30 días o renueva</p>
+          </div>
+        </div>
+        <button onclick="closeManageModal()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Buscador por teléfono -->
+      <div class="space-y-2">
+        <label class="font-bold text-xs text-slate-700 block">Tu WhatsApp registrado:</label>
+        <div class="flex space-x-2">
+          <input type="tel" id="managePhoneInput" placeholder="Ej: 315 123 4567" class="flex-1 p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+          <button id="searchManageBtn" class="px-3.5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs rounded-xl shadow touch-btn">
+            Buscar
+          </button>
+        </div>
+      </div>
+
+      <!-- Resultado de consulta -->
+      <div id="manageResultSection" class="hidden pt-3 border-t border-slate-100 space-y-3 text-xs">
+        <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-extrabold text-sm text-slate-900" id="manageBizName"></span>
+            <span id="manageStatusBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold"></span>
+          </div>
+          <span class="text-slate-500 block text-[11px]" id="manageBizMz"></span>
+          <p class="text-xs font-bold text-slate-700 pt-1" id="manageDaysRemaining"></p>
+        </div>
+
+        <button id="renewManageBtn" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow touch-btn flex items-center justify-center space-x-2">
+          <i class="fa-solid fa-rotate-right"></i>
+          <span>Renovar Membresía ($31.600 COP)</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 4: DETALLE DE OFERTA ESPECIAL -->
+  <!-- ======================================================== -->
+  <div id="offerModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-slide-up">
+      <div class="relative h-44 bg-slate-100">
+        <img id="offerModalImg" src="" alt="Oferta" class="w-full h-full object-cover" />
+        <button onclick="closeOfferModal()" class="absolute top-3 right-3 bg-white/90 hover:bg-white text-slate-800 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <span class="absolute bottom-3 left-3 bg-red-600 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow">
+          🔥 OFERTA VECINOS
+        </span>
+      </div>
+      <div class="p-4">
+        <span id="offerModalBizName" class="text-xs font-bold text-orange-600 uppercase tracking-wider block"></span>
+        <h3 id="offerModalTitle" class="text-base font-extrabold text-slate-900 mt-1"></h3>
+        <div class="flex items-baseline space-x-2 mt-2">
+          <span id="offerModalPrice" class="text-xl font-extrabold text-emerald-600"></span>
+          <span id="offerModalOldPrice" class="text-xs text-slate-400 line-through"></span>
+        </div>
+        <p id="offerModalDesc" class="text-xs text-slate-600 mt-2 bg-slate-50 p-2.5 rounded-xl"></p>
+        
+        <button id="offerModalWhatsAppBtn" class="w-full mt-4 py-3 bg-[#25D366] hover:bg-[#1ebd59] text-white font-extrabold text-sm rounded-xl flex items-center justify-center space-x-2 shadow-lg touch-btn">
+          <i class="fa-brands fa-whatsapp text-lg"></i>
+          <span>Pedir esta Promo por WhatsApp</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 5: PREVIEW DEL MENSAJE DE WHATSAPP -->
+  <!-- ======================================================== -->
+  <div id="waPreviewModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-[#0b141a] text-white w-full max-w-sm rounded-3xl shadow-2xl border border-emerald-500/30 overflow-hidden">
+      <div class="bg-[#202c33] p-3.5 flex items-center justify-between border-b border-slate-700">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-9 h-9 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold">
+            <i class="fa-brands fa-whatsapp text-lg"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-xs" id="waPreviewTitle">WhatsApp</h4>
+            <span class="text-[10px] text-emerald-400">Enlace directo listo</span>
+          </div>
+        </div>
+        <button onclick="closeWaPreview()" class="text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+      
+      <div class="p-4 bg-[#0b141a] min-h-[160px] flex flex-col justify-end">
+        <div class="bg-[#005c4b] text-[#e9edef] p-3 rounded-2xl rounded-tr-none text-xs leading-relaxed shadow relative">
+          <p id="waPreviewMessage" class="whitespace-pre-line"></p>
+          <span class="text-[9px] text-[#8696a0] block text-right mt-1.5">Ahora ✓✓</span>
+        </div>
+      </div>
+
+      <div class="p-3.5 bg-[#202c33] border-t border-slate-700 flex space-x-2">
+        <a id="waDirectLink" href="#" target="_blank" class="flex-1 py-2.5 bg-[#00a884] hover:bg-[#029071] text-white text-center font-bold text-xs rounded-xl shadow touch-btn flex items-center justify-center space-x-1.5">
+          <i class="fa-brands fa-whatsapp text-base"></i>
+          <span>Abrir en mi WhatsApp</span>
+        </a>
+        <button onclick="closeWaPreview()" class="px-3 py-2.5 bg-slate-700 hover:bg-slate-600 text-xs font-bold rounded-xl text-slate-200">
+          Volver
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL CHECKOUT DUAL: Identidad (Registrado / Invitado)  -->
+  <!-- ======================================================== -->
+  <div id="checkoutModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl animate-slide-up flex flex-col max-h-[92vh]">
+      <div class="bg-slate-900 text-white p-4 flex items-center justify-between">
+        <div>
+          <span class="text-[10px] text-orange-400 font-extrabold uppercase tracking-wider">Checkout Seguro</span>
+          <h3 class="text-base font-extrabold leading-tight">Confirma tu identidad</h3>
+        </div>
+        <button onclick="closeCheckoutModal()" class="text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 p-4 space-y-4">
+
+        <!-- Resumen del pedido -->
+        <div id="checkoutOrderSummary" class="bg-orange-50 border border-orange-200 rounded-2xl p-3 text-xs space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-orange-600 uppercase tracking-wide">Tu pedido</span>
+            <span id="checkoutOrderCount" class="bg-white px-2 py-0.5 rounded-full text-[10px] font-bold text-orange-700"></span>
+          </div>
+          <p id="checkoutOrderText" class="text-slate-700 font-semibold"></p>
+        </div>
+
+        <!-- Selector de modo -->
+        <div class="grid grid-cols-2 gap-2">
+          <button id="checkoutTabLogin" class="py-2.5 rounded-xl text-xs font-extrabold border touch-btn transition">
+            🔓 Ya tengo cuenta
+          </button>
+          <button id="checkoutTabGuest" class="py-2.5 rounded-xl text-xs font-extrabold border touch-btn transition">
+            ⚡ Continuar como invitado
+          </button>
+        </div>
+
+        <!-- PANEL A: LOGIN RESIDENTE -->
+        <div id="checkoutLoginPanel" class="space-y-3 hidden">
+          <p class="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl">
+            Ingresa con el teléfono que usaste al crear tu cuenta. Podremos autocompletar tu torre y apartamento.
+          </p>
+          <div>
+            <label class="font-bold text-xs text-slate-700 block mb-1">Tu teléfono</label>
+            <input type="tel" id="coLoginPhone" placeholder="Ej: 315 123 4567" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="font-bold text-xs text-slate-700 block mb-1">Contraseña</label>
+            <input type="password" id="coLoginPassword" placeholder="Tu contraseña" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+          </div>
+          <button id="coLoginSubmit" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl shadow touch-btn flex items-center justify-center space-x-2">
+            <span>Ingresar y continuar</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+
+        <!-- PANEL B: INVITADO -->
+        <div id="checkoutGuestPanel" class="space-y-3 hidden">
+          <p class="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl">
+            No necesitas contraseña. Completa tus datos y guardaremos tu información como vecino de la comunidad (2.160 apartamentos).
+          </p>
+          <div>
+            <label class="font-bold text-xs text-slate-700 block mb-1">Nombre completo</label>
+            <input type="text" id="coGuestName" placeholder="Ej: María López" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="font-bold text-xs text-slate-700 block mb-1">Teléfono</label>
+            <input type="tel" id="coGuestPhone" placeholder="Ej: 315 123 4567" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="font-bold text-xs text-slate-700 block mb-1">Torre</label>
+              <select id="coGuestTower" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white"></select>
+            </div>
+            <div>
+              <label class="font-bold text-xs text-slate-700 block mb-1">Apartamento</label>
+              <input type="text" id="coGuestApt" placeholder="Ej: 405" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+            </div>
+          </div>
+          <div>
+            <label class="font-bold text-xs text-slate-700 block mb-1">Fecha de nacimiento</label>
+            <input type="date" id="coGuestBirth" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <div id="checkoutError" class="hidden bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-2.5 rounded-xl"></div>
+
+      </div>
+
+      <div class="p-4 bg-white border-t border-slate-100 flex-shrink-0">
+        <button id="checkoutConfirmBtn" class="w-full py-3 bg-[#25D366] hover:bg-[#1ebd59] text-white font-extrabold text-sm rounded-xl shadow-lg flex items-center justify-center space-x-2 touch-btn">
+          <i class="fa-brands fa-whatsapp text-lg"></i>
+          <span>Confirmar pedido y enviar por WhatsApp</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL HISTORIA: COMUNICADO OFICIAL -->
+  <!-- ======================================================== -->
+  <div id="annStoryModal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
+    <button onclick="closeAnnStory()" class="absolute top-4 right-4 text-white/90 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center touch-btn">
+      <i class="fa-solid fa-xmark text-xl"></i>
+    </button>
+    <div id="annStoryContent" class="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"></div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL SOPORTE: Estilo vitrina, contáctanos por WhatsApp -->
+  <!-- ======================================================== -->
+  <div id="supportModal" class="fixed inset-0 bg-slate-900/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl animate-slide-up flex flex-col max-h-[90vh]">
+
+      <!-- Cabecera estilo vitrina -->
+      <div class="bg-slate-900 text-white p-4 flex items-center justify-between">
+        <div>
+          <span class="text-[10px] text-orange-400 font-extrabold uppercase tracking-wider">Soporte</span>
+          <h3 class="text-base font-extrabold leading-tight">Vitrina Digital Los Naranjos</h3>
+        </div>
+        <button onclick="closeSupportModal()" class="text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Cuerpo con Scroll -->
+      <div class="p-4 overflow-y-auto flex-1 space-y-3">
+        <div class="flex items-center space-x-3">
+          <div class="w-12 h-12 rounded-xl bg-orange-500/15 text-orange-600 flex items-center justify-center text-2xl flex-shrink-0">
+            <i class="fa-solid fa-headset"></i>
+          </div>
+          <div>
+            <h4 class="font-extrabold text-sm text-slate-900">¿Necesitas ayuda?</h4>
+            <p class="text-xs text-slate-500 leading-relaxed">Asesoría para publicar, pagar o manejar tu vitrina.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl text-xs">
+          <div>
+            <span class="text-slate-400 font-semibold block">🕒 Atención</span>
+            <span class="font-bold text-slate-800">Lun a Dom · 8am–8pm</span>
+          </div>
+          <div>
+            <span class="text-slate-400 font-semibold block">📱 Soporte</span>
+            <span class="font-bold text-emerald-600" id="supportWhatsappLabel">WhatsApp</span>
+          </div>
+        </div>
+
+        <p class="text-[11px] text-slate-500 leading-relaxed bg-amber-50 border border-amber-100 rounded-xl p-3">
+          Escríbenos por WhatsApp y te respondemos lo antes posible: ofertas, fotos, pagos o cualquier duda con tu vitrina.
+        </p>
+      </div>
+
+      <!-- Pie con botón Contactar estilo vitrina -->
+      <div class="p-4 bg-white border-t border-slate-100 flex-shrink-0">
+        <button id="supportWhatsappBtn" class="w-full py-3 bg-[#25D366] hover:bg-[#1ebd59] text-white font-extrabold text-sm rounded-xl flex items-center justify-center space-x-2 shadow-lg touch-btn">
+          <i class="fa-brands fa-whatsapp text-lg"></i>
+          <span>Contactar</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL PQRS: Formulario de Petición/Queja/Reclamo/Sugerencia -->
+  <!-- ======================================================== -->
+  <div id="pqrsModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl animate-slide-up flex flex-col max-h-[92vh]">
+      <div class="bg-slate-900 text-white p-4 flex items-center justify-between">
+        <div>
+          <span class="text-[10px] text-orange-400 font-extrabold uppercase tracking-wider">Canales de Atención</span>
+          <h3 class="text-base font-extrabold leading-tight">PQRS · Radica tu solicitud</h3>
+        </div>
+        <button onclick="closePqrsModal()" class="text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 p-4 space-y-3">
+
+        <div class="grid grid-cols-4 gap-2">
+          <button data-tipo="Petición" class="pqrs-tipo-btn py-2 rounded-xl border text-[10px] font-extrabold touch-btn">📨<br/>Petición</button>
+          <button data-tipo="Queja" class="pqrs-tipo-btn py-2 rounded-xl border text-[10px] font-extrabold touch-btn">😠<br/>Queja</button>
+          <button data-tipo="Reclamo" class="pqrs-tipo-btn py-2 rounded-xl border text-[10px] font-extrabold touch-btn">📢<br/>Reclamo</button>
+          <button data-tipo="Sugerencia" class="pqrs-tipo-btn py-2 rounded-xl border text-[10px] font-extrabold touch-btn">💡<br/>Sugerencia</button>
+        </div>
+
+        <div>
+          <label class="font-bold text-xs text-slate-700 block mb-1">Tu nombre</label>
+          <input type="text" id="pqrsNombre" placeholder="Nombre completo" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="font-bold text-xs text-slate-700 block mb-1">Teléfono</label>
+          <input type="tel" id="pqrsTelefono" placeholder="Ej: 315 123 4567" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="font-bold text-xs text-slate-700 block mb-1">Descripción</label>
+          <textarea id="pqrsDesc" rows="3" placeholder="Cuéntanos los detalles de tu solicitud..." class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none resize-none"></textarea>
+        </div>
+
+        <div id="pqrsError" class="hidden bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-2.5 rounded-xl"></div>
+
+      </div>
+
+      <div class="p-4 bg-white border-t border-slate-100 flex-shrink-0">
+        <button id="pqrsSubmitBtn" class="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-sm rounded-xl shadow-lg touch-btn">
+          Radicar PQRS
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT MODULAR DEL FRONTEND -->
+  <script type="module" src="./js/app.js"></script>
+
+</body>
+</html>

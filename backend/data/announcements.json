@@ -1,0 +1,17 @@
+[
+  {
+    "id": "ann-1788840231204",
+    "manzana": "3",
+    "title": "Corte de agua programado",
+    "body": "El sábado 12 de septiembre se realizará mantenimiento de tuberías desde las 9:00 am hasta la 1:00 pm en toda la manzana. Agradecemos tu comprensión.",
+    "kind": "text",
+    "mediaUrl": "",
+    "status": "published",
+    "recipientsCount": 0,
+    "broadcastSent": true,
+    "publishedBy": "573001234503",
+    "createdAt": "2026-09-08T04:03:51.204Z",
+    "updatedAt": "2026-09-08T04:03:51.204Z",
+    "broadcastAt": "2026-09-08T04:03:51.229Z"
+  }
+]

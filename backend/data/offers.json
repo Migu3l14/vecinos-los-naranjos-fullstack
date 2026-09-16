@@ -1,0 +1,44 @@
+[
+  {
+    "id": "off-1",
+    "bizId": "biz-1",
+    "bizName": "Una Nona Pastas",
+    "title": "Combo Familiar Lasaña Mixta",
+    "price": "$32.000",
+    "oldPrice": "$40.000",
+    "image": "https://images.unsplash.com/photo-1574894709920-11b28e7367e3?auto=format&fit=crop&w=600&q=80",
+    "desc": "Incluye Lasaña tamaño familiar para 4 personas + 4 panes al ajo recién horneados. Entrega sin costo en cualquier manzana de Los Naranjos.",
+    "date": "2026-09-07",
+    "status": "active",
+    "createdAt": "2026-09-01T10:00:00.000Z",
+    "updatedAt": "2026-09-07T09:00:00.000Z"
+  },
+  {
+    "id": "off-2",
+    "bizId": "biz-2",
+    "bizName": "Glamour Nails Spa",
+    "title": "Semipermanente + Spa de Manos",
+    "price": "$28.000",
+    "oldPrice": "$35.000",
+    "image": "https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=600&q=80",
+    "desc": "Servicio en apartamento (Manzana 4) o a domicilio. Incluye exfoliación, limado y esmaltado semipermanente de alta duración.",
+    "date": "2026-09-07",
+    "status": "active",
+    "createdAt": "2026-09-01T10:05:00.000Z",
+    "updatedAt": "2026-09-07T09:05:00.000Z"
+  },
+  {
+    "id": "off-3",
+    "bizId": "biz-3",
+    "bizName": "Dulces de Ana",
+    "title": "Torta Mini de Chocolate & Arequipe",
+    "price": "$18.000",
+    "oldPrice": "$24.000",
+    "image": "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=600&q=80",
+    "desc": "Torta artesanal para 2 a 4 porciones. Perfecta para cumpleaños y antojos de fin de semana.",
+    "date": "2026-09-07",
+    "status": "active",
+    "createdAt": "2026-09-01T10:10:00.000Z",
+    "updatedAt": "2026-09-07T09:10:00.000Z"
+  }
+]

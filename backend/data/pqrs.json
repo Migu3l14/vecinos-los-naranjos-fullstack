@@ -1,0 +1,15 @@
+[
+  {
+    "id": "pqrs-1788834705032",
+    "ticketId": "PQRS-20260907-01",
+    "tipo": "Queja",
+    "descripcion": "Prueba de PQRS sin torre ni apartamento.",
+    "nombre": "Cliente Prueba",
+    "telefono": "3151234567",
+    "email": null,
+    "estado": "Pendiente",
+    "notas": [],
+    "createdAt": "2026-09-08T02:31:45.036Z",
+    "updatedAt": "2026-09-08T02:31:45.036Z"
+  }
+]

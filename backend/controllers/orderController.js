@@ -1,0 +1,102 @@
+import Storage from '../db/storage.js';
+
+const ESTADOS = ['Recibido', 'En Preparación', 'En Camino', 'Entregado', 'Cancelado'];
+
+const generateOrderId = () => `ORD-${Date.now().toString().slice(-6)}`;
+
+/**
+ * POST /api/orders
+ * Crea un pedido de un producto/servicio de una vitrina.
+ * Se crea SIEMPRE tras capturar la identidad del residente (registrado o invitado).
+ *
+ * body:
+ * {
+ *   businessId, products: [{name, price?, qty}],
+ *   resident: { fullName, phone, tower, apartment, birthDate?, email?, authType? }
+ * }
+ */
+export const createOrder = (req, res) => {
+  try {
+    const { businessId, products, resident } = req.body;
+
+    if (!businessId) {
+      return res.status(400).json({ success: false, message: 'businessId es obligatorio.' });
+    }
+    if (!products || !Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({ success: false, message: 'Debe incluir al menos un producto.' });
+    }
+    if (!resident || !resident.fullName || !resident.phone || !resident.tower || !resident.apartment) {
+      return res.status(400).json({ success: false, message: 'Datos de identidad del residente incompletos.' });
+    }
+
+    const business = Storage.findById('businesses', businessId);
+
+    const order = {
+      id: `order-${Date.now()}`,
+      orderId: generateOrderId(),
+      businessId,
+      businessName: business ? business.name : 'Vitrina',
+      products: products.map(p => ({
+        name: p.name,
+        price: p.price || null,
+        qty: p.qty || 1
+      })),
+      resident: {
+        fullName: resident.fullName,
+        phone: String(resident.phone).replace(/\D/g, ''),
+        tower: resident.tower,
+        apartment: resident.apartment,
+        email: resident.email || null,
+        authType: resident.authType || 'guest'
+      },
+      channel: 'whatsapp',
+      estado: 'Recibido',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    Storage.insert('orders', order);
+    res.status(201).json({
+      success: true,
+      message: 'Pedido registrado. Se abrirá WhatsApp para coordinarlo.',
+      data: order
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al crear el pedido', error: error.message });
+  }
+};
+
+// GET /api/orders (admin) — listar pedidos para trazabilidad
+export const getAllOrders = (req, res) => {
+  try {
+    const { estado } = req.query;
+    let orders = Storage.read('orders');
+    if (estado && ESTADOS.includes(estado)) {
+      orders = orders.filter(o => o.estado === estado);
+    }
+    orders = [...orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json({ success: true, data: orders });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al listar pedidos', error: error.message });
+  }
+};
+
+// PUT /api/orders/:id/status (admin) — actualizar estado del pedido
+export const updateOrderStatus = (req, res) => {
+  try {
+    const { id } = req.params;
+    const { estado } = req.body;
+    if (!ESTADOS.includes(estado)) {
+      return res.status(400).json({ success: false, message: `Estado inválido. Opciones: ${ESTADOS.join(', ')}` });
+    }
+    const order = Storage.findById('orders', id);
+    if (!order) return res.status(404).json({ success: false, message: 'Pedido no encontrado.' });
+
+    const updated = Storage.updateById('orders', id, { estado, updatedAt: new Date().toISOString() });
+    res.json({ success: true, message: `Pedido marcado como "${estado}".`, data: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al actualizar pedido', error: error.message });
+  }
+};
+
+export default { createOrder, getAllOrders, updateOrderStatus };

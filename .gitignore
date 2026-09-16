@@ -1,0 +1,25 @@
+# Dependencias
+node_modules/
+
+# Entorno (contiene secretos, NUNCA subir)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operativo / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.sublime-project
+
+# Datos locales de desarrollo (opcional descomentar si se migra a BD)
+# backend/data/*.json
+
+# Archivos subidos por los usuarios (se guardan en el volumen del servidor)
+uploads/
+backend/uploads/

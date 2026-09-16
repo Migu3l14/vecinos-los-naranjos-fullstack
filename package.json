@@ -1,0 +1,33 @@
+{
+  "name": "vecinos-los-naranjos-fullstack",
+  "version": "1.0.0",
+  "description": "Plataforma de comercio hiperlocal para la comunidad Los Naranjos (Jamundí)",
+  "main": "backend/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js"
+  },
+  "keywords": [
+    "marketplace",
+    "jamundi",
+    "los-naranjos",
+    "whatsapp",
+    "fullstack",
+    "express"
+  ],
+  "author": "Antigravity & Equipo Los Naranjos",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.7.0",
+    "express-validator": "^7.3.2",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.3.0"
+  }
+}

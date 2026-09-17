@@ -36,6 +36,7 @@ const state = {
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', async () => {
+  setupActionButtons();
   setupEventListeners();
   setupImageUpload('regCoverImg');
   setupImageUpload('prod1Img');
@@ -1295,4 +1296,23 @@ window.closeSupportModal = () => document.getElementById('supportModal').classLi
 function handleSupportWhatsApp() {
   const btn = document.getElementById('supportWhatsappBtn');
   if (btn.dataset.wa) window.open(btn.dataset.wa, '_blank');
+}
+
+// Asegura que ningun <button> actue como tipo submit (endurece los cierres X/Cerrar/Volver)
+function setupActionButtons() {
+  document.querySelectorAll('button').forEach((b) => {
+    if (!b.hasAttribute('type')) b.type = 'button';
+  });
+}
+
+// Bloquea el scroll de la pagina mientras haya cualquier modal abierto y lo
+// restaura al cerrar: evita que se deslice el fondo detras de la ventana.
+function setupModalScrollLock() {
+  const modals = document.querySelectorAll('[id$="Modal"]');
+  const sync = () => {
+    const anyOpen = Array.from(modals).some((el) => !el.classList.contains('hidden'));
+    document.body.classList.toggle('modal-open', anyOpen);
+  };
+  modals.forEach((el) => new MutationObserver(sync).observe(el, { attributes: true, attributeFilter: ['class'] }));
+  sync();
 }

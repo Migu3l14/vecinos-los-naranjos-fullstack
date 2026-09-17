@@ -17,6 +17,24 @@
   transform: scale(0.96);
 }
 
+/* Interaccion tactil: evita el doble-tap-zoom en botones y enlaces.
+   iOS ignora user-scalable=no, por lo que touch-action es el fix real. */
+button, a, [role="button"], .touch-btn {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Bloquea el scroll de la pagina de fondo mientras hay una ventana modal abierta */
+body.modal-open {
+  overflow: hidden;
+}
+
+/* Evita que el scroll dentro del modal arrastre la pagina de atras (scroll chaining) */
+[id$="Modal"] {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Animaciones de entrada para modales */
 @keyframes slideUp {
   from {

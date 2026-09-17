@@ -5,15 +5,11 @@
       "src": "api/index.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["frontend/**", "backend/data/**"]
+        "includeFiles": ["frontend/**", "backend/data/**"],
+        "maxDuration": 60
       }
     }
   ],
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 60
-    }
-  },
   "rewrites": [
     {
       "source": "/(.*)",

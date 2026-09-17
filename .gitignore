@@ -6,6 +6,9 @@ node_modules/
 .env.local
 .env.*.local
 
+# Vercel CLI
+.vercel
+
 # Logs
 *.log
 npm-debug.log*

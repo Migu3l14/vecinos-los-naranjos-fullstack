@@ -87,7 +87,7 @@ const writeLimiter = rateLimit({
 });
 
 // Servir los archivos estáticos del Frontend
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Imágenes subidas por los usuarios (portadas, productos y ofertas)
 app.use('/uploads', express.static(process.env.UPLOADS_DIR || path.join(__dirname, 'uploads')));
@@ -125,7 +125,7 @@ app.use('/api', (req, res) => {
 
 // Redirigir cualquier otra ruta no-API al Frontend
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 // Manejador central de errores (no filtra detalles internos en producción)

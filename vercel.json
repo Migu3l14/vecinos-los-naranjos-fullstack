@@ -1,19 +1,17 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/index.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["frontend/**", "backend/data/**"],
-        "maxDuration": 60
-      }
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "backend/data/**,backend/uploads/**",
+      "maxDuration": 60
     }
-  ],
+  },
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/api/index.js"
-    }
+    { "source": "/api/(.*)", "destination": "/api/index.js" },
+    { "source": "/backend/(.*)", "destination": "/404" },
+    { "source": "/uploads/(.*)", "destination": "/404" }
+  ],
+  "headers": [
+    { "source": "/js/(.*)", "headers": [ { "key": "Cache-Control", "value": "public, max-age=3600" } ] },
+    { "source": "/css/(.*)", "headers": [ { "key": "Cache-Control", "value": "public, max-age=3600" } ] }
   ]
 }

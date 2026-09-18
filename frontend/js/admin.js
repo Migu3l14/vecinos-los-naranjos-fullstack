@@ -621,4 +621,4 @@ function init() {
 window.closeAdminModal = () => $('pqrsDetailModal').classList.add('hidden');
 window.closeAdminAnnView = () => $('annViewModal').classList.add('hidden');
 function setupModalScrollLock(){const modals=document.querySelectorAll('[id$="Modal"]');const sync=()=>{const anyOpen=Array.from(modals).some(el=>!el.classList.contains('hidden'));document.body.classList.toggle('modal-open',anyOpen)};modals.forEach(el=>new MutationObserver(sync).observe(el,{attributes:true,attributeFilter:['class']}));sync()}
-document.addEventListener('DOMContentLoaded', () => { document.querySelectorAll('button').forEach(b => { if (!b.hasAttribute('type')) b.type = 'button'; }); setupModalScrollLock(); init(); });
+document.addEventListener('DOMContentLoaded', () => { document.querySelectorAll('button').forEach(b => { if (!b.hasAttribute('type')) b.type = 'button'; }); document.querySelectorAll('[data-close]').forEach(b => { b.addEventListener('click', () => { const fn = window[b.dataset.close]; if (typeof fn === 'function') fn(); }); }); setupModalScrollLock(); init(); });

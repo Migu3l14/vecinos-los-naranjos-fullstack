@@ -41,33 +41,59 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupImageUpload('regCoverImg');
   setupImageUpload('prod1Img');
   setupImageUpload('prod2Img');
+  setupModalScrollLock();
   await loadInitialData();
 });
 
+// Muestra un aviso con botón Reintentar cuando falla la carga inicial
+function setLoadError(msg) {
+  const badge = document.getElementById('businessCountBadge');
+  const list = document.getElementById('businessList');
+  if (badge) badge.textContent = msg || 'Sin conexión con el servidor';
+  if (msg && list) {
+    list.innerHTML = `
+      <div class="col-span-full text-center py-10 space-y-3">
+        <p class="text-[11px] text-slate-400">${msg}</p>
+        <button id="retryLoadBtn" class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl touch-btn">Reintentar</button>
+      </div>`;
+    const retry = document.getElementById('retryLoadBtn');
+    if (retry) retry.addEventListener('click', () => {
+      badge.textContent = 'Cargando...';
+      list.innerHTML = '';
+      loadInitialData();
+    });
+  }
+}
+
 // Cargar datos desde la API REST
 async function loadInitialData() {
-  const [categories, offers, businesses] = await Promise.all([
-    API.getCategories(),
-    API.getOffers(),
-    API.getBusinesses()
-  ]);
+  try {
+    const [categories, offers, businesses] = await Promise.all([
+      API.getCategories(),
+      API.getOffers(),
+      API.getBusinesses()
+    ]);
 
-  state.categories = categories;
-  state.offers = offers;
-  state.businesses = businesses;
+    state.categories = categories;
+    state.offers = offers;
+    state.businesses = businesses;
 
-  UI.renderCategories(state.categories, state.currentCategory, handleCategorySelect);
-  UI.renderOffers(state.offers, handleOpenOffer, handleContactOffer);
-  await fetchFilteredBusinesses();
+    UI.renderCategories(state.categories, state.currentCategory, handleCategorySelect);
+    UI.renderOffers(state.offers, handleOpenOffer, handleContactOffer);
+    await fetchFilteredBusinesses();
 
-  const todayLabel = document.getElementById('offersDateLabel');
-  if (todayLabel) {
-    todayLabel.innerText = `Hoy · ${new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}`;
+    const todayLabel = document.getElementById('offersDateLabel');
+    if (todayLabel) {
+      todayLabel.innerText = `Hoy · ${new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}`;
+    }
+
+    loadStatsAndRecordVisit();
+    verifySession();
+    updateMyVitrinaButton();
+  } catch (e) {
+    console.error('Fallo al cargar datos iniciales:', e);
+    setLoadError('No pudimos cargar las vitrinas. Revisa tu conexión.');
   }
-
-  loadStatsAndRecordVisit();
-  verifySession();
-  updateMyVitrinaButton();
 }
 
 // Verifica en el servidor que la sesión guardada siga siendo válida.
@@ -213,6 +239,21 @@ function setupEventListeners() {
       resetPqrsTipo();
     });
   });
+
+  // Cierres de modales (X / Cerrar / Volver) — bindeados sin onclick inline
+  document.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const fn = window[btn.dataset.close];
+      if (typeof fn === 'function') fn();
+    });
+  });
+
+  // Atajo "Renovar Vitrina" del panel del emprendedor
+  const renewShortcutBtn = document.getElementById('renewShortcutBtn');
+  if (renewShortcutBtn) renewShortcutBtn.addEventListener('click', () => {
+    const openManageBtn = document.getElementById('openManageModalBtn');
+    if (openManageBtn) openManageBtn.click();
+  });
 }
 
 // ==========================================
@@ -226,10 +267,17 @@ async function fetchFilteredBusinesses() {
   if (state.currentSearch.trim() !== '') params.q = state.currentSearch;
 
   const manzana = state.currentManzana;
-  const [filtered, anns] = await Promise.all([
-    API.getBusinesses(params),
-    (manzana && manzana !== 'all') ? API.getAnnouncements(manzana) : Promise.resolve([])
-  ]);
+  let filtered, anns;
+  try {
+    [filtered, anns] = await Promise.all([
+      API.getBusinesses(params),
+      (manzana && manzana !== 'all') ? API.getAnnouncements(manzana) : Promise.resolve([])
+    ]);
+  } catch (e) {
+    console.error('Fallo al filtrar vitrinas:', e);
+    setLoadError('No pudimos cargar las vitrinas. Revisa tu conexión.');
+    return;
+  }
 
   state.businesses = filtered;
   state.announcements = anns || [];
@@ -460,7 +508,7 @@ async function handleOpenProfile(bizId) {
         productsHtml += `
           <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100">
             <div class="flex items-center space-x-2.5 min-w-0">
-              <img src="${prod.photo}" alt="${escHtml(prod.name)}" class="w-12 h-12 rounded-lg object-cover flex-shrink-0 bg-slate-200" onerror="this.style.display='none'"/>
+              <img src="${prod.photo}" alt="${escHtml(prod.name)}" class="w-12 h-12 rounded-lg object-cover flex-shrink-0 bg-slate-200"/>
               <div class="min-w-0">
                 <h5 class="text-xs font-bold text-slate-800 leading-tight">${escHtml(prod.name)}</h5>
                 ${prod.price ? `<span class="text-xs font-extrabold text-emerald-600">${escHtml(prod.price)}</span>` : ''}
@@ -482,6 +530,9 @@ async function handleOpenProfile(bizId) {
     });
   }
   productsContainer.innerHTML = productsHtml;
+  productsContainer.querySelectorAll('img').forEach(img => {
+    img.addEventListener('error', () => { img.style.display = 'none'; });
+  });
   renderRatingWidget(biz);
 
   productsContainer.querySelectorAll('[data-prodwa]').forEach(btn => {

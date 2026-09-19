@@ -520,9 +520,6 @@ async function handleOpenProfile(bizId) {
               <button data-prodwa="${i}" data-cat="${escHtml(cat)}" class="prod-wa-btn px-2.5 py-1 bg-[#25D366] hover:bg-[#1ebd59] text-white text-[10px] font-bold rounded-lg flex items-center space-x-1 shadow">
                 <i class="fa-brands fa-whatsapp"></i><span>${agotado ? 'Contactar' : 'Pedir'}</span>
               </button>
-              ${agotado ? '' : `<button data-prodbuy="${i}" data-cat="${escHtml(cat)}" class="prod-buy-btn px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold rounded-lg shadow">
-                <i class="fa-solid fa-cart-shopping mr-1"></i>Comprar / Reservar
-              </button>`}
             </div>
           </div>`;
       });
@@ -541,14 +538,6 @@ async function handleOpenProfile(bizId) {
       document.getElementById('profileModal').classList.add('hidden');
       const msg = WhatsAppHelper.buildProductMessage(biz, { name: prod.name });
       openWhatsAppPreview(biz.name, biz.phone, msg);
-    });
-  });
-
-  productsContainer.querySelectorAll('[data-prodbuy]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const prod = prods[Number(btn.dataset.prodbuy)];
-      document.getElementById('profileModal').classList.add('hidden');
-      openCheckoutFor(biz, [{ name: prod.name, price: prod.price, qty: 1, category: prod.category }]);
     });
   });
 

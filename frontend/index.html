@@ -38,17 +38,16 @@
       <div class="absolute inset-0 bg-gradient-to-r from-orange-500/85 via-orange-500/35 to-amber-500/75"></div>
 
       <div class="flex items-center justify-between relative z-10 gap-2">
-        <div class="flex flex-col min-w-0">
-          <img src="images/logo-naranjos-transparent.png" alt="Vitrina Digital Los Naranjos" class="h-11 w-auto shrink-0 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" />
-          <div class="mt-1 flex items-baseline flex-wrap gap-x-1.5">
+        <div class="min-w-0">
+          <div class="flex items-baseline flex-wrap gap-x-1.5">
             <h1 class="text-base font-extrabold tracking-tight leading-tight">Vitrina Digital</h1>
             <p class="text-[11px] text-orange-100 font-medium">• Los Naranjos • Jamundí</p>
           </div>
         </div>
         
-        <!-- SELECTOR DE MANZANA Y ACCESO A GESTIÓN -->
-        <div class="flex flex-wrap items-center justify-end gap-1.5">
-          <select id="manzanaFilter" class="bg-orange-600/80 border border-orange-300 text-white text-xs rounded-full px-2.5 py-1.5 font-bold focus:outline-none focus:ring-2 focus:ring-white">
+        <!-- SELECTOR DE MANZANA Y ACCESO A GESTIÓN (fila horizontal única) -->
+        <div class="flex items-center justify-end gap-1.5 shrink-0">
+          <select id="manzanaFilter" class="bg-orange-600/80 border border-orange-300 text-white text-xs rounded-full px-2.5 py-1.5 font-bold focus:outline-none focus:ring-2 focus:ring-white whitespace-nowrap">
             <option value="all">📍 Todas las Mz</option>
             <option value="1">Mz 1</option>
             <option value="2">Mz 2</option>

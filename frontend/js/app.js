@@ -98,12 +98,13 @@ async function loadInitialData() {
 }
 
 // Verifica en el servidor que la sesión guardada siga siendo válida.
-// Si el token expiró, la limpia para evitar pantallas rotas.
+// Solo limpia el perfil si el token es realmente inválido (401); si hay error de
+// red no borra nada, para no volver a preguntar los datos a quien ya ingresó.
 async function verifySession() {
   const hasToken = API.hasAnySession();
   if (!hasToken) return;
   const me = await API.getMe();
-  if (!me) {
+  if (me && me.reason === 'unauthorized') {
     API.logoutResident();
     API.logoutAdmin();
   }
@@ -232,7 +233,16 @@ function setupEventListeners() {
     updateEntryRoleUI();
   }));
   const entrySubmitBtn = document.getElementById('entrySubmitBtn');
-  if (entrySubmitBtn) entrySubmitBtn.addEventListener('click', handleEntrySubmit);
+  if (entrySubmitBtn) entrySubmitBtn.addEventListener('click', () => {
+    if (entryPhase === 'phone') handleEntryLookup();
+    else handleEntrySubmit();
+  });
+  const entryChangePhone = document.getElementById('entryChangePhone');
+  if (entryChangePhone) entryChangePhone.addEventListener('click', () => {
+    entryKnown = null;
+    document.getElementById('entryTerms').checked = false;
+    setEntryPhase('phone');
+  });
   const entryMzSelect = document.getElementById('entryMz');
   if (entryMzSelect) {
     entryMzSelect.addEventListener('change', () => {
@@ -1153,20 +1163,52 @@ function openTermsModal() {
 }
 window.closeTermsModal = () => document.getElementById('termsModal').classList.add('hidden');
 
-// Modal ingreso por QR / enlace (rol + celular + manzana + torre/apto + T&C)
+// Modal ingreso por QR / enlace.
+// 1er paso: celular → buscamos si la persona ya ingresó (reconocimiento).
+// 2do paso: confirmación si la reconocemos, o formulario completo si es nueva.
 let entrySelectedRole = 'buyer';
+let entryPhase = 'phone';      // 'phone' | 'known' | 'new'
+let entryKnown = null;         // residente reconocido por celular (o null)
+
+function setEntryPhase(phase) {
+  entryPhase = phase;
+  const phonePanel = document.getElementById('entryPhonePanel');
+  const detailsPanel = document.getElementById('entryDetailsPanel');
+  const recBox = document.getElementById('entryRecognitionBox');
+  const newForm = document.getElementById('entryNewForm');
+  const btn = document.getElementById('entrySubmitBtn');
+  document.getElementById('entryError').classList.add('hidden');
+
+  if (phase === 'phone') {
+    phonePanel.classList.remove('hidden');
+    detailsPanel.classList.add('hidden');
+    btn.innerHTML = '<i class="fa-solid fa-arrow-right"></i><span>Continuar</span>';
+    return;
+  }
+  phonePanel.classList.add('hidden');
+  detailsPanel.classList.remove('hidden');
+  if (phase === 'known') {
+    recBox.classList.remove('hidden');
+    newForm.classList.add('hidden');
+    btn.innerHTML = '<i class="fa-solid fa-check"></i><span>Confirmar mi ingreso</span>';
+  } else {
+    recBox.classList.add('hidden');
+    newForm.classList.remove('hidden');
+    btn.innerHTML = '<i class="fa-solid fa-arrow-right"></i><span>Registrar mi ingreso</span>';
+  }
+}
 
 function openEntryModal() {
   const prof = API.getStoredResidentProfile();
   document.getElementById('entryPhone').value = (prof && prof.phone) ? prof.phone.replace('57', '') : '';
-  document.getElementById('entryApt').value = (prof && prof.apartment) ? prof.apartment : '';
-  document.getElementById('entryMz').value = (prof && prof.manzana) ? String(prof.manzana) : '';
-  document.getElementById('entryError').classList.add('hidden');
+  document.getElementById('entryApt').value = '';
+  document.getElementById('entryMz').value = '';
+  document.getElementById('entryTower').innerHTML = '<option value="" selected>Selecciona tu torre</option>';
+  document.getElementById('entryTerms').checked = false;
   entrySelectedRole = 'buyer';
   updateEntryRoleUI();
-  document.getElementById('entryTerms').checked = false;
-  const mzSel = document.getElementById('entryMz');
-  ensureTowers(['entryTower'], { manzana: mzSel ? mzSel.value : '', placeholder: 'Selecciona tu torre', onlyFromManzana: true });
+  entryKnown = null;
+  setEntryPhase('phone');
   document.getElementById('entryModal').classList.remove('hidden');
 }
 
@@ -1180,16 +1222,77 @@ function updateEntryRoleUI() {
   });
 }
 
+// Paso 1: con el celular decidimos si reconocemos a la persona o pedimos el formulario.
+async function handleEntryLookup() {
+  const errEl = document.getElementById('entryError');
+  errEl.classList.add('hidden');
+
+  const phone = document.getElementById('entryPhone').value.trim();
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 10) {
+    errEl.textContent = 'Ingresa un número de celular válido (10 dígitos).';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  const btn = document.getElementById('entrySubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span>Buscando...</span>';
+
+  const r = await API.residentLookup(digits);
+  if (r.success && r.found && r.data) {
+    entryKnown = r.data;
+    entrySelectedRole = (r.data.role === 'seller') ? 'seller' : 'buyer';
+    updateEntryRoleUI();
+    if (r.data.manzana) document.getElementById('entryMz').value = String(r.data.manzana);
+    if (r.data.apartment) document.getElementById('entryApt').value = r.data.apartment;
+    const mz = r.data.manzana ? String(r.data.manzana) : '';
+    if (r.data.tower) {
+      ensureTowers(['entryTower'], { manzana: mz, placeholder: '', onlyFromManzana: true });
+      const sel = document.getElementById('entryTower');
+      if ([...sel.options].some(o => o.value === r.data.tower)) sel.value = r.data.tower;
+    }
+    const rol = r.data.role === 'seller' ? 'Emprendedor' : 'Comprador';
+    document.getElementById('entryRecognitionData').textContent =
+      `Manzana ${r.data.manzana || '—'} · ${r.data.tower || '—'} · Apto ${r.data.apartment || '—'} · ${rol}`;
+    document.getElementById('entryTerms').checked = false;
+    setEntryPhase('known');
+  } else {
+    entryKnown = null;
+    document.getElementById('entryApt').value = '';
+    document.getElementById('entryMz').value = '';
+    document.getElementById('entryTower').innerHTML = '<option value="" selected>Selecciona tu torre</option>';
+    document.getElementById('entryTerms').checked = false;
+    entrySelectedRole = 'buyer';
+    updateEntryRoleUI();
+    setEntryPhase('new');
+  }
+  btn.disabled = false;
+  btn.innerHTML = entryPhase === 'phone' ? '<i class="fa-solid fa-arrow-right"></i><span>Continuar</span>' : '<span>Buscando...</span>';
+  if (entryPhase === 'known') btn.innerHTML = '<i class="fa-solid fa-check"></i><span>Confirmar mi ingreso</span>';
+  if (entryPhase === 'new') btn.innerHTML = '<i class="fa-solid fa-arrow-right"></i><span>Registrar mi ingreso</span>';
+}
+
+// Paso 2: guarda el ingreso (reconocido o con formulario completo).
 async function handleEntrySubmit() {
   const errEl = document.getElementById('entryError');
   errEl.classList.add('hidden');
 
-  const role = entrySelectedRole;
   const phone = document.getElementById('entryPhone').value.trim();
-  const manzana = document.getElementById('entryMz').value;
-  const tower = document.getElementById('entryTower').value;
-  const apartment = document.getElementById('entryApt').value.trim();
   const acceptedTerms = document.getElementById('entryTerms').checked;
+
+  let role, manzana, tower, apartment;
+  if (entryPhase === 'known' && entryKnown) {
+    role = entryKnown.role === 'seller' ? 'seller' : 'buyer';
+    manzana = entryKnown.manzana;
+    tower = entryKnown.tower;
+    apartment = entryKnown.apartment;
+  } else {
+    role = entrySelectedRole;
+    manzana = document.getElementById('entryMz').value;
+    tower = document.getElementById('entryTower').value;
+    apartment = document.getElementById('entryApt').value.trim();
+  }
 
   const digits = phone.replace(/\D/g, '');
   if (!role) {
@@ -1232,7 +1335,7 @@ async function handleEntrySubmit() {
     errEl.textContent = res.message || 'No pudimos guardar tus datos.';
     errEl.classList.remove('hidden');
     btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-arrow-right"></i><span>Ingresar a la Vitrina Virtual</span>';
+    btn.innerHTML = entryPhase === 'known' ? '<i class="fa-solid fa-check"></i><span>Confirmar mi ingreso</span>' : '<i class="fa-solid fa-arrow-right"></i><span>Registrar mi ingreso</span>';
     return;
   }
 
@@ -1241,10 +1344,16 @@ async function handleEntrySubmit() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
   if (role === 'seller') {
-    resetRegisterWizard();
-    const phone = document.getElementById('entryPhone').value.trim().replace(/\D/g, '');
-    if (phone) document.getElementById('regPhone').value = phone;
-    document.getElementById('registerWizardModal').classList.remove('hidden');
+    if (entryKnown && entryKnown.hasBusiness) {
+      // Emprendedor ya registrado → lo llevamos a gestionar su vitrina
+      document.getElementById('managePhoneInput').value = digits;
+      document.getElementById('manageResultSection').classList.add('hidden');
+      document.getElementById('manageModal').classList.remove('hidden');
+    } else {
+      resetRegisterWizard();
+      if (digits) document.getElementById('regPhone').value = digits;
+      document.getElementById('registerWizardModal').classList.remove('hidden');
+    }
   }
 }
 

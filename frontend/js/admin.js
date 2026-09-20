@@ -111,12 +111,13 @@ function switchPanel(name) {
     t.classList.toggle('text-orange-600', active);
     t.classList.toggle('text-slate-500', !active);
   });
-  ['pqrs', 'orders', 'businesses', 'support', 'announcements'].forEach(p => {
+  ['pqrs', 'orders', 'businesses', 'residents', 'support', 'announcements'].forEach(p => {
     $('panel-' + p).classList.toggle('hidden', p !== name);
   });
   if (name === 'pqrs') loadPqrs();
   if (name === 'orders') loadOrders();
   if (name === 'businesses') loadBusinesses();
+  if (name === 'residents') loadResidents();
   if (name === 'support') loadSupport();
   if (name === 'announcements') loadAnnouncements();
 }
@@ -126,8 +127,84 @@ async function loadAll() {
   loadPqrs();
   loadOrders();
   loadBusinesses();
+  loadResidents();
   loadSupport();
   loadAnnouncements();
+}
+
+// ---------- RESIDENTES ----------
+let residentsCache = [];
+let residentsFilter = '';
+
+async function loadResidents() {
+  const container = $('residentsListContainer');
+  container.innerHTML = '<p class="text-xs text-slate-400">Cargando residentes...</p>';
+  const res = await API.adminResidents();
+  if (!res || !res.success) {
+    container.innerHTML = `<p class="text-xs text-red-500 font-bold">${(res && res.message) || 'No pudimos cargar los residentes.'}</p>`;
+    return;
+  }
+  residentsCache = res.data || [];
+  renderResidents();
+}
+
+function renderResidents() {
+  const container = $('residentsListContainer');
+  const q = residentsFilter.toLowerCase();
+  const list = residentsCache
+    .filter(r => {
+      if (!q) return true;
+      return (r.phone || '').toLowerCase().includes(q)
+        || (r.role || '').toLowerCase().includes(q)
+        || String(r.manzana || '').includes(q)
+        || (r.tower || '').toLowerCase().includes(q)
+        || (r.apartment || '').toLowerCase().includes(q);
+    });
+
+  const buyers = list.filter(r => r.role === 'buyer').length;
+  const sellers = list.filter(r => r.role === 'seller').length;
+
+  container.innerHTML = `
+    <div class="grid grid-cols-3 gap-2">
+      <div class="bg-orange-50 border border-orange-200 rounded-xl p-3 text-center">
+        <p class="text-xl font-extrabold text-orange-600">${residentsCache.length}</p>
+        <p class="text-[10px] font-bold text-slate-500 uppercase">Total</p>
+      </div>
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-center">
+        <p class="text-xl font-extrabold text-blue-600">${buyers}</p>
+        <p class="text-[10px] font-bold text-slate-500 uppercase">Compradores</p>
+      </div>
+      <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-center">
+        <p class="text-xl font-extrabold text-emerald-600">${sellers}</p>
+        <p class="text-[10px] font-bold text-slate-500 uppercase">Emprendedores</p>
+      </div>
+    </div>
+    ${list.length === 0 ? '<p class="text-xs text-slate-400">Sin residentes que mostrar.</p>' : list.map(r => {
+      const rol = r.role === 'seller' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700';
+      const rolTxt = r.role === 'seller' ? 'Emprendedor' : 'Comprador';
+      const fecha = r.lastEntryAt || r.createdAt || '';
+      return `<div class="border border-slate-200 rounded-2xl p-3.5 bg-white">
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <p class="text-[13px] font-extrabold text-slate-800">+${r.phone || '—'}</p>
+            <p class="text-[11px] text-slate-500 font-bold">Manzana ${r.manzana || '—'} · ${r.tower || '—'} · Apto ${r.apartment || '—'}</p>
+          </div>
+          <span class="flex-shrink-0 text-[10px] font-extrabold px-2 py-1 rounded-full ${rol}">${rolTxt}</span>
+        </div>
+        <div class="mt-2 flex items-center justify-between text-[10px] text-slate-400 font-bold">
+          <span>${r.businessCount ? `🛍 ${r.businessCount} vitrina(s)` : 'Sin vitrina'}</span>
+          <span>Ingreso: ${fecha ? formatResidentDate(fecha) : '—'}</span>
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+function formatResidentDate(iso) {
+  try {
+    return new Date(iso).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' });
+  } catch (e) {
+    return iso || '';
+  }
 }
 
 // ---------- PQRS ----------
@@ -606,11 +683,15 @@ function init() {
   const mzSel = document.getElementById('annMZ');
   if (mzSel) mzSel.addEventListener('change', refreshRecipientsPreview);
 
+  $('refreshResidentsBtn').addEventListener('click', loadResidents);
+  const resSearch = document.getElementById('residentsSearch');
+  if (resSearch) resSearch.addEventListener('input', e => { residentsFilter = e.target.value.trim(); renderResidents(); });
+
   // Auto-login si hay una sesión guardada/activa (valida la cookie en el servidor)
   if (API.getAdminToken() || localStorage.getItem('adminPhone')) {
     API.getMe().then(me => {
-      if (me && me.isAdmin) {
-        enterPanel({ manzana: me.manzana || localStorage.getItem('adminManzana') || '', phone: me.phone || '' });
+      if (me && me.ok && me.data && me.data.isAdmin) {
+        enterPanel({ manzana: me.data.manzana || localStorage.getItem('adminManzana') || '', phone: me.data.phone || '' });
       } else {
         API.logoutAdmin();
       }

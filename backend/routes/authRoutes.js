@@ -12,9 +12,11 @@ import {
   getTowers,
   validateApartmentEndpoint,
   requestOtp,
-  verifyOtp
+  verifyOtp,
+  residentLookup,
+  adminResidents
 } from '../controllers/authController.js';
-import { authResident, authAny } from '../middleware/auth.js';
+import { authResident, authAny, authAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -42,6 +44,12 @@ router.post('/guest/checkout', guestCheckout);
 
 // Ingreso por QR/enlace (rol + datos de la comunidad + T&C)
 router.post('/entry', entryGuest);
+
+// Reconocimiento por celular de quien ya ingresó (cliente o emprendedor)
+router.post('/resident-lookup', residentLookup);
+
+// Registro de personas que han ingresado (solo admin)
+router.get('/admin/residents', authAdmin, adminResidents);
 
 // Utilidades del conjunto
 router.get('/towers', getTowers);

@@ -390,6 +390,17 @@ export const API = {
     } catch (e) { /* sin acción */ }
   },
 
+  // GET /api/auth/admin/residents (admin) — listado con teléfono, rol y vivienda
+  async adminResidents() {
+    try {
+      const json = await this.fetchAdmin(`${API_BASE}/auth/admin/residents`);
+      return json;
+    } catch (error) {
+      console.error('Error al obtener residentes:', error);
+      return { success: false, message: error.message || 'No pudimos cargar los residentes.' };
+    }
+  },
+
   // Estructura del conjunto (torres para selectores)
   async getTowers() {
     try {
@@ -427,6 +438,7 @@ export const API = {
       const json = await res.json();
       if (json.success && json.data && json.data.token) {
         memResidentToken = json.data.token;
+        localStorage.setItem('residentToken', json.data.token);
         localStorage.setItem('residentProfile', JSON.stringify(json.data.resident));
       }
       return json;
@@ -447,6 +459,7 @@ export const API = {
       const json = await res.json();
       if (json.success && json.data && json.data.token) {
         memResidentToken = json.data.token;
+        localStorage.setItem('residentToken', json.data.token);
         localStorage.setItem('residentProfile', JSON.stringify(json.data.resident));
       }
       return json;
@@ -482,6 +495,7 @@ export const API = {
       const json = await res.json();
       if (json.success && json.data && json.data.token) {
         memResidentToken = json.data.token;
+        localStorage.setItem('residentToken', json.data.token);
         localStorage.setItem('residentProfile', JSON.stringify(json.data.resident));
       }
       return json;
@@ -504,6 +518,7 @@ export const API = {
         localStorage.setItem('residentProfile', JSON.stringify(json.data.resident));
         if (json.data.token) {
           memResidentToken = json.data.token;
+          localStorage.setItem('residentToken', json.data.token);
         }
       }
       return json;
@@ -534,12 +549,29 @@ export const API = {
         localStorage.setItem('residentProfile', JSON.stringify(json.data.resident));
         if (json.data.token) {
           memResidentToken = json.data.token;
+          localStorage.setItem('residentToken', json.data.token);
         }
       }
       return json;
     } catch (error) {
       console.error('Error en ingreso por QR:', error);
       return { success: false, message: 'Error de conexión.' };
+    }
+  },
+
+  // Reconocimiento por celular: devuelve la identidad guardada si la persona ya ingresó
+  async residentLookup(phone) {
+    try {
+      const res = await fetch(`${API_BASE}/auth/resident-lookup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      });
+      const json = await res.json();
+      return { success: json.success !== false, found: !!json.found, data: json.data || null, message: json.message || '' };
+    } catch (error) {
+      console.error('Error al reconocer al residente:', error);
+      return { success: false, found: false, data: null, message: 'Error de conexión.' };
     }
   },
 
@@ -580,20 +612,24 @@ export const API = {
     return res.json();
   },
 
-  // Valida la sesión en el servidor (rol admin o residente) y devuelve perfil.
+  // Valida la sesión en el servidor (rol admin o residente).
+  // Devuelve { ok, data } en éxito, { ok:false, reason:'unauthorized' } cuando el
+  // token es inválido/vencido, y { ok:false, reason:'network' } cuando la app no
+  // pudo contactar el servidor (NO invalidar la sesión guardada en ese caso).
   async getMe() {
     try {
       const token = this.getResidentToken() || this.getAdminToken();
       const res = await fetch(`${API_BASE}/auth/me`, {
         headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
       });
-      if (res.status === 401) return null;
+      if (res.status === 401) return { ok: false, reason: 'unauthorized' };
+      if (!res.ok) return { ok: false, reason: 'network' };
       const json = await res.json();
-      if (!json.success) return null;
-      return json.data || null;
+      if (!json.success) return { ok: false, reason: 'unauthorized' };
+      return { ok: true, data: json.data || null };
     } catch (error) {
       console.error('Error al validar sesión:', error);
-      return null;
+      return { ok: false, reason: 'network' };
     }
   },
 

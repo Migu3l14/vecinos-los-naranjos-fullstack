@@ -49,6 +49,10 @@ const clearSessionCookie = (res) => {
 // administración registrado en adminUsers.json. Nada de correos.
 const ADMIN_SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 
+// La sesión del residente (cliente o emprendedor) dura 1 año para que no se
+// cierre sola y el registro de ingresos no se duplique ni re-pregunte.
+const RESIDENT_SESSION_TTL_MS = 365 * 24 * 60 * 60 * 1000;
+
 const findAdminByPhone = async (phone) => {
   const clean = normalizePhone(phone);
   const admins = await Storage.read('adminUsers');
@@ -222,8 +226,8 @@ export const registerResident = async (req, res) => {
 
     await Storage.insert('residents', resident);
 
-    const token = signToken({ role: 'resident', residentId: resident.id, phone: cleanPhone });
-    setSessionCookie(res, token, 7 * 24 * 60 * 60 * 1000);
+    const token = signToken({ role: 'resident', residentId: resident.id, phone: cleanPhone }, RESIDENT_SESSION_TTL_MS / 1000);
+    setSessionCookie(res, token, RESIDENT_SESSION_TTL_MS);
     res.status(201).json({
       success: true,
       message: 'Cuenta creada correctamente.',
@@ -256,8 +260,8 @@ export const residentLogin = async (req, res) => {
     resident.lastLoginAt = new Date().toISOString();
     await Storage.updateById('residents', resident.id, { lastLoginAt: resident.lastLoginAt });
 
-    const token = signToken({ role: 'resident', residentId: resident.id, phone: resident.phone });
-    setSessionCookie(res, token, 7 * 24 * 60 * 60 * 1000);
+    const token = signToken({ role: 'resident', residentId: resident.id, phone: resident.phone }, RESIDENT_SESSION_TTL_MS / 1000);
+    setSessionCookie(res, token, RESIDENT_SESSION_TTL_MS);
     res.json({
       success: true,
       message: 'Sesión iniciada.',
@@ -367,8 +371,8 @@ export const guestCheckout = async (req, res) => {
       await Storage.insert('residents', resident);
     }
 
-    const token = signToken({ role: 'resident', residentId: resident.id, phone: resident.phone });
-    setSessionCookie(res, token, 7 * 24 * 60 * 60 * 1000);
+    const token = signToken({ role: 'resident', residentId: resident.id, phone: resident.phone }, RESIDENT_SESSION_TTL_MS / 1000);
+    setSessionCookie(res, token, RESIDENT_SESSION_TTL_MS);
     res.status(201).json({
       success: true,
       message: 'Información guardada. ¡Gracias por registrarte en la comunidad!',
@@ -439,8 +443,8 @@ export const entryGuest = async (req, res) => {
       await Storage.insert('residents', resident);
     }
 
-    const token = signToken({ role: 'resident', residentId: resident.id, phone: resident.phone });
-    setSessionCookie(res, token, 7 * 24 * 60 * 60 * 1000);
+    const token = signToken({ role: 'resident', residentId: resident.id, phone: resident.phone }, RESIDENT_SESSION_TTL_MS / 1000);
+    setSessionCookie(res, token, RESIDENT_SESSION_TTL_MS);
     res.status(201).json({
       success: true,
       message: '¡Bienvenido a la Vitrina Digital Los Naranjos!',
@@ -624,11 +628,10 @@ export const verifyOtp = async (req, res) => {
       })) || resident;
     }
 
-    // La sesión del vendedor dura lo mismo que su membrecía (30 días), sin
-    // cerrarse antes de tiempo.
-    const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-    const token = signToken({ role: 'resident', residentId: resident.id, phone: clean }, SESSION_TTL_MS / 1000);
-    setSessionCookie(res, token, SESSION_TTL_MS);
+    // La sesión del vendedor dura 1 año (antes se ataba a la membrecía de 30 días)
+    // para que no se cierre y el registro de personas no se duplique.
+    const token = signToken({ role: 'resident', residentId: resident.id, phone: clean }, RESIDENT_SESSION_TTL_MS / 1000);
+    setSessionCookie(res, token, RESIDENT_SESSION_TTL_MS);
     res.json({
       success: true,
       message: 'Sesión iniciada.',
@@ -654,6 +657,64 @@ const findMembershipEnd = async (phone) => {
     membershipExpiresAt: maxEnd.toISOString(),
     sessionDays: Math.max(1, Math.round((maxEnd - now) / (24 * 60 * 60 * 1000)))
   };
+};
+
+// POST /api/auth/resident-lookup — reconoce por celular a quien ya ingresó
+// (cliente o emprendedor) para no volver a pedir todos sus datos.
+export const residentLookup = async (req, res) => {
+  try {
+    const { phone } = req.body || {};
+    if (!phone || !String(phone).trim()) {
+      return res.status(400).json({ success: false, message: 'Ingresa tu número de celular.' });
+    }
+    const cleanPhone = normalizePhone(phone);
+    const resident = await findResidentByPhone(cleanPhone);
+    if (!resident) {
+      return res.status(200).json({ success: true, found: false, data: null });
+    }
+    return res.status(200).json({
+      success: true,
+      found: true,
+      data: {
+        phone: cleanPhone,
+        ...toPublicProfile(resident),
+        hasBusiness: await hasBusinessForPhone(cleanPhone)
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al reconocer al residente.', error: error.message });
+  }
+};
+
+// GET /api/auth/admin/residents (admin) — registro de todas las personas que
+// han ingresado, sin duplicados (uno por celular).
+export const adminResidents = async (req, res) => {
+  try {
+    const residents = await Storage.read('residents');
+    const businesses = await Storage.read('businesses');
+    const list = (residents || []).map(r => ({
+      id: r.id,
+      phone: r.phone,
+      fullName: r.fullName || null,
+      role: r.role || 'buyer',
+      manzana: String(r.manzana || ''),
+      tower: r.tower || '',
+      apartment: r.apartment || '',
+      authType: r.authType || null,
+      businessCount: (businesses || []).filter(b =>
+        normalizePhone(b.ownerPhone) === normalizePhone(r.phone) ||
+        normalizePhone(b.phone) === normalizePhone(r.phone)
+      ).length,
+      acceptedTermsAt: r.acceptedTermsAt || null,
+      createdAt: r.createdAt || null,
+      lastEntryAt: r.lastEntryAt || null,
+      lastGuestCheckoutAt: r.lastGuestCheckoutAt || null
+    }));
+    list.sort((a, b) => String(b.lastEntryAt || b.lastGuestCheckoutAt || b.createdAt || '').localeCompare(String(a.lastEntryAt || a.lastGuestCheckoutAt || a.createdAt || '')));
+    res.json({ success: true, count: list.length, data: list });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al obtener el registro de residentes.', error: error.message });
+  }
 };
 
 // ---------- Utilidades de conjunto ----------

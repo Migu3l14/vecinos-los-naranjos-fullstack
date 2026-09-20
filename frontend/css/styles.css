@@ -29,6 +29,21 @@ body.modal-open {
   overflow: hidden;
 }
 
+/* La pagina solo se desliza hacia arriba o hacia abajo: sin movimiento lateral.
+   (pan-y permite el scroll vertical y bloquea el arrastre horizontal en tactil) */
+html, body {
+  overflow-x: hidden;
+}
+body {
+  touch-action: pan-y;
+  overscroll-behavior-x: contain;
+}
+
+/* Carruseles horizontales (ofertas y comunicados): conservan su swipe lateral */
+.no-scrollbar {
+  touch-action: pan-x;
+}
+
 /* Evita que el scroll dentro del modal arrastre la pagina de atras (scroll chaining) */
 [id$="Modal"] {
   overscroll-behavior: contain;

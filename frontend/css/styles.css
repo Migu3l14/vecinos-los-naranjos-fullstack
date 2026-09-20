@@ -126,10 +126,10 @@ body.modal-open {
 }
 .brand-watermark img {
   width: 100%;
-  max-width: min(78vw, 620px);
+  max-width: min(92vw, 760px);
   height: auto;
   mix-blend-mode: multiply;
-  opacity: 0.05;
+  opacity: 0.09;
   -webkit-mask-image: radial-gradient(closest-side, #000 55%, transparent 100%);
   mask-image: radial-gradient(closest-side, #000 55%, transparent 100%);
 }

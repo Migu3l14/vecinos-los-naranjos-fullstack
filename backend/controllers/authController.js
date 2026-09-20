@@ -3,6 +3,7 @@ import Storage from '../db/storage.js';
 import ENV from '../config/env.js';
 import { signToken } from '../middleware/auth.js';
 import validateApartment from '../utils/validateApartment.js';
+import { ensureTowersData } from '../db/seed.js';
 import {
   validateFullName,
   validateEmail,
@@ -669,7 +670,12 @@ export const logout = (req, res) => {
 // GET /api/auth/towers
 export const getTowers = async (req, res) => {
   try {
-    const config = await Storage.read('towers');
+    let config = await Storage.read('towers');
+    const hasTowers = config && Array.isArray(config.towers) && config.towers.length > 0;
+    if (!hasTowers) {
+      await ensureTowersData();
+      config = await Storage.read('towers');
+    }
     res.json({ success: true, data: config });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al obtener configuración de torres', error: error.message });

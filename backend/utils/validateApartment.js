@@ -1,4 +1,17 @@
 import Storage from '../db/storage.js';
+import { ensureTowersData } from '../db/seed.js';
+
+const readTowersConfig = async () => {
+  let config = await Storage.read('towers');
+  const towers = config && Array.isArray(config.towers)
+    ? config.towers
+    : (Array.isArray(config) ? config : []);
+  if (towers.length === 0) {
+    await ensureTowersData();
+    config = await Storage.read('towers');
+  }
+  return config;
+};
 
 /**
  * Valida la estructura de una torre y un apartamento usando la configuración
@@ -18,8 +31,8 @@ import Storage from '../db/storage.js';
  * @returns {{ valid: boolean, error?: string, normalized?: {tower, towerId, apartment} }}
  */
 export const validateApartment = async (tower, apartment, manzana) => {
-  const config = await Storage.read('towers');
-  const towers = Array.isArray(config.towers) ? config.towers : [];
+  const config = await readTowersConfig();
+  const towers = config && Array.isArray(config.towers) ? config.towers : [];
   const total = config.totalApartments ?? (towers.length ? 2160 : 0);
 
   if (!tower) {

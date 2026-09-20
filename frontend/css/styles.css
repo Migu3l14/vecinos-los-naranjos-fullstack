@@ -120,13 +120,7 @@ body {
   letter-spacing: 1px;
 }
 
-/* Logo del header: funde el fondo del JPEG con el degradado naranja
-   (multiply hace que el cuadro blanco desaparezca y solo quede el árbol) */
-.logo-blend {
-  mix-blend-mode: multiply;
-  filter: saturate(0.92) contrast(0.95);
-  border-radius: 4px;
-}
+/* Logo del header: PNG con fondo transparente (se adapta a cualquier fondo) */
 
 /* Marca de agua del árbol: grande, centrada, muy tenue, con bordes disueltos.
    Capa fija (acompaña el scroll), sin interacción, debajo de header/modales. */
@@ -143,7 +137,6 @@ body {
   width: 100%;
   max-width: min(92vw, 760px);
   height: auto;
-  mix-blend-mode: multiply;
   opacity: 0.09;
   -webkit-mask-image: radial-gradient(closest-side, #000 55%, transparent 100%);
   mask-image: radial-gradient(closest-side, #000 55%, transparent 100%);

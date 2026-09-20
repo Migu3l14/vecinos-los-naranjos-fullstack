@@ -12,7 +12,6 @@ const state = {
   categories: [],
   offers: [],
   businesses: [],
-  announcements: [],
   currentCategory: 'all',
   currentManzana: 'all',
   currentSearch: '',
@@ -44,6 +43,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupModalScrollLock();
   await loadInitialData();
   maybeShowEntryModal();
+  renderMiManzana();
+  bindMmDemoToggle();
 });
 
 // Muestra un aviso con botón Reintentar cuando falla la carga inicial
@@ -289,20 +290,16 @@ function setupEventListeners() {
 // ==========================================
 // FILTROS Y NAVEGACIÓN DEL DIRECTORIO
 // ==========================================
-// Filtros del directorio + comunicados oficiales de la manzana activa
+// Directorio comercial (los comunicados ahora viven en el módulo privado "Mi Manzana")
 async function fetchFilteredBusinesses() {
   const params = {};
   if (state.currentCategory !== 'all') params.category = state.currentCategory;
   if (state.currentManzana !== 'all') params.manzana = state.currentManzana;
   if (state.currentSearch.trim() !== '') params.q = state.currentSearch;
 
-  const manzana = state.currentManzana;
-  let filtered, anns;
+  let filtered;
   try {
-    [filtered, anns] = await Promise.all([
-      API.getBusinesses(params),
-      (manzana && manzana !== 'all') ? API.getAnnouncements(manzana) : Promise.resolve([])
-    ]);
+    filtered = await API.getBusinesses(params);
   } catch (e) {
     console.error('Fallo al filtrar vitrinas:', e);
     setLoadError('No pudimos cargar las vitrinas. Revisa tu conexión.');
@@ -310,30 +307,215 @@ async function fetchFilteredBusinesses() {
   }
 
   state.businesses = filtered;
-  state.announcements = anns || [];
-
-  UI.renderAnnStories(state.announcements, manzana, openAnnStory);
   renderBusinessList();
 }
 
-// Renderiza el listado intercalando tarjetas promocionales cuando hay comunicados
 function renderBusinessList() {
-  if (state.announcements.length) {
-    UI.renderBusinessesWithPromos(state.businesses, state.announcements, handleOpenProfile, handleQuickWhatsApp, openAnnStory, 4);
-  } else {
-    UI.renderBusinesses(state.businesses, handleOpenProfile, handleQuickWhatsApp);
-  }
-}
-
-// Abre el comunicado como historia a pantalla completa
-function openAnnStory(id) {
-  const ann = state.announcements.find(a => a.id === id) || null;
-  if (!ann) return;
-  UI.renderAnnStoryModal(ann);
-  document.getElementById('annStoryModal').classList.remove('hidden');
+  UI.renderBusinesses(state.businesses, handleOpenProfile, handleQuickWhatsApp);
 }
 
 window.closeAnnStory = () => document.getElementById('annStoryModal').classList.add('hidden');
+
+// ============================================
+// MÓDULO "🏠 MI MANZANA" (antiguo bloque "Comunicados oficiales")
+// Espacio comunitario PRIVADO por manzana. FASE VISUAL: los datos son de
+// ejemplo (mock) para organizar la apariencia. El backend con roles,
+// lecturas y privacidad por manzana llega en la fase 2.
+// ============================================
+const MM_CAT_EMOJI = { aviso: '🚨', comunicado: '🔔', actividad: '📅', documento: '📄' };
+
+const MM_MOCK = [
+  { id: 'mm-1', categoria: 'aviso', importante: true, title: 'Corte de agua este sábado', body: 'El sábado 3 de octubre la administración hará mantenimiento de tuberías desde las 9:00 am hasta la 1:00 pm. Agradecemos tu comprensión y te pedimos almacenar agua con anticipación.', fecha: '28 sept', evento: 'Sáb 3 oct · 9:00 am - 1:00 pm', media: '', read: false },
+  { id: 'mm-2', categoria: 'aviso', importante: true, title: 'Fumigación en zonas comunes', body: 'Se realizará fumigación en pasillos, ascensores y zonas verdes. Evita el paso por estas áreas mientras se realiza el procedimiento.', fecha: '25 sept', evento: '', media: '', read: true },
+  { id: 'mm-3', categoria: 'comunicado', importante: false, title: 'Nuevo punto de reciclaje', body: 'Instalamos un punto de reciclaje ecológico frente a la torre 5. Deposita vidrio, cartón y plástico en el contenedor que corresponde.', fecha: '26 sept', evento: '', media: '', read: false },
+  { id: 'mm-4', categoria: 'comunicado', importante: false, title: 'Reglamento interno actualizado', body: 'El reglamento de convivencia fue actualizado. Puedes consultar la versión completa en la sección Documentos.', fecha: '22 sept', evento: '', media: '', read: true },
+  { id: 'mm-5', categoria: 'actividad', importante: false, title: 'Asamblea general de residentes', body: 'Te invitamos a la asamblea ordinaria. Puntos: presupuesto 2027, mejoras en zonas comunes y elección del comité de convivencia.', fecha: '1 oct', evento: 'Sáb 10 oct · 10:00 am', media: '', read: false },
+  { id: 'mm-6', categoria: 'actividad', importante: false, title: 'Mantenimiento de ascensores', body: 'Revisión técnica de los ascensores por 2 horas. Habrá cortes intermitentes del servicio.', fecha: '24 sept', evento: 'Mar 6 oct · 8:00 am', media: '', read: true },
+  { id: 'mm-7', categoria: 'documento', importante: false, title: 'Circular 12 - Seguridad en el edificio', body: 'Indicaciones de seguridad y control de acceso de visitantes.', fecha: '20 sept', evento: '', media: { tipo: 'pdf', url: '#' }, read: false },
+  { id: 'mm-8', categoria: 'documento', importante: false, title: 'Acta asamblea ordinaria', body: 'Acta completa con los acuerdos tomados en la última asamblea.', fecha: '15 sept', evento: '', media: { tipo: 'pdf', url: '#' }, read: true }
+];
+
+let mmState = {
+  mode: API.isResidentLoggedIn() ? 'resident' : 'guest',
+  manzana: (API.getStoredResidentProfile() && API.getStoredResidentProfile().manzana) || '3'
+};
+
+function mmUnreadCount() {
+  return mmState.mode === 'resident' ? MM_MOCK.filter(i => !i.read).length : 0;
+}
+
+function renderMiManzana() {
+  const content = document.getElementById('miManzanaContent');
+  if (!content) return;
+
+  const badge = document.getElementById('mmUnreadBadge');
+  const unread = mmUnreadCount();
+  if (badge) {
+    badge.classList.toggle('hidden', mmState.mode !== 'resident' || unread === 0);
+    if (mmState.mode === 'resident') badge.textContent = `🔴 ${unread}`;
+  }
+
+  const demoGuest = document.getElementById('mmDemoGuest');
+  const demoResident = document.getElementById('mmDemoResident');
+  if (demoGuest) demoGuest.className = mmState.mode === 'guest' ? 'px-2.5 py-0.5 rounded-full bg-slate-900 text-white' : 'px-2.5 py-0.5 rounded-full text-slate-500';
+  if (demoResident) demoResident.className = mmState.mode === 'resident' ? 'px-2.5 py-0.5 rounded-full bg-orange-500 text-white' : 'px-2.5 py-0.5 rounded-full text-slate-500';
+
+  if (mmState.mode === 'guest') {
+    content.innerHTML = mmGuestPanel();
+    const btn = document.getElementById('mmLoginBtn');
+    if (btn) btn.addEventListener('click', openEntryModal);
+    return;
+  }
+
+  content.innerHTML = [
+    mmHeader(),
+    mmSection('aviso', 'Avisos importantes', MM_MOCK.filter(i => i.categoria === 'aviso')),
+    mmSection('comunicado', 'Comunicados recientes', MM_MOCK.filter(i => i.categoria === 'comunicado')),
+    mmSection('actividad', 'Próximas actividades', MM_MOCK.filter(i => i.categoria === 'actividad')),
+    mmSection('documento', 'Documentos', MM_MOCK.filter(i => i.categoria === 'documento'))
+  ].join('');
+
+  content.querySelectorAll('.mm-open').forEach(el => el.addEventListener('click', () => openMmDetail(el.dataset.id)));
+}
+
+function bindMmDemoToggle() {
+  const demoGuest = document.getElementById('mmDemoGuest');
+  const demoResident = document.getElementById('mmDemoResident');
+  if (demoGuest) demoGuest.addEventListener('click', () => { mmState.mode = 'guest'; renderMiManzana(); });
+  if (demoResident) demoResident.addEventListener('click', () => { mmState.mode = 'resident'; renderMiManzana(); });
+}
+
+function mmGuestPanel() {
+  return `
+    <div class="bg-white border border-slate-100 rounded-2xl p-5 text-center shadow-sm space-y-3">
+      <span class="text-3xl inline-block">🏠</span>
+      <h3 class="text-sm font-extrabold text-slate-800">Esta sección es exclusiva para residentes</h3>
+      <p class="text-[11px] text-slate-500 leading-snug">Tu administración publica aquí avisos, comunicados, actividades y documentos, solo para los vecinos de tu manzana.</p>
+      <button id="mmLoginBtn" class="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-sm rounded-xl shadow touch-btn">
+        <i class="fa-solid fa-right-to-bracket mr-1"></i> Iniciar sesión / Ingresar
+      </button>
+      <p class="text-[10px] text-slate-400">Ingresa con el mismo celular que usas en la Vitrina Digital.</p>
+    </div>`;
+}
+
+function mmHeader() {
+  const mz = escHtml(mmState.manzana);
+  return `
+    <div class="bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3">
+      <div>
+        <p class="text-[11px] font-bold text-orange-100">Comunidad privada · solo tu manzana</p>
+        <h3 class="text-xl font-extrabold leading-tight mt-0.5">📍 Manzana ${mz}</h3>
+        <p class="text-[11px] text-orange-100 font-medium mt-0.5">Administración Manzana ${mz}</p>
+      </div>
+      <a href="https://wa.me/57300123450${mz}" target="_blank" rel="noopener" class="bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-xl text-[11px] font-extrabold flex items-center gap-1.5 whitespace-nowrap touch-btn">
+        <i class="fa-brands fa-whatsapp text-sm"></i> Contacto
+      </a>
+    </div>
+    <div class="bg-white border border-slate-100 rounded-2xl p-3 shadow-sm flex items-center gap-2 text-[11px] font-bold text-slate-600">
+      <i class="fa-solid fa-phone text-orange-500"></i>
+      <span>57 300 123 450${mz}</span>
+      <span class="text-slate-300">·</span>
+      <i class="fa-solid fa-envelope text-orange-500"></i>
+      <span class="truncate">admin.manzana${mz}@losnaranjos.app</span>
+    </div>`;
+}
+
+function mmSection(name, label, list) {
+  const emoji = MM_CAT_EMOJI[name] || '📌';
+  const body = list.length
+    ? list.map(mmCard).join('')
+    : `<div class="bg-slate-50 border border-dashed border-slate-200 rounded-xl p-4 text-center">
+         <p class="text-lg mb-1">${emoji}</p>
+         <p class="text-[11px] font-bold text-slate-500">Aún no hay comunicados en esta sección.</p>
+       </div>`;
+  return `
+    <section class="bg-white border border-slate-100 rounded-2xl p-3.5 shadow-sm space-y-2.5">
+      <div class="flex items-center justify-between">
+        <h4 class="text-xs font-extrabold text-slate-800">${emoji} ${escHtml(label)}</h4>
+        <span class="text-[10px] font-extrabold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">${list.length}</span>
+      </div>
+      ${body}
+    </section>`;
+}
+
+function mmCard(item) {
+  const estado = item.read
+    ? '<span class="text-[9px] font-extrabold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full flex items-center gap-1"><i class="fa-solid fa-check"></i> Leído</span>'
+    : '<span class="text-[9px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full flex items-center gap-1">🔵 Nuevo</span>';
+  const tag = item.importante
+    ? '<span class="text-[9px] font-extrabold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">⭐ Importante</span>'
+    : '';
+
+  if (item.categoria === 'documento') {
+    return `
+      <div data-id="${item.id}" class="mm-open flex items-center gap-3 rounded-xl border border-slate-100 p-3 cursor-pointer touch-btn bg-white hover:bg-slate-50">
+        <div class="w-11 h-11 shrink-0 rounded-xl bg-red-50 text-red-500 flex items-center justify-center text-lg"><i class="fa-solid fa-file-pdf"></i></div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5 flex-wrap">${tag}${estado}</div>
+          <p class="text-xs font-extrabold text-slate-800 leading-tight truncate mt-1">${escHtml(item.title)}</p>
+          <p class="text-[10px] text-slate-500 font-medium mt-0.5">${escHtml(item.fecha)}</p>
+        </div>
+        <div class="shrink-0 text-[9px] font-extrabold text-orange-600">Ver / Descargar</div>
+      </div>`;
+  }
+
+  return `
+    <div data-id="${item.id}" class="mm-open flex gap-3 items-start rounded-xl border border-slate-100 p-3 cursor-pointer touch-btn bg-white hover:bg-slate-50">
+      <div class="w-10 h-10 shrink-0 rounded-xl bg-orange-50 text-lg flex items-center justify-center">${MM_CAT_EMOJI[item.categoria] || '📌'}</div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-1.5 flex-wrap">${tag}${estado}</div>
+        <p class="text-xs font-extrabold text-slate-800 leading-tight mt-1">${escHtml(item.title)}</p>
+        <p class="text-[11px] text-slate-500 leading-snug line-clamp-2 mt-0.5">${escHtml(item.body)}</p>
+        <p class="text-[10px] font-bold text-orange-600 mt-1">${escHtml(item.evento || item.fecha)}</p>
+      </div>
+    </div>`;
+}
+
+function openMmDetail(id) {
+  const item = MM_MOCK.find(i => i.id === id);
+  if (!item) return;
+  item.read = true;
+
+  const modal = document.getElementById('annStoryModal');
+  const content = document.getElementById('annStoryContent');
+  const isDoc = item.categoria === 'documento';
+  const media = isDoc
+    ? `<a href="${escHtml((item.media && item.media.url) || '#')}" target="_blank" rel="noopener" class="w-full py-3 bg-red-50 text-red-600 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 touch-btn"><i class="fa-solid fa-file-pdf text-lg"></i> Ver documento PDF</a>`
+    : (item.media ? `<img src="${escHtml(item.media)}" alt="${escHtml(item.title)}" class="w-full h-40 object-cover rounded-xl" />` : '');
+
+  content.innerHTML = `
+    <div class="bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-3 text-white flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">${MM_CAT_EMOJI[item.categoria] || '📌'}</span>
+        <span class="text-[10px] font-extrabold uppercase tracking-wider">Mi Manzana · Mz ${escHtml(mmState.manzana)}</span>
+      </div>
+      <button data-close="closeAnnStory" class="text-white/90 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center touch-btn"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="overflow-y-auto p-4 space-y-3 flex-1">
+      <div class="flex items-center gap-1.5 flex-wrap">
+        ${item.importante ? '<span class="text-[10px] font-extrabold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">⭐ Importante</span>' : ''}
+        <span class="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1"><i class="fa-solid fa-check"></i> Leído</span>
+      </div>
+      <h3 class="text-base font-extrabold text-slate-900 leading-tight">${escHtml(item.title)}</h3>
+      <div class="text-[11px] font-bold text-slate-500 space-y-1">
+        <p><i class="fa-solid fa-calendar-day text-orange-500 mr-1"></i>Publicado: ${escHtml(item.fecha)}</p>
+        ${item.evento ? `<p><i class="fa-solid fa-calendar text-orange-500 mr-1"></i>${escHtml(item.evento)}</p>` : ''}
+      </div>
+      ${media}
+      <p class="text-xs text-slate-600 leading-relaxed">${escHtml(item.body)}</p>
+    </div>
+    <div class="p-4 border-t border-slate-100">
+      <button data-close="closeAnnStory" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-sm rounded-xl touch-btn">Cerrar</button>
+    </div>`;
+
+  content.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => {
+    const fn = window[b.dataset.close];
+    if (typeof fn === 'function') fn();
+  }));
+
+  modal.classList.remove('hidden');
+  renderMiManzana();
+}
 
 function handleCategorySelect(catId) {
   state.currentCategory = catId;
@@ -1342,6 +1524,10 @@ async function handleEntrySubmit() {
   btn.disabled = false;
   document.getElementById('entryModal').classList.add('hidden');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  mmState.mode = 'resident';
+  mmState.manzana = String(manzana || '3');
+  renderMiManzana();
 
   if (role === 'seller') {
     if (entryKnown && entryKnown.hasBusiness) {

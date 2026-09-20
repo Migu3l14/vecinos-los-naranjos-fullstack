@@ -130,16 +130,38 @@
           <div id="supportListContainer" class="space-y-3"></div>
         </div>
 
-        <!-- ==== PANEL COMUNICADOS OFICIALES ==== -->
+        <!-- ==== PANEL "MI MANZANA" · COMUNICADOS ==== -->
         <div id="panel-announcements" class="adm-panel hidden space-y-4">
           <div class="flex items-center justify-between">
-            <h3 class="font-extrabold text-sm">Comunicados oficiales</h3>
+            <h3 class="font-extrabold text-sm">🏠 Mi Manzana · Comunicados</h3>
             <button id="refreshAnnBtn" class="text-xs font-bold text-orange-600">⟳ Actualizar</button>
+          </div>
+
+          <!-- Filtros rápidos -->
+          <div class="border border-slate-200 rounded-2xl p-3 space-y-2 bg-white">
+            <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Filtrar comunicados</p>
+            <input id="annFilterQ" type="search" placeholder="Buscar por título..." class="w-full border border-slate-200 rounded-xl text-xs p-2.5" />
+            <div class="grid grid-cols-3 gap-2">
+              <select id="annFilterCategoria" class="border border-slate-200 rounded-xl text-xs p-2.5">
+                <option value="">Todas las categorías</option>
+                <option value="aviso">🚨 Aviso</option>
+                <option value="comunicado">🔔 Comunicado</option>
+                <option value="actividad">📅 Actividad</option>
+                <option value="documento">📄 Documento</option>
+              </select>
+              <select id="annFilterEstado" class="border border-slate-200 rounded-xl text-xs p-2.5">
+                <option value="">Todos los estados</option>
+                <option value="publicado">Publicados</option>
+                <option value="borrador">Borradores</option>
+                <option value="archivado">Archivados</option>
+              </select>
+              <button id="annFilterImportante" class="border border-slate-200 rounded-xl text-xs p-2.5 font-bold text-amber-600 hover:bg-amber-50">⭐ Importantes</button>
+            </div>
           </div>
 
           <!-- Formulario de publicación -->
           <div class="border border-slate-200 rounded-2xl p-3.5 space-y-3 bg-slate-50/60">
-            <p class="text-xs font-extrabold text-slate-700">📣 Publicar un comunicado</p>
+            <p class="text-xs font-extrabold text-slate-700">📣 Nuevo comunicado</p>
 
             <div id="annMzWrap" class="grid grid-cols-2 gap-2">
               <div>
@@ -162,9 +184,20 @@
               <label class="font-bold text-xs text-slate-700 block mb-1">Título *</label>
               <input id="annTitle" maxlength="160" placeholder="Ej: Corte de agua este sábado 9:00 am" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none" />
             </div>
+
+            <div>
+              <label class="font-bold text-xs text-slate-700 block mb-1">Categoría</label>
+              <select id="annCategoria" class="w-full border border-slate-200 rounded-xl text-xs p-2.5">
+                <option value="comunicado">🔔 Comunicado</option>
+                <option value="aviso">🚨 Aviso importante</option>
+                <option value="actividad">📅 Actividad</option>
+                <option value="documento">📄 Documento</option>
+              </select>
+            </div>
+
             <div>
               <label class="font-bold text-xs text-slate-700 block mb-1">Mensaje</label>
-              <textarea id="annBody" rows="3" placeholder="Detalle del comunicado oficial..." class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none resize-none"></textarea>
+              <textarea id="annBody" rows="3" placeholder="Detalle del comunicado..." class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none resize-none"></textarea>
             </div>
 
             <div>
@@ -174,6 +207,36 @@
                 <i class="fa-solid fa-paperclip text-orange-600"></i>
                 <span id="annFileName" class="truncate"></span>
                 <button id="annFileClear" type="button" class="ml-auto text-slate-400 hover:text-red-500"><i class="fa-solid fa-circle-xmark"></i></button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="font-bold text-xs text-slate-700 block mb-1">Fecha de publicación</label>
+                <input type="date" id="annFechaPublicacion" class="w-full border border-slate-200 rounded-xl text-xs p-2.5" />
+              </div>
+              <div>
+                <label class="font-bold text-xs text-slate-700 block mb-1">Fecha de evento (opcional)</label>
+                <input type="date" id="annFechaEvento" class="w-full border border-slate-200 rounded-xl text-xs p-2.5" />
+              </div>
+            </div>
+
+            <div>
+              <label class="font-bold text-xs text-slate-700 block mb-1">Fecha de vencimiento (opcional)</label>
+              <input type="date" id="annFechaVencimiento" class="w-full border border-slate-200 rounded-xl text-xs p-2.5" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <label class="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer border border-slate-200 rounded-xl p-2.5 bg-white">
+                <input type="checkbox" id="annImportante" class="w-4 h-4 accent-amber-500" />
+                ⭐ Marcar como importante
+              </label>
+              <div>
+                <select id="annEstado" class="w-full border border-slate-200 rounded-xl text-xs p-2.5">
+                  <option value="publicado">Estado: Publicado</option>
+                  <option value="borrador">Estado: Borrador</option>
+                  <option value="archivado">Estado: Archivado</option>
+                </select>
               </div>
             </div>
 

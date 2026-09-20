@@ -58,6 +58,10 @@
           </select>
 
           <div class="flex items-center gap-1.5">
+            <a href="#miManzana" title="Mi Manzana (aviso, comunicados, actividades y documentos de tu manzana)" aria-label="Mi Manzana" class="bg-white/30 hover:bg-white/40 text-black h-8 shrink-0 rounded-full flex items-center gap-1 px-2.5 text-[11px] font-extrabold transition active:scale-95 whitespace-nowrap">
+              <i class="fa-solid fa-house"></i><span>Mi Manzana</span>
+            </a>
+
             <a id="myVitrinaBtn" href="./mi-vitrina.html" title="Mi Vitrina / Panel del Vendedor" aria-label="Mi Vitrina / Panel del Vendedor" class="bg-white/30 hover:bg-white/40 text-black w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold transition active:scale-95">
               <i class="fa-solid fa-store"></i>
             </a>
@@ -141,16 +145,20 @@
         </span>
       </div>
 
-      <!-- SECCIÓN: COMUNICADOS OFICIALES (HISTORIAS TIPO INSTAGRAM) -->
-      <div class="mb-4">
-        <div class="flex items-center justify-between">
-          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">🛡️ Comunicados oficiales</h2>
-          <span id="annMzLabel" class="text-[10px] font-bold text-orange-600"></span>
+      <!-- SECCIÓN "MI MANZANA": espacio comunitario privado (antes "Comunicados oficiales") -->
+      <div id="miManzana" class="mb-4 scroll-mt-44">
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">🏠 Mi Manzana</h2>
+          <div class="flex items-center gap-2">
+            <span id="mmUnreadBadge" class="hidden text-[10px] font-extrabold text-white bg-red-500 px-2 py-1 rounded-full shadow-sm">🔴 0</span>
+            <!-- Toggle DEMO (fase visual): previsualiza los dos estados sin esperar el backend -->
+            <div id="mmDemoToggle" class="flex items-center bg-white border border-slate-200 rounded-full p-0.5 text-[10px] font-bold">
+              <button id="mmDemoGuest" class="px-2.5 py-0.5 rounded-full text-slate-500">Exclusiva</button>
+              <button id="mmDemoResident" class="px-2.5 py-0.5 rounded-full text-slate-500">Residente Mz 3</button>
+            </div>
+          </div>
         </div>
-        <div id="annStoriesContainer" class="flex space-x-3 overflow-x-auto no-scrollbar mt-3 pb-1"></div>
-        <div id="annStoriesEmpty" class="hidden text-[11px] text-slate-500 bg-slate-50 border border-dashed border-slate-200 rounded-xl p-3 mt-3">
-          Selecciona tu manzana para ver los comunicados oficiales de tu administración.
-        </div>
+        <div id="miManzanaContent" class="mt-3 space-y-4"></div>
       </div>
 
       <!-- LISTA DE TARJETAS DE VITRINA -->

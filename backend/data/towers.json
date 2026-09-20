@@ -1,11 +1,425 @@
 {
-  "totalApartments": 2160,
-  "towers": [
-    { "id": "torre-1", "name": "Torre 1", "manzana": "1", "floors": 30, "aptsPerFloor": 6 },
-    { "id": "torre-2", "name": "Torre 2", "manzana": "2", "floors": 30, "aptsPerFloor": 6 },
-    { "id": "torre-3", "name": "Torre 3", "manzana": "3", "floors": 30, "aptsPerFloor": 6 },
-    { "id": "torre-4", "name": "Torre 4", "manzana": "4", "floors": 30, "aptsPerFloor": 6 },
-    { "id": "torre-5", "name": "Torre 5", "manzana": "5", "floors": 30, "aptsPerFloor": 6 },
-    { "id": "torre-6", "name": "Torre 6", "manzana": "6", "floors": 30, "aptsPerFloor": 6 }
-  ]
+    "totalApartments":  2160,
+    "towers":  [
+                   {
+                       "id":  "torre-m1-1",
+                       "name":  "Torre 1",
+                       "manzana":  "1",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m1-2",
+                       "name":  "Torre 2",
+                       "manzana":  "1",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m1-3",
+                       "name":  "Torre 3",
+                       "manzana":  "1",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m1-4",
+                       "name":  "Torre 4",
+                       "manzana":  "1",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m1-5",
+                       "name":  "Torre 5",
+                       "manzana":  "1",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m1-6",
+                       "name":  "Torre 6",
+                       "manzana":  "1",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m1-7",
+                       "name":  "Torre 7",
+                       "manzana":  "1",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m1-8",
+                       "name":  "Torre 8",
+                       "manzana":  "1",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m1-9",
+                       "name":  "Torre 9",
+                       "manzana":  "1",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m1-10",
+                       "name":  "Torre 10",
+                       "manzana":  "1",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m2-1",
+                       "name":  "Torre 1",
+                       "manzana":  "2",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m2-2",
+                       "name":  "Torre 2",
+                       "manzana":  "2",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m2-3",
+                       "name":  "Torre 3",
+                       "manzana":  "2",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m2-4",
+                       "name":  "Torre 4",
+                       "manzana":  "2",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m2-5",
+                       "name":  "Torre 5",
+                       "manzana":  "2",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m2-6",
+                       "name":  "Torre 6",
+                       "manzana":  "2",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m2-7",
+                       "name":  "Torre 7",
+                       "manzana":  "2",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m2-8",
+                       "name":  "Torre 8",
+                       "manzana":  "2",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m2-9",
+                       "name":  "Torre 9",
+                       "manzana":  "2",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m2-10",
+                       "name":  "Torre 10",
+                       "manzana":  "2",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m3-1",
+                       "name":  "Torre 1",
+                       "manzana":  "3",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m3-2",
+                       "name":  "Torre 2",
+                       "manzana":  "3",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m3-3",
+                       "name":  "Torre 3",
+                       "manzana":  "3",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m3-4",
+                       "name":  "Torre 4",
+                       "manzana":  "3",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m3-5",
+                       "name":  "Torre 5",
+                       "manzana":  "3",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m3-6",
+                       "name":  "Torre 6",
+                       "manzana":  "3",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m3-7",
+                       "name":  "Torre 7",
+                       "manzana":  "3",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m3-8",
+                       "name":  "Torre 8",
+                       "manzana":  "3",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m3-9",
+                       "name":  "Torre 9",
+                       "manzana":  "3",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m3-10",
+                       "name":  "Torre 10",
+                       "manzana":  "3",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m4-1",
+                       "name":  "Torre 1",
+                       "manzana":  "4",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m4-2",
+                       "name":  "Torre 2",
+                       "manzana":  "4",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m4-3",
+                       "name":  "Torre 3",
+                       "manzana":  "4",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m4-4",
+                       "name":  "Torre 4",
+                       "manzana":  "4",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m4-5",
+                       "name":  "Torre 5",
+                       "manzana":  "4",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m4-6",
+                       "name":  "Torre 6",
+                       "manzana":  "4",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m4-7",
+                       "name":  "Torre 7",
+                       "manzana":  "4",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m4-8",
+                       "name":  "Torre 8",
+                       "manzana":  "4",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m4-9",
+                       "name":  "Torre 9",
+                       "manzana":  "4",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m4-10",
+                       "name":  "Torre 10",
+                       "manzana":  "4",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m5-1",
+                       "name":  "Torre 1",
+                       "manzana":  "5",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m5-2",
+                       "name":  "Torre 2",
+                       "manzana":  "5",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m5-3",
+                       "name":  "Torre 3",
+                       "manzana":  "5",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m5-4",
+                       "name":  "Torre 4",
+                       "manzana":  "5",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m5-5",
+                       "name":  "Torre 5",
+                       "manzana":  "5",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m5-6",
+                       "name":  "Torre 6",
+                       "manzana":  "5",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m5-7",
+                       "name":  "Torre 7",
+                       "manzana":  "5",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m5-8",
+                       "name":  "Torre 8",
+                       "manzana":  "5",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m5-9",
+                       "name":  "Torre 9",
+                       "manzana":  "5",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m5-10",
+                       "name":  "Torre 10",
+                       "manzana":  "5",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m6-1",
+                       "name":  "Torre 1",
+                       "manzana":  "6",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m6-2",
+                       "name":  "Torre 2",
+                       "manzana":  "6",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m6-3",
+                       "name":  "Torre 3",
+                       "manzana":  "6",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m6-4",
+                       "name":  "Torre 4",
+                       "manzana":  "6",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m6-5",
+                       "name":  "Torre 5",
+                       "manzana":  "6",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m6-6",
+                       "name":  "Torre 6",
+                       "manzana":  "6",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m6-7",
+                       "name":  "Torre 7",
+                       "manzana":  "6",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m6-8",
+                       "name":  "Torre 8",
+                       "manzana":  "6",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m6-9",
+                       "name":  "Torre 9",
+                       "manzana":  "6",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   },
+                   {
+                       "id":  "torre-m6-10",
+                       "name":  "Torre 10",
+                       "manzana":  "6",
+                       "floors":  9,
+                       "aptsPerFloor":  4
+                   }
+               ]
 }

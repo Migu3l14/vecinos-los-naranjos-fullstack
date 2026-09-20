@@ -233,6 +233,12 @@ function setupEventListeners() {
   }));
   const entrySubmitBtn = document.getElementById('entrySubmitBtn');
   if (entrySubmitBtn) entrySubmitBtn.addEventListener('click', handleEntrySubmit);
+  const entryMzSelect = document.getElementById('entryMz');
+  if (entryMzSelect) {
+    entryMzSelect.addEventListener('change', () => {
+      ensureTowers(['entryTower'], { manzana: entryMzSelect.value, placeholder: 'Selecciona tu torre', onlyFromManzana: true });
+    });
+  }
 
   // Checkout Dual
   const coTabLogin = document.getElementById('checkoutTabLogin');
@@ -1035,8 +1041,8 @@ window.closeManageModal = () => document.getElementById('manageModal').classList
 // CHECKOUT DUAL: Identidad (Registrado / Invitado) + Pedido
 // ============================================================
 
-// Carga la lista de torres en los selects indicados
-async function ensureTowers(selectIds) {
+// Carga la lista de torres en los selects indicados (10 torres por manzana, 9 pisos, 4 aptos)
+async function ensureTowers(selectIds, ops = {}) {
   if (!state.towersList || state.towersList.length === 0) {
     const cfg = await API.getTowers();
     state.towersList = (cfg && cfg.towers) ? cfg.towers : [];
@@ -1045,9 +1051,27 @@ async function ensureTowers(selectIds) {
     const sel = document.getElementById(id);
     if (!sel) return;
     const current = sel.value;
-    sel.innerHTML = state.towersList.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
+    let list = state.towersList;
+    if (ops.manzana) {
+      const filtered = list.filter(t => String(t.manzana) === String(ops.manzana).trim());
+      if (filtered.length > 0) list = filtered;
+    } else if (ops.onlyFromManzana) {
+      list = [];
+    }
+    const place = ops.placeholder ? `<option value="">${ops.placeholder}</option>` : '';
+    sel.innerHTML = place + list.map(t => {
+      const value = ops.useId ? t.id : t.name;
+      const label = ops.useId ? `${t.name} · Manzana ${t.manzana}` : t.name;
+      return `<option value="${value}">${label}</option>`;
+    }).join('');
     if (current && [...sel.options].some(o => o.value === current)) sel.value = current;
   });
+}
+
+// Resuelve el valor del select (id de torre) a partir del nombre guardado en el perfil
+function towerOptionValue(towerName) {
+  const t = state.towersList.find(x => x.name === towerName);
+  return t ? t.id : towerName;
 }
 
 // Abre el modal de checkout dual para un pedido concreto
@@ -1060,8 +1084,9 @@ async function openCheckoutFor(business, products) {
   document.getElementById('checkoutOrderText').innerText =
     `${business.name} · ${products.map(p => `${p.name}${p.qty > 1 ? ` ×${p.qty}` : ''}`).join(', ')}`;
 
-  // Precargar torres
-  await ensureTowers(['coGuestTower']);
+  // Precargar torres (todas las manzanas: "Torre N · Manzana M")
+  await ensureTowers(['coGuestTower'], { useId: true });
+  document.getElementById('coGuestTower').insertAdjacentHTML('afterbegin', '<option value="">Selecciona tu torre</option>');
 
   // Autocompletar si el residente ya se identificó antes (perfil guardado)
   const existing = API.getStoredResidentProfile();
@@ -1070,7 +1095,8 @@ async function openCheckoutFor(business, products) {
     document.getElementById('coGuestPhone').value = (existing.phone || '').replace('57', '');
     if (existing.tower) {
       const sel = document.getElementById('coGuestTower');
-      if ([...sel.options].some(o => o.value === existing.tower)) sel.value = existing.tower;
+      const val = towerOptionValue(existing.tower);
+      if ([...sel.options].some(o => o.value === val)) sel.value = val;
     }
     document.getElementById('coGuestApt').value = existing.apartment || '';
     document.getElementById('coGuestBirth').value = existing.birthDate || '';
@@ -1134,15 +1160,13 @@ function openEntryModal() {
   const prof = API.getStoredResidentProfile();
   document.getElementById('entryPhone').value = (prof && prof.phone) ? prof.phone.replace('57', '') : '';
   document.getElementById('entryApt').value = (prof && prof.apartment) ? prof.apartment : '';
-  if (prof && prof.tower) {
-    const sel = document.getElementById('entryTower');
-    if ([...sel.options].some(o => o.value === prof.tower)) sel.value = prof.tower;
-  }
+  document.getElementById('entryMz').value = (prof && prof.manzana) ? String(prof.manzana) : '';
   document.getElementById('entryError').classList.add('hidden');
   entrySelectedRole = 'buyer';
   updateEntryRoleUI();
   document.getElementById('entryTerms').checked = false;
-  ensureTowers(['entryTower']);
+  const mzSel = document.getElementById('entryMz');
+  ensureTowers(['entryTower'], { manzana: mzSel ? mzSel.value : '', placeholder: 'Selecciona tu torre', onlyFromManzana: true });
   document.getElementById('entryModal').classList.remove('hidden');
 }
 
@@ -1255,7 +1279,8 @@ async function handleCheckoutLogin() {
   // Autocompletar apartamento/torre
   if (profile.tower) {
     const sel = document.getElementById('coGuestTower');
-    if ([...sel.options].some(o => o.value === profile.tower)) sel.value = profile.tower;
+    const val = towerOptionValue(profile.tower);
+    if ([...sel.options].some(o => o.value === val)) sel.value = val;
   }
   document.getElementById('coGuestApt').value = profile.apartment || '';
   document.getElementById('coGuestName').value = profile.fullName || '';

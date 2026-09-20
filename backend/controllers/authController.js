@@ -399,7 +399,7 @@ export const entryGuest = async (req, res) => {
     const vPhone = validatePhone(phone);
     if (vPhone) return res.status(400).json({ success: false, message: vPhone });
 
-    const check = await validateApartment(tower, apartment);
+    const check = await validateApartment(tower, apartment, manzana);
     if (!check.valid) {
       return res.status(400).json({ success: false, message: check.error });
     }
@@ -679,8 +679,8 @@ export const getTowers = async (req, res) => {
 // POST /api/auth/validate-apartment
 export const validateApartmentEndpoint = async (req, res) => {
   try {
-    const { tower, apartment } = req.body;
-    const check = await validateApartment(tower, apartment);
+    const { tower, apartment, manzana } = req.body;
+    const check = await validateApartment(tower, apartment, manzana);
     res.json({ success: check.valid, data: check });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al validar apartamento', error: error.message });

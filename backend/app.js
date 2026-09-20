@@ -20,6 +20,7 @@ import uploadRoutes from './routes/uploadRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
 import supportRoutes from './routes/supportRoutes.js';
 import announcementRoutes from './routes/announcementRoutes.js';
+import { runSeeds } from './db/seed.js';
 
 // Guarda de seguridad: en producción no se puede arrancar con el secreto JWT por defecto.
 if (ENV.NODE_ENV === 'production' && isUsingDefaultJwtSecret) {
@@ -140,5 +141,7 @@ app.use((err, req, res, next) => {
     message: isProd ? 'Error interno del servidor.' : (err?.message || 'Error interno del servidor.')
   });
 });
+
+await runSeeds();
 
 export default app;

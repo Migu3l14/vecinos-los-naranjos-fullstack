@@ -13,9 +13,11 @@ import Storage from '../db/storage.js';
  * en towers.json. Mientras tanto usamos una validación base para no bloquear el
  * registro de residentes con los códigos reales del conjunto.
  *
+ * @param {string} [manzana] Manzana para acotar la búsqueda cuando hay torres
+ *   repetidas por unidad (cada manzana tiene sus 10 torres).
  * @returns {{ valid: boolean, error?: string, normalized?: {tower, towerId, apartment} }}
  */
-export const validateApartment = async (tower, apartment) => {
+export const validateApartment = async (tower, apartment, manzana) => {
   const config = await Storage.read('towers');
   const towers = Array.isArray(config.towers) ? config.towers : [];
   const total = config.totalApartments ?? (towers.length ? 2160 : 0);
@@ -27,18 +29,24 @@ export const validateApartment = async (tower, apartment) => {
     return { valid: false, error: 'El apartamento es obligatorio.' };
   }
 
+  let candidates = towers;
+  if (manzana != null && String(manzana).trim() !== '') {
+    const filtered = towers.filter(t => String(t.manzana) === String(manzana).trim());
+    if (filtered.length > 0) candidates = filtered;
+  }
+
   const towerStr = String(tower).trim().toLowerCase();
 
-  // Buscar torre por id, nombre o número
-  const towerMatch = towers.find(t =>
+  // Buscar torre por id, nombre o número (dentro de la manzana seleccionada)
+  const towerMatch = candidates.find(t =>
     String(t.id).toLowerCase() === towerStr ||
     String(t.name).toLowerCase() === towerStr ||
     String(t.index + 1) === towerStr ||
     (t.alias && String(t.alias).toLowerCase() === towerStr)
-  ) || (towers.find(t => String(t.name).toLowerCase().includes(towerStr)));
+  ) || (candidates.find(t => String(t.name).toLowerCase().includes(towerStr)));
 
   if (!towerMatch && towers.length > 0) {
-    const avail = towers.map(t => t.name).join(', ') || 'sin torres configuradas';
+    const avail = candidates.map(t => t.name).join(', ') || 'sin torres configuradas';
     return { valid: false, error: `Torre no válida. Torres disponibles: ${avail}` };
   }
 

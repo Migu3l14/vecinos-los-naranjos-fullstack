@@ -64,7 +64,7 @@ export const Storage = {
       }
       try {
         const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-        return Array.isArray(parsed) ? parsed : [];
+        return parsed;
       } catch (err) {
         console.error(`[STORAGE] Error parseando ${collection} en Redis, devolviendo vacío.`, err.message);
         return [];

@@ -168,16 +168,6 @@ function setupEventListeners() {
     });
   }
 
-  // Botón abrir modal de gestión / renovación
-  const openManageBtn = document.getElementById('openManageModalBtn');
-  if (openManageBtn) {
-    openManageBtn.addEventListener('click', () => {
-      document.getElementById('managePhoneInput').value = '';
-      document.getElementById('manageResultSection').classList.add('hidden');
-      document.getElementById('manageModal').classList.remove('hidden');
-    });
-  }
-
   // Botones del Asistente de Registro (Wizard)
   const step1NextBtn = document.getElementById('step1NextBtn');
   if (step1NextBtn) step1NextBtn.addEventListener('click', handleStep1Next);
@@ -280,11 +270,12 @@ function setupEventListeners() {
     });
   });
 
-  // Atajo "Renovar Vitrina" del panel del emprendedor
+  // Atajo "Renovar Vitrina" del panel del emprendedor (abre directamente el modal de gestión)
   const renewShortcutBtn = document.getElementById('renewShortcutBtn');
   if (renewShortcutBtn) renewShortcutBtn.addEventListener('click', () => {
-    const openManageBtn = document.getElementById('openManageModalBtn');
-    if (openManageBtn) openManageBtn.click();
+    document.getElementById('managePhoneInput').value = '';
+    document.getElementById('manageResultSection').classList.add('hidden');
+    document.getElementById('manageModal').classList.remove('hidden');
   });
 }
 

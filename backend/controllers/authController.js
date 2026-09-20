@@ -307,10 +307,10 @@ export const getMe = async (req, res) => {
 // POST /api/auth/guest/checkout
 export const guestCheckout = async (req, res) => {
   try {
-    const { fullName, phone, tower, apartment, birthDate, email } = req.body;
+    const { fullName, phone, tower, apartment, birthDate, email, deliveryAddress } = req.body;
 
-    if (!fullName || !phone || !tower || !apartment || !birthDate) {
-      return res.status(400).json({ success: false, message: 'Nombre completo, teléfono, torre, apartamento y fecha de nacimiento son obligatorios.' });
+    if (!fullName || !phone || !tower || !apartment || !birthDate || !deliveryAddress) {
+      return res.status(400).json({ success: false, message: 'Nombre completo, teléfono, torre, apartamento, fecha de nacimiento y dirección de entrega son obligatorios.' });
     }
 
     const vName = validateFullName(fullName);
@@ -338,9 +338,11 @@ export const guestCheckout = async (req, res) => {
         tower: check.normalized.tower,
         towerId: check.normalized.towerId,
         apartment: check.normalized.apartment,
+        deliveryAddress,
         birthDate,
         email: email || resident.email,
         authType: resident.authType || 'guest',
+        acceptedTermsAt: resident.acceptedTermsAt || new Date().toISOString(),
         lastGuestCheckoutAt: new Date().toISOString()
       });
     } else {
@@ -352,10 +354,12 @@ export const guestCheckout = async (req, res) => {
         tower: check.normalized.tower,
         towerId: check.normalized.towerId,
         apartment: check.normalized.apartment,
+        deliveryAddress,
         birthDate,
         authType: 'guest',
         passwordHash: null,
         createdAt: new Date().toISOString(),
+        acceptedTermsAt: new Date().toISOString(),
         guestCheckouts: 1,
         lastGuestCheckoutAt: new Date().toISOString()
       };
@@ -620,6 +624,7 @@ const toPublicProfile = (resident) => ({
   tower: resident.tower,
   towerId: resident.towerId,
   apartment: resident.apartment,
+  deliveryAddress: resident.deliveryAddress,
   birthDate: resident.birthDate,
   authType: resident.authType
 });

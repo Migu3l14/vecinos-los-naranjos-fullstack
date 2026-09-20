@@ -220,6 +220,11 @@ function setupEventListeners() {
   const supportWaBtn = document.getElementById('supportWhatsappBtn');
   if (supportWaBtn) supportWaBtn.addEventListener('click', handleSupportWhatsApp);
 
+  // Botón y enlaces del modal Términos y Condiciones
+  const openTermsBtn = document.getElementById('openTermsBtn');
+  if (openTermsBtn) openTermsBtn.addEventListener('click', openTermsModal);
+  document.querySelectorAll('.open-terms-link').forEach(a => a.addEventListener('click', openTermsModal));
+
   // Checkout Dual
   const coTabLogin = document.getElementById('checkoutTabLogin');
   if (coTabLogin) coTabLogin.addEventListener('click', () => switchCheckoutMode('login'));
@@ -641,6 +646,9 @@ function resetRegisterWizard() {
   document.getElementById('prod2Price').value = '';
   resetImageUpload('prod2Img');
 
+  const regTerms = document.getElementById('regTerms');
+  if (regTerms) regTerms.checked = false;
+
   showWizardStep(1);
 }
 
@@ -688,6 +696,12 @@ function handleStep1Next() {
 
 // Paso 2: Crear la vitrina y pasar al Pago
 async function handleStep2Submit() {
+  const regTerms = document.getElementById('regTerms');
+  if (regTerms && !regTerms.checked) {
+    alert('Debes aceptar los Términos y Condiciones para activar tu vitrina.');
+    return;
+  }
+
   const products = [];
 
   const p1Name = document.getElementById('prod1Name').value.trim();
@@ -1051,6 +1065,7 @@ async function openCheckoutFor(business, products) {
     }
     document.getElementById('coGuestApt').value = existing.apartment || '';
     document.getElementById('coGuestBirth').value = existing.birthDate || '';
+    document.getElementById('coGuestDelivery').value = existing.deliveryAddress || '';
   }
 
   resetCheckoutPanels();
@@ -1064,6 +1079,9 @@ function resetCheckoutPanels() {
   document.getElementById('coLoginPassword').value = '';
   document.getElementById('coGuestName').value = API.getStoredResidentProfile()?.fullName || '';
   document.getElementById('coGuestPhone').value = API.getStoredResidentProfile()?.phone?.replace('57', '') || '';
+  document.getElementById('coGuestDelivery').value = '';
+  const guestTerms = document.getElementById('coGuestTerms');
+  if (guestTerms) guestTerms.checked = false;
 }
 
 function switchCheckoutMode(mode) {
@@ -1093,6 +1111,12 @@ window.closeCheckoutModal = () => {
   document.getElementById('checkoutModal').classList.add('hidden');
   state.checkoutCtx = null;
 };
+
+// Modal Términos, Condiciones y Confidencialidad
+function openTermsModal() {
+  document.getElementById('termsModal').classList.remove('hidden');
+}
+window.closeTermsModal = () => document.getElementById('termsModal').classList.add('hidden');
 
 // Login de residente dentro del checkout → autocompleta torre/apto
 async function handleCheckoutLogin() {
@@ -1124,6 +1148,7 @@ async function handleCheckoutLogin() {
   document.getElementById('coGuestName').value = profile.fullName || '';
   document.getElementById('coGuestPhone').value = (profile.phone || '').replace('57', '');
   document.getElementById('coGuestBirth').value = profile.birthDate || '';
+  document.getElementById('coGuestDelivery').value = profile.deliveryAddress || '';
 
   // Mostrar confirmación amigable
   errEl.classList.remove('hidden');
@@ -1147,9 +1172,21 @@ async function handleCheckoutConfirm() {
   const tower = document.getElementById('coGuestTower').value;
   const apartment = document.getElementById('coGuestApt').value.trim();
   const birthDate = document.getElementById('coGuestBirth').value;
+  const deliveryAddress = document.getElementById('coGuestDelivery').value.trim();
+  const termsAccepted = document.getElementById('coGuestTerms').checked;
 
   if (!fullName || !phone || !tower || !apartment || !birthDate) {
     errEl.textContent = 'Completa nombre, teléfono, torre, apartamento y fecha de nacimiento.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (!deliveryAddress) {
+    errEl.textContent = 'Indica la dirección de entrega de tu pedido.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (!termsAccepted) {
+    errEl.textContent = 'Debes aceptar los Términos y Condiciones para continuar.';
     errEl.classList.remove('hidden');
     return;
   }
@@ -1160,7 +1197,7 @@ async function handleCheckoutConfirm() {
 
   // Registrar/actualizar la identidad como vecino (guest checkout usa los datos del formulario,
   // que ya vienen autocompletados tras el login del residente cuando aplica)
-  const guestData = { fullName, phone, tower, apartment, birthDate };
+  const guestData = { fullName, phone, tower, apartment, birthDate, deliveryAddress };
   const g = await API.guestCheckout(guestData);
   if (!g.success) {
     errEl.textContent = g.message || 'No pudimos guardar tus datos.';
@@ -1180,6 +1217,7 @@ async function handleCheckoutConfirm() {
       phone: resident.phone,
       tower: resident.tower,
       apartment: resident.apartment,
+      deliveryAddress: resident.deliveryAddress,
       authType: resident.authType || 'guest'
     }
   };
@@ -1195,7 +1233,7 @@ async function handleCheckoutConfirm() {
 // Construye el mensaje de WhatsApp del pedido con datos del residente
 function buildOrderMessage(ctx, resident) {
   const products = ctx.products.map(p => `${p.name}${p.qty > 1 ? ` ×${p.qty}` : ''}`).join(', ');
-  return `Hola, soy ${resident.fullName}, vecino de Los Naranjos (Torre ${resident.tower}, Apartamento ${resident.apartment}).\n\nQuisiera pedir de tu vitrina:\n• ${products}\n\nMi teléfono: ${resident.phone}`;
+  return `Hola, soy ${resident.fullName}, vecino de Los Naranjos (Torre ${resident.tower}, Apartamento ${resident.apartment}).\n\nQuisiera pedir de tu vitrina:\n• ${products}\n\nDirección de entrega: ${resident.deliveryAddress || 'Por coordinar'}\n\nMi teléfono: ${resident.phone}`;
 }
 
 // ============================================================

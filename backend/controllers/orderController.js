@@ -25,8 +25,8 @@ export const createOrder = async (req, res) => {
     if (!products || !Array.isArray(products) || products.length === 0) {
       return res.status(400).json({ success: false, message: 'Debe incluir al menos un producto.' });
     }
-    if (!resident || !resident.fullName || !resident.phone || !resident.tower || !resident.apartment) {
-      return res.status(400).json({ success: false, message: 'Datos de identidad del residente incompletos.' });
+    if (!resident || !resident.fullName || !resident.phone || !resident.tower || !resident.apartment || !resident.deliveryAddress) {
+      return res.status(400).json({ success: false, message: 'Datos de identidad del residente incompletos (incluye la dirección de entrega).' });
     }
 
     const business = await Storage.findById('businesses', businessId);
@@ -46,6 +46,7 @@ export const createOrder = async (req, res) => {
         phone: String(resident.phone).replace(/\D/g, ''),
         tower: resident.tower,
         apartment: resident.apartment,
+        deliveryAddress: resident.deliveryAddress,
         email: resident.email || null,
         authType: resident.authType || 'guest'
       },

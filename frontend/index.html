@@ -30,7 +30,7 @@
     <header class="bg-gradient-to-r from-orange-500 to-amber-500 text-white p-4 sticky top-0 z-30 shadow-md">
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-2">
-          <span class="text-2xl">🍊</span>
+          <img src="images/logo-naranjos.jpeg" alt="Vitrina Digital Los Naranjos" class="h-10 w-auto rounded-xl object-cover shadow-sm" />
           <div>
             <h1 class="text-lg font-extrabold tracking-tight leading-tight">Vitrina Digital</h1>
             <p class="text-xs text-orange-100 font-medium">Los Naranjos • Jamundí</p>
@@ -210,6 +210,7 @@
     <footer class="p-4 text-center text-xs text-slate-400 border-t border-slate-100">
       <p class="font-semibold text-slate-600">Vitrina Digital Los Naranjos — Jamundí, Valle</p>
       <p class="text-[11px] mt-1">Conectando vecinos de las Manzanas 1 a 6 • Renovación cada 30 días</p>
+      <button id="openTermsBtn" class="mt-2 text-[11px] font-bold text-orange-500 hover:text-orange-600 underline underline-offset-2 touch-btn">Términos y Condiciones · Política de Confidencialidad</button>
     </footer>
 
   </div>
@@ -454,6 +455,11 @@
             </div>
           </div>
 
+          <div class="flex items-start space-x-2 text-[11px] text-slate-600 pt-1">
+            <input type="checkbox" id="regTerms" class="mt-0.5 w-4 h-4 accent-orange-500 flex-shrink-0" />
+            <span>Acepto los <a class="underline text-orange-600 font-bold cursor-pointer touch-btn open-terms-link">Términos y Condiciones</a> y la <a class="underline text-orange-600 font-bold cursor-pointer touch-btn open-terms-link">Política de Confidencialidad</a> antes de activar mi vitrina.</span>
+          </div>
+
           <div class="flex space-x-2 pt-2">
             <button id="step2BackBtn" class="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">
               Atrás
@@ -686,6 +692,54 @@
   </div>
 
   <!-- ======================================================== -->
+  <!-- MODAL TÉRMINOS, CONDICIONES Y CONFIDENCIALIDAD -->
+  <!-- ======================================================== -->
+  <div id="termsModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl animate-slide-up flex flex-col max-h-[90vh]">
+      <div class="bg-slate-900 text-white p-4 flex items-center justify-between">
+        <div>
+          <span class="text-[10px] text-orange-400 font-extrabold uppercase tracking-wider">Documento</span>
+          <h3 class="text-base font-extrabold leading-tight">Términos y Condiciones</h3>
+        </div>
+        <button data-close="closeTermsModal" class="text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="overflow-y-auto flex-1 p-4 space-y-3 text-xs text-slate-700 leading-relaxed">
+        <div>
+          <h4 class="font-extrabold text-slate-900 mb-1">1. Sobre la plataforma</h4>
+          <p>Vitrina Digital Los Naranjos es una vitrina comunitaria que conecta a los vecinos y emprendedores del conjunto Los Naranjos (Jamundí, Valle). No interviene, garantiza ni responde por la calidad, precio, promesas o cumplimiento de los productos y servicios ofrecidos por cada emprendimiento; esa responsabilidad es exclusiva del vendedor.</p>
+        </div>
+        <div>
+          <h4 class="font-extrabold text-slate-900 mb-1">2. Uso de la vitrina</h4>
+          <p>Al publicar un emprendimiento, declaras que la información, imágenes y productos que registras son de tu propiedad o cuentas con autorización para usarlos, y que cumples con la normatividad aplicable a tu actividad. Las vitrinas se activan mediante una membresía mensual y se renuevan cada 30 días.</p>
+        </div>
+        <div>
+          <h4 class="font-extrabold text-slate-900 mb-1">3. Pedidos y pagos</h4>
+          <p>Los pedidos se coordinan directamente entre el comprador y el vendedor (por WhatsApp u otro medio). Los pagos de membresía se procesan de forma segura a través de Wompi; la plataforma no almacena datos de tarjetas.</p>
+        </div>
+        <div>
+          <h4 class="font-extrabold text-slate-900 mb-1">4. Protección de datos (política de confidencialidad)</h4>
+          <p>Tratamos tus datos de forma confidencial y con fines exclusivamente comunitarios: identificación, contacto, entrega de pedidos, facturación y soporte. Tus datos de contacto (teléfono y dirección de entrega) solo son visibles para el emprendimiento con el que realices un pedido. Nunca se venden ni se comparten con terceros con fines de mercadeo. Tienes derecho a consultar, corregir o eliminar tu información escribiéndonos por los canales de soporte del conjunto, conforme a la Ley 1581 de 2012.</p>
+        </div>
+        <div>
+          <h4 class="font-extrabold text-slate-900 mb-1">5. Fechas de nacimiento y verificación</h4>
+          <p>La fecha de nacimiento se solicita únicamente para confirmar que eres mayor de edad y validar que resides en la comunidad; no es publicada.</p>
+        </div>
+        <div>
+          <h4 class="font-extrabold text-slate-900 mb-1">6. Aceptación</h4>
+          <p>Al marcar la casilla de aceptación confirmas que leíste y aceptas estos términos. Si no estás de acuerdo, no continúes con el registro ni con el pedido.</p>
+        </div>
+      </div>
+      <div class="p-4 bg-white border-t border-slate-100 flex-shrink-0">
+        <button data-close="closeTermsModal" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-sm rounded-xl shadow touch-btn">
+          Entendido, acepto
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
   <!-- MODAL CHECKOUT DUAL: Identidad (Registrado / Invitado)  -->
   <!-- ======================================================== -->
   <div id="checkoutModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -764,8 +818,16 @@
             </div>
           </div>
           <div>
+            <label class="font-bold text-xs text-slate-700 block mb-1">Dirección de entrega *</label>
+            <input type="text" id="coGuestDelivery" placeholder="Ej: Torre A, apto 405 — entregar en portería 2" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+          </div>
+          <div>
             <label class="font-bold text-xs text-slate-700 block mb-1">Fecha de nacimiento</label>
             <input type="date" id="coGuestBirth" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+          </div>
+          <div class="flex items-start space-x-2 text-[11px] text-slate-600 pt-0.5">
+            <input type="checkbox" id="coGuestTerms" class="mt-0.5 w-4 h-4 accent-orange-500 flex-shrink-0" />
+            <span>Acepto los <a class="underline text-orange-600 font-bold cursor-pointer touch-btn open-terms-link">Términos y Condiciones</a> y la <a class="underline text-orange-600 font-bold cursor-pointer touch-btn open-terms-link">Política de Confidencialidad</a>.</span>
           </div>
         </div>
 

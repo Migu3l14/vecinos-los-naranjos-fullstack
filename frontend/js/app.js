@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   maybeShowEntryModal();
   renderMiManzana();
   bindMmDemoToggle();
+  bindMmAccordion();
 });
 
 // Muestra un aviso con botón Reintentar cuando falla la carga inicial
@@ -344,6 +345,23 @@ function mmUnreadCount() {
   return mmState.mode === 'resident' ? MM_MOCK.filter(i => !i.read).length : 0;
 }
 
+let mmOpen = false;
+
+function applyMmAccordion() {
+  const body = document.getElementById('mmAccordionBody');
+  const chev = document.getElementById('mmChevron');
+  const btn = document.getElementById('mmToggleBtn');
+  if (body) body.style.maxHeight = mmOpen ? `${body.scrollHeight}px` : '0px';
+  if (chev) chev.classList.toggle('rotate-180', mmOpen);
+  if (btn) btn.setAttribute('aria-expanded', String(mmOpen));
+}
+
+function bindMmAccordion() {
+  const btn = document.getElementById('mmToggleBtn');
+  if (!btn) return;
+  btn.addEventListener('click', () => { mmOpen = !mmOpen; applyMmAccordion(); });
+}
+
 function renderMiManzana() {
   const content = document.getElementById('miManzanaContent');
   if (!content) return;
@@ -364,6 +382,7 @@ function renderMiManzana() {
     content.innerHTML = mmGuestPanel();
     const btn = document.getElementById('mmLoginBtn');
     if (btn) btn.addEventListener('click', openEntryModal);
+    applyMmAccordion();
     return;
   }
 
@@ -376,6 +395,7 @@ function renderMiManzana() {
   ].join('');
 
   content.querySelectorAll('.mm-open').forEach(el => el.addEventListener('click', () => openMmDetail(el.dataset.id)));
+  applyMmAccordion();
 }
 
 function bindMmDemoToggle() {

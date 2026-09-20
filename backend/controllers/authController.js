@@ -304,7 +304,7 @@ export const getMe = async (req, res) => {
 };
 
 // ---------- INVITADO (Checkout rápido, sin contraseña) ----------
-// POST /api/auth/guest/checkout
+// POST /api/auth/guest/checkout — identidad rápida para el checkout (nombre, nacimiento)
 export const guestCheckout = async (req, res) => {
   try {
     const { fullName, phone, tower, apartment, birthDate, email, deliveryAddress } = req.body;
@@ -375,6 +375,78 @@ export const guestCheckout = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al procesar invitado', error: error.message });
+  }
+};
+
+// POST /api/auth/entry — ingreso rápido por QR/enlace: rol + celular + manzana + torre/apto + T&C
+export const entryGuest = async (req, res) => {
+  try {
+    const { phone, manzana, tower, apartment, role, acceptedTerms } = req.body;
+
+    if (!phone || !manzana || !tower || !apartment) {
+      return res.status(400).json({ success: false, message: 'Celular, manzana, torre y apartamento son obligatorios.' });
+    }
+    if (role !== 'buyer' && role !== 'seller') {
+      return res.status(400).json({ success: false, message: 'Debes indicar si ingresas como Comprador o como Vendedor.' });
+    }
+    if (acceptedTerms !== true) {
+      return res.status(400).json({ success: false, message: 'Debes aceptar los Términos y Condiciones para continuar.' });
+    }
+    if (!['1', '2', '3', '4', '5', '6'].includes(String(manzana))) {
+      return res.status(400).json({ success: false, message: 'Selecciona una manzana válida (1 a 6).' });
+    }
+
+    const vPhone = validatePhone(phone);
+    if (vPhone) return res.status(400).json({ success: false, message: vPhone });
+
+    const check = await validateApartment(tower, apartment);
+    if (!check.valid) {
+      return res.status(400).json({ success: false, message: check.error });
+    }
+
+    const cleanPhone = normalizePhone(phone);
+    let resident = await findResidentByPhone(cleanPhone);
+
+    if (resident) {
+      resident = await Storage.updateById('residents', resident.id, {
+        tower: check.normalized.tower,
+        towerId: check.normalized.towerId,
+        apartment: check.normalized.apartment,
+        manzana: String(manzana),
+        role,
+        acceptedTermsAt: resident.acceptedTermsAt || new Date().toISOString(),
+        lastEntryAt: new Date().toISOString()
+      });
+    } else {
+      resident = {
+        id: `res-${Date.now()}`,
+        phone: cleanPhone,
+        fullName: null,
+        email: null,
+        tower: check.normalized.tower,
+        towerId: check.normalized.towerId,
+        apartment: check.normalized.apartment,
+        manzana: String(manzana),
+        role,
+        birthDate: null,
+        authType: 'entry',
+        passwordHash: null,
+        createdAt: new Date().toISOString(),
+        acceptedTermsAt: new Date().toISOString(),
+        lastEntryAt: new Date().toISOString()
+      };
+      await Storage.insert('residents', resident);
+    }
+
+    const token = signToken({ role: 'resident', residentId: resident.id, phone: resident.phone });
+    setSessionCookie(res, token, 7 * 24 * 60 * 60 * 1000);
+    res.status(201).json({
+      success: true,
+      message: '¡Bienvenido a la Vitrina Digital Los Naranjos!',
+      data: { residentId: resident.id, token, resident: toPublicProfile(resident) }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al registrar el ingreso', error: error.message });
   }
 };
 
@@ -624,6 +696,8 @@ const toPublicProfile = (resident) => ({
   tower: resident.tower,
   towerId: resident.towerId,
   apartment: resident.apartment,
+  manzana: resident.manzana,
+  role: resident.role,
   deliveryAddress: resident.deliveryAddress,
   birthDate: resident.birthDate,
   authType: resident.authType

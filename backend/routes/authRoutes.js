@@ -8,6 +8,7 @@ import {
   getMe,
   logout,
   guestCheckout,
+  entryGuest,
   getTowers,
   validateApartmentEndpoint,
   requestOtp,
@@ -38,6 +39,9 @@ router.get('/me', authAny, getMe);
 
 // Invitado (checkout rápido)
 router.post('/guest/checkout', guestCheckout);
+
+// Ingreso por QR/enlace (rol + datos de la comunidad + T&C)
+router.post('/entry', entryGuest);
 
 // Utilidades del conjunto
 router.get('/towers', getTowers);

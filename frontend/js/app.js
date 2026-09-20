@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupImageUpload('prod2Img');
   setupModalScrollLock();
   await loadInitialData();
+  maybeShowEntryModal();
 });
 
 // Muestra un aviso con botón Reintentar cuando falla la carga inicial
@@ -224,6 +225,14 @@ function setupEventListeners() {
   const openTermsBtn = document.getElementById('openTermsBtn');
   if (openTermsBtn) openTermsBtn.addEventListener('click', openTermsModal);
   document.querySelectorAll('.open-terms-link').forEach(a => a.addEventListener('click', openTermsModal));
+
+  // Modal ingreso por QR/link: rol, datos y validación
+  document.querySelectorAll('.entry-role-btn').forEach(b => b.addEventListener('click', () => {
+    entrySelectedRole = b.dataset.role;
+    updateEntryRoleUI();
+  }));
+  const entrySubmitBtn = document.getElementById('entrySubmitBtn');
+  if (entrySubmitBtn) entrySubmitBtn.addEventListener('click', handleEntrySubmit);
 
   // Checkout Dual
   const coTabLogin = document.getElementById('checkoutTabLogin');
@@ -1117,6 +1126,104 @@ function openTermsModal() {
   document.getElementById('termsModal').classList.remove('hidden');
 }
 window.closeTermsModal = () => document.getElementById('termsModal').classList.add('hidden');
+
+// Modal ingreso por QR / enlace (rol + celular + manzana + torre/apto + T&C)
+let entrySelectedRole = 'buyer';
+
+function openEntryModal() {
+  const prof = API.getStoredResidentProfile();
+  document.getElementById('entryPhone').value = (prof && prof.phone) ? prof.phone.replace('57', '') : '';
+  document.getElementById('entryApt').value = (prof && prof.apartment) ? prof.apartment : '';
+  if (prof && prof.tower) {
+    const sel = document.getElementById('entryTower');
+    if ([...sel.options].some(o => o.value === prof.tower)) sel.value = prof.tower;
+  }
+  document.getElementById('entryError').classList.add('hidden');
+  entrySelectedRole = 'buyer';
+  updateEntryRoleUI();
+  document.getElementById('entryTerms').checked = false;
+  ensureTowers(['entryTower']);
+  document.getElementById('entryModal').classList.remove('hidden');
+}
+
+window.closeEntryModal = () => document.getElementById('entryModal').classList.add('hidden');
+
+function updateEntryRoleUI() {
+  const active = 'border-orange-500 bg-orange-50 text-orange-700';
+  const inactive = 'border-slate-200 bg-white text-slate-600';
+  document.querySelectorAll('.entry-role-btn').forEach(b => {
+    b.className = `entry-role-btn py-3 rounded-xl border font-extrabold text-xs touch-btn flex items-center justify-center space-x-1.5 transition ${b.dataset.role === entrySelectedRole ? active : inactive}`;
+  });
+}
+
+async function handleEntrySubmit() {
+  const errEl = document.getElementById('entryError');
+  errEl.classList.add('hidden');
+
+  const role = entrySelectedRole;
+  const phone = document.getElementById('entryPhone').value.trim();
+  const manzana = document.getElementById('entryMz').value;
+  const tower = document.getElementById('entryTower').value;
+  const apartment = document.getElementById('entryApt').value.trim();
+  const acceptedTerms = document.getElementById('entryTerms').checked;
+
+  const digits = phone.replace(/\D/g, '');
+  if (!role) {
+    errEl.textContent = 'Selecciona si ingresas como Comprador o como Vendedor.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (digits.length < 10) {
+    errEl.textContent = 'Ingresa un número de celular válido (10 dígitos).';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (!manzana) {
+    errEl.textContent = 'Selecciona tu manzana.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (!tower) {
+    errEl.textContent = 'Selecciona tu torre.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (!apartment) {
+    errEl.textContent = 'Ingresa tu apartamento.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (!acceptedTerms) {
+    errEl.textContent = 'Debes aceptar los Términos y Condiciones para continuar.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  const btn = document.getElementById('entrySubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span>Guardando...</span>';
+
+  const res = await API.communityEntry({ phone, manzana, tower, apartment, role, acceptedTerms });
+  if (!res.success) {
+    errEl.textContent = res.message || 'No pudimos guardar tus datos.';
+    errEl.classList.remove('hidden');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-arrow-right"></i><span>Ingresar a la Vitrina Virtual</span>';
+    return;
+  }
+
+  btn.disabled = false;
+  document.getElementById('entryModal').classList.add('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Solo se muestra cuando se llega con el enlace QR (?qr=1) y aún no hay sesión/perfil
+function maybeShowEntryModal() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('qr') === '1' && !API.getStoredResidentProfile()) {
+    setTimeout(() => openEntryModal(), 500);
+  }
+}
 
 // Login de residente dentro del checkout → autocompleta torre/apto
 async function handleCheckoutLogin() {

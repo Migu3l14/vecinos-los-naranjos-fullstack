@@ -521,6 +521,28 @@ export const API = {
     }
   },
 
+  // Ingreso rápido por QR/enlace: guarda rol y datos de la comunidad, emite sesión
+  async communityEntry(data) {
+    try {
+      const res = await fetch(`${API_BASE}/auth/entry`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        localStorage.setItem('residentProfile', JSON.stringify(json.data.resident));
+        if (json.data.token) {
+          memResidentToken = json.data.token;
+        }
+      }
+      return json;
+    } catch (error) {
+      console.error('Error en ingreso por QR:', error);
+      return { success: false, message: 'Error de conexión.' };
+    }
+  },
+
   logoutResident() {
     memResidentToken = '';
     localStorage.removeItem('residentToken');

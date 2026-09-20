@@ -1215,14 +1215,20 @@ async function handleEntrySubmit() {
   btn.disabled = false;
   document.getElementById('entryModal').classList.add('hidden');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (role === 'seller') {
+    resetRegisterWizard();
+    const phone = document.getElementById('entryPhone').value.trim().replace(/\D/g, '');
+    if (phone) document.getElementById('regPhone').value = phone;
+    document.getElementById('registerWizardModal').classList.remove('hidden');
+  }
 }
 
-// Solo se muestra cuando se llega con el enlace QR (?qr=1) y aún no hay sesión/perfil
+// Se muestra SIEMPRE en el primer ingreso (por enlace o QR), antes de ver la vitrina,
+// hasta que la persona elija rol y guarde celular, manzana, torre y apartamento.
 function maybeShowEntryModal() {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('qr') === '1' && !API.getStoredResidentProfile()) {
-    setTimeout(() => openEntryModal(), 500);
-  }
+  if (API.getStoredResidentProfile()) return;
+  setTimeout(() => openEntryModal(), 400);
 }
 
 // Login de residente dentro del checkout → autocompleta torre/apto

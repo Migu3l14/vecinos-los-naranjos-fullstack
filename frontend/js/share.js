@@ -92,7 +92,6 @@ async function renderShareContent() {
   const urlInput = $share('shareUrlInput');
   const img = $share('shareQrImg');
   const box = $share('shareQrBox');
-  const dlBtn = $share('downloadQrBtn');
 
   if (urlInput) urlInput.value = url;
 
@@ -113,10 +112,6 @@ async function renderShareContent() {
       img.src = dataUrl;
       img.removeAttribute('hidden');
       img.classList.remove('hidden');
-    }
-    if (dlBtn) {
-      dlBtn.href = dataUrl;
-      dlBtn.classList.remove('pointer-events-none', 'opacity-50');
     }
   } catch (err) {
     console.error('[SHARE] Error generando QR:', err);

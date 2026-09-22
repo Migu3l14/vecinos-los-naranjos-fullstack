@@ -4,10 +4,44 @@
 
 const $share = (id) => document.getElementById(id);
 
+// Caché del QR generado para reutilizarlo (descarga / WhatsApp) sin regenerarlo
+let currentQrDataUrl = '';
+
 // Genera la URL para compartir por WhatsApp con el enlace de la página
 function buildWhatsAppShareUrl() {
   const msg = `Descubre el comercio de Los Naranjos, Jamundí: ${window.location.href}`;
   return `https://wa.me/?text=${encodeURIComponent(msg)}`;
+}
+
+// Convierte un dataURL (PNG) en un objeto Blob descargable/compartible
+function dataUrlToBlob(dataUrl) {
+  const parts = dataUrl.split(',');
+  const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/png';
+  const bin = atob(parts[1]);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+
+// Comparte el QR por WhatsApp (imagen nativa) o cae al enlace directo
+async function handleShareWhatsApp() {
+  const url = window.location.href;
+  const text = `Vitrina Digital Los Naranjos, Jamundí\n${url}`;
+
+  if (currentQrDataUrl && navigator.share && navigator.canShare) {
+    try {
+      const file = new File([dataUrlToBlob(currentQrDataUrl)], 'vitrina-los-naranjos-qr.png', { type: 'image/png' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Vitrina Digital Los Naranjos', text });
+        return;
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      console.error('[SHARE] Error compartiendo QR:', err);
+    }
+  }
+
+  window.open(buildWhatsAppShareUrl(), '_blank');
 }
 
 // Copia el enlace al portapapeles (con fallback para navegadores sin Clipboard API)
@@ -59,10 +93,8 @@ async function renderShareContent() {
   const img = $share('shareQrImg');
   const box = $share('shareQrBox');
   const dlBtn = $share('downloadQrBtn');
-  const waBtn = $share('shareWhatsAppBtn');
 
   if (urlInput) urlInput.value = url;
-  if (waBtn) waBtn.href = buildWhatsAppShareUrl();
 
   if (typeof window.qrcode !== 'function') {
     if (box) {
@@ -76,12 +108,12 @@ async function renderShareContent() {
     qr.addData(url);
     qr.make();
     const dataUrl = qr.createDataURL(6, 12);
+    currentQrDataUrl = dataUrl;
     if (img) {
       img.src = dataUrl;
       img.removeAttribute('hidden');
       img.classList.remove('hidden');
     }
-    if (box) box.innerHTML = '';
     if (dlBtn) {
       dlBtn.href = dataUrl;
       dlBtn.classList.remove('pointer-events-none', 'opacity-50');
@@ -110,8 +142,9 @@ function closeShareModal() {
 }
 
 // Exportados para app.js (bindings centralizados en setupEventListeners)
-export { openShareModal, closeShareModal, copyShareLink };
+export { openShareModal, closeShareModal, copyShareLink, handleShareWhatsApp };
 
 window.openShareModal = openShareModal;
 window.closeShareModal = closeShareModal;
 window.copyShareLink = copyShareLink;
+window.handleShareWhatsApp = handleShareWhatsApp;

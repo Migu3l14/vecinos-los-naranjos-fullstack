@@ -221,6 +221,12 @@ function setupEventListeners() {
     if (typeof window.copyShareLink === 'function') window.copyShareLink();
   });
 
+  // Botón compartir por WhatsApp del modal Compartir (envía el QR como imagen)
+  const shareWaBtn = document.getElementById('shareWhatsAppBtn');
+  if (shareWaBtn) shareWaBtn.addEventListener('click', () => {
+    if (typeof window.handleShareWhatsApp === 'function') window.handleShareWhatsApp();
+  });
+
   // Botón Contactar por WhatsApp del modal Soporte
   const supportWaBtn = document.getElementById('supportWhatsappBtn');
   if (supportWaBtn) supportWaBtn.addEventListener('click', handleSupportWhatsApp);

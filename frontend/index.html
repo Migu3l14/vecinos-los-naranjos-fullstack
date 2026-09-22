@@ -70,6 +70,10 @@
               <i class="fa-solid fa-headset"></i>
             </button>
 
+            <button id="openShareModalBtn" title="Compartir la página y QR" aria-label="Compartir la página y QR" class="bg-white/30 hover:bg-white/40 text-black w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold transition active:scale-95">
+              <i class="fa-solid fa-share-nodes"></i>
+            </button>
+
             <a href="./admin.html" title="Panel de Administración" aria-label="Panel de Administración" class="bg-white/30 hover:bg-white/40 text-black w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold transition active:scale-95">
               <i class="fa-solid fa-lock"></i>
             </a>
@@ -1075,7 +1079,62 @@
     </div>
   </div>
 
+  <!-- ======================================================== -->
+  <!-- MODAL COMPARTIR: ENLACE + QR DE LA PÁGINA -->
+  <!-- ======================================================== -->
+  <div id="shareModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl animate-slide-up flex flex-col max-h-[90vh]">
+      <div class="bg-slate-900 text-white p-4 flex items-center justify-between">
+        <div>
+          <span class="text-[10px] text-orange-400 font-extrabold uppercase tracking-wider">Invita a tus vecinos</span>
+          <h3 class="text-base font-extrabold leading-tight">Comparte la Vitrina Digital</h3>
+        </div>
+        <button data-close="closeShareModal" class="text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="p-4 overflow-y-auto flex-1 space-y-3.5">
+        <div>
+          <label class="font-bold text-xs text-slate-700 block mb-1">Enlace de la página</label>
+          <div class="flex space-x-2">
+            <input type="text" id="shareUrlInput" readonly class="flex-1 min-w-0 p-2.5 border border-slate-200 rounded-xl text-[11px] bg-slate-50 text-slate-600 font-semibold focus:outline-none" />
+            <button id="copyShareLinkBtn" class="px-3 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs rounded-xl shadow touch-btn flex items-center space-x-1.5 shrink-0">
+              <i class="fa-solid fa-copy"></i>
+              <span>Copiar</span>
+            </button>
+          </div>
+          <p id="copyShareMsg" class="hidden text-emerald-600 text-[11px] font-bold mt-1">¡Enlace copiado!</p>
+          <p id="copyShareErr" class="hidden text-red-600 text-[11px] font-bold mt-1"></p>
+        </div>
+
+        <div class="text-center">
+          <label class="font-bold text-xs text-slate-700 block mb-1.5">Código QR de la página</label>
+          <div class="inline-flex flex-col items-center bg-white border border-slate-200 rounded-2xl p-3 shadow-sm">
+            <div id="shareQrBox" class="w-56 h-56 flex items-center justify-center">
+              <img id="shareQrImg" alt="Código QR de la Vitrina Digital" class="w-full h-full object-contain" />
+            </div>
+            <span class="text-[10px] font-bold text-slate-500 mt-1.5">📍 Los Naranjos · Jamundí</span>
+          </div>
+          <p class="text-[10px] text-slate-400 mt-1.5">Escanea con la cámara y la página se abre sola.</p>
+        </div>
+      </div>
+
+      <div class="p-4 bg-white border-t border-slate-100 flex-shrink-0 space-y-2">
+        <a id="downloadQrBtn" download="vitrina-los-naranjos-qr.png" href="#" class="pointer-events-none opacity-50 w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-sm rounded-xl flex items-center justify-center space-x-2 shadow touch-btn">
+          <i class="fa-solid fa-download text-orange-500"></i>
+          <span>Descargar QR (PNG)</span>
+        </a>
+        <a id="shareWhatsAppBtn" href="#" target="_blank" rel="noopener" class="w-full py-3 bg-[#25D366] hover:bg-[#1ebd59] text-white font-extrabold text-sm rounded-xl flex items-center justify-center space-x-2 shadow-lg touch-btn">
+          <i class="fa-brands fa-whatsapp text-lg"></i>
+          <span>Compartir por WhatsApp</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
   <!-- SCRIPT MODULAR DEL FRONTEND -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
   <script type="module" src="./js/app.js"></script>
 
 </body>

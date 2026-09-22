@@ -3,6 +3,7 @@ import { UI } from './ui.js';
 import { WhatsAppHelper } from './whatsapp.js';
 import { openWompiCheckout } from './wompi.js';
 import { setupImageUpload, resetImageUpload } from './upload.js';
+import { openShareModal } from './share.js';
 
 // Atajo para document.getElementById
 const $ = (id) => document.getElementById(id);
@@ -209,6 +210,16 @@ function setupEventListeners() {
   // Botón abrir modal Soporte
   const openSupportBtn = document.getElementById('openSupportModalBtn');
   if (openSupportBtn) openSupportBtn.addEventListener('click', openSupportModal);
+
+  // Botón abrir modal Compartir (enlace + QR)
+  const openShareBtn = document.getElementById('openShareModalBtn');
+  if (openShareBtn) openShareBtn.addEventListener('click', openShareModal);
+
+  // Botón copiar enlace del modal Compartir
+  const copyShareBtn = document.getElementById('copyShareLinkBtn');
+  if (copyShareBtn) copyShareBtn.addEventListener('click', () => {
+    if (typeof window.copyShareLink === 'function') window.copyShareLink();
+  });
 
   // Botón Contactar por WhatsApp del modal Soporte
   const supportWaBtn = document.getElementById('supportWhatsappBtn');

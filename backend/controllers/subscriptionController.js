@@ -3,6 +3,7 @@ import WompiConfig from '../config/wompi.js';
 import Storage from '../db/storage.js';
 import { hasRealWompi } from '../config/env.js';
 import { WhatsAppService } from '../services/whatsappService.js';
+import { businessOwnedBy } from './businessController.js';
 
 // Función interna para activar membresía por 30 días, emitir recibo y
 // ENVIAR AUTOMÁTICAMENTE POR WHATSAPP. (Usada por el fallback simulado
@@ -117,6 +118,22 @@ export const processSubscriptionPayment = async (req, res) => {
 export const handleWompiWebhook = async (req, res) => {
   try {
     const event = req.body;
+
+    // Verificación de integridad de la firma (mismo criterio que el webhook de
+    // /api/payments/wompi-webhook). Sin esto, cualquiera podría enviar un evento
+    // "APPROVED" falsificado y activar una membresía de pago sin pagar nada,
+    // porque los businessId son públicos en GET /api/businesses.
+    if (hasRealWompi && event?.signature?.checksum) {
+      const check = WompiService.verifyEventChecksum(event);
+      if (!check.valid) {
+        console.warn('[WOMPI WEBHOOK] Firma inválida, evento ignorado.');
+        return res.status(401).json({ received: false, reason: 'invalid_checksum' });
+      }
+    } else if (hasRealWompi) {
+      // En modo real se exige firma (para evitar suplantación). Sin firma -> rechazar.
+      return res.status(401).json({ received: false, reason: 'missing_signature' });
+    }
+
     if (event && event.event === 'transaction.updated' && event.data?.transaction) {
       const trx = event.data.transaction;
       const { reference, status, id, payment_method_type } = trx;
@@ -150,6 +167,9 @@ export const handleWompiWebhook = async (req, res) => {
 };
 
 // GET /api/subscriptions/receipt/:id
+// Solo lo puede consultar quien es dueño de la vitrina o un administrador.
+// Los recibos contienen nombre, teléfono y valores pagados, así que no se
+// sirven a cualquier visitante que adivine el identificador.
 export const getReceiptById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -158,6 +178,17 @@ export const getReceiptById = async (req, res) => {
     if (!receipt) {
       return res.status(404).json({ success: false, message: 'Recibo no encontrado.' });
     }
+
+    // El token ya fue validado por authAny; aquí se comprueba la propiedad.
+    if (req.user.role !== 'admin') {
+      const businesses = await Storage.read('businesses');
+      const business = businesses.find(b => b.id === receipt.businessId);
+      const isOwner = businessOwnedBy(business || {}, req.user.residentId, req.user.phone);
+      if (!isOwner) {
+        return res.status(403).json({ success: false, message: 'No autorizado para ver este recibo.' });
+      }
+    }
+
     res.json({ success: true, data: receipt });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al consultar recibo', error: error.message });

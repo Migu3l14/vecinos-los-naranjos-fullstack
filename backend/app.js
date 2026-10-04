@@ -78,12 +78,21 @@ const authLimiter = rateLimit({
   skip: (req) => ['GET', 'HEAD', 'OPTIONS'].includes(req.method),
   message: { success: false, message: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.' }
 });
+// Los webhooks de la pasarela llegan desde servidores de Wompi compartidos entre
+// muchos comercios. Limitarlos por IP haría que un reintento reciba 429 y el pago
+// se pierda sin confirmar, así que quedan fuera del límite. La defensa real de
+// estas rutas es la verificación de firma del checksum, no el rate limit.
+const WEBHOOK_PATHS = ['/api/subscriptions/webhook-wompi', '/api/payments/wompi-webhook'];
+const isWebhookRequest = (req) => {
+  const fullPath = String(req.originalUrl || '').split('?')[0].replace(/\/+$/, '');
+  return WEBHOOK_PATHS.includes(fullPath);
+};
 const writeLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 120,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => ['GET', 'HEAD', 'OPTIONS'].includes(req.method),
+  skip: (req) => ['GET', 'HEAD', 'OPTIONS'].includes(req.method) || isWebhookRequest(req),
   message: { success: false, message: 'Demasiadas peticiones. Intenta de nuevo más tarde.' }
 });
 
@@ -97,16 +106,16 @@ app.use('/uploads', express.static(process.env.UPLOADS_DIR || path.join(__dirnam
 app.use('/api/categories', categoryRoutes);
 app.use('/api/offers', writeLimiter, offerRoutes);
 app.use('/api/businesses', writeLimiter, businessRoutes);
-app.use('/api/subscriptions', subscriptionRoutes);
-app.use('/api/join-requests', joinRoutes);
-app.use('/api/payments', paymentRoutes);
+app.use('/api/subscriptions', writeLimiter, subscriptionRoutes);
+app.use('/api/join-requests', writeLimiter, joinRoutes);
+app.use('/api/payments', writeLimiter, paymentRoutes);
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/pqrs', writeLimiter, pqrsRoutes);
 app.use('/api/orders', writeLimiter, orderRoutes);
 app.use('/api/uploads', writeLimiter, uploadRoutes);
-app.use('/api/stats', statsRoutes);
-app.use('/api/support', supportRoutes);
-app.use('/api/announcements', announcementRoutes);
+app.use('/api/stats', writeLimiter, statsRoutes);
+app.use('/api/support', writeLimiter, supportRoutes);
+app.use('/api/announcements', writeLimiter, announcementRoutes);
 
 // Estado de la API (Healthcheck)
 app.get('/api/health', (req, res) => {

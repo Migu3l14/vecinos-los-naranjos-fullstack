@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import Storage from '../db/storage.js';
 import ENV from '../config/env.js';
 import { signToken } from '../middleware/auth.js';
@@ -462,7 +463,7 @@ const OTP_MAX_ATTEMPTS = 3;
 const OTP_TTL_MS = 5 * 60 * 1000;
 const OTP_RESEND_COOLDOWN_MS = 60 * 1000;
 
-const generateOtpCode = () => String(Math.floor(1000 + Math.random() * 9000));
+const generateOtpCode = () => String(crypto.randomInt(1000, 10000));
 
 const findOtpRecordsForPhone = async (phone) => {
   const clean = normalizePhone(phone);
@@ -677,7 +678,7 @@ export const residentLookup = async (req, res) => {
       found: true,
       data: {
         phone: cleanPhone,
-        ...toPublicProfile(resident),
+        ...toRecognitionProfile(resident),
         hasBusiness: await hasBusinessForPhone(cleanPhone)
       }
     });
@@ -768,4 +769,17 @@ const toPublicProfile = (resident) => ({
   deliveryAddress: resident.deliveryAddress,
   birthDate: resident.birthDate,
   authType: resident.authType
+});
+
+// Perfil mínimo para el reconocimiento por celular (POST /api/auth/resident-lookup).
+// Este endpoint es público: solo recibe un número, sin contraseña ni OTP, así que
+// NO debe devolver correo, dirección de entrega ni fecha de nacimiento. Se limita
+// a lo que el formulario de ingreso necesita para autocompletarse. Los datos
+// completos se entregan en /api/auth/me, que sí exige sesión.
+const toRecognitionProfile = (resident) => ({
+  fullName: resident.fullName,
+  manzana: resident.manzana,
+  tower: resident.tower,
+  apartment: resident.apartment,
+  role: resident.role
 });

@@ -97,16 +97,16 @@ app.use('/uploads', express.static(process.env.UPLOADS_DIR || path.join(__dirnam
 app.use('/api/categories', categoryRoutes);
 app.use('/api/offers', writeLimiter, offerRoutes);
 app.use('/api/businesses', writeLimiter, businessRoutes);
-app.use('/api/subscriptions', subscriptionRoutes);
-app.use('/api/join-requests', joinRoutes);
-app.use('/api/payments', paymentRoutes);
+app.use('/api/subscriptions', writeLimiter, subscriptionRoutes);
+app.use('/api/join-requests', writeLimiter, joinRoutes);
+app.use('/api/payments', writeLimiter, paymentRoutes);
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/pqrs', writeLimiter, pqrsRoutes);
 app.use('/api/orders', writeLimiter, orderRoutes);
 app.use('/api/uploads', writeLimiter, uploadRoutes);
-app.use('/api/stats', statsRoutes);
-app.use('/api/support', supportRoutes);
-app.use('/api/announcements', announcementRoutes);
+app.use('/api/stats', writeLimiter, statsRoutes);
+app.use('/api/support', writeLimiter, supportRoutes);
+app.use('/api/announcements', writeLimiter, announcementRoutes);
 
 // Estado de la API (Healthcheck)
 app.get('/api/health', (req, res) => {

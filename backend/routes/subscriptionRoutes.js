@@ -4,6 +4,7 @@ import {
   getReceiptById,
   handleWompiWebhook
 } from '../controllers/subscriptionController.js';
+import { authAny } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -14,6 +15,7 @@ router.post('/checkout', processSubscriptionPayment);
 router.post('/webhook-wompi', handleWompiWebhook);
 
 // GET /api/subscriptions/receipt/:id (Consultar Recibo Digital)
-router.get('/receipt/:id', getReceiptById);
+// Requiere sesión: solo el dueño de la vitrina o un administrador.
+router.get('/receipt/:id', authAny, getReceiptById);
 
 export default router;

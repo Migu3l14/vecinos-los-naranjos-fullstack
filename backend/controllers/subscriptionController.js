@@ -3,6 +3,7 @@ import WompiConfig from '../config/wompi.js';
 import Storage from '../db/storage.js';
 import { hasRealWompi } from '../config/env.js';
 import { WhatsAppService } from '../services/whatsappService.js';
+import { businessOwnedBy } from './businessController.js';
 
 // Función interna para activar membresía por 30 días, emitir recibo y
 // ENVIAR AUTOMÁTICAMENTE POR WHATSAPP. (Usada por el fallback simulado
@@ -150,6 +151,9 @@ export const handleWompiWebhook = async (req, res) => {
 };
 
 // GET /api/subscriptions/receipt/:id
+// Solo lo puede consultar quien es dueño de la vitrina o un administrador.
+// Los recibos contienen nombre, teléfono y valores pagados, así que no se
+// sirven a cualquier visitante que adivine el identificador.
 export const getReceiptById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -158,6 +162,17 @@ export const getReceiptById = async (req, res) => {
     if (!receipt) {
       return res.status(404).json({ success: false, message: 'Recibo no encontrado.' });
     }
+
+    // El token ya fue validado por authAny; aquí se comprueba la propiedad.
+    if (req.user.role !== 'admin') {
+      const businesses = await Storage.read('businesses');
+      const business = businesses.find(b => b.id === receipt.businessId);
+      const isOwner = businessOwnedBy(business || {}, req.user.residentId, req.user.phone);
+      if (!isOwner) {
+        return res.status(403).json({ success: false, message: 'No autorizado para ver este recibo.' });
+      }
+    }
+
     res.json({ success: true, data: receipt });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al consultar recibo', error: error.message });

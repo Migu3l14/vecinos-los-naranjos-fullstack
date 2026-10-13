@@ -47,8 +47,14 @@ npm run cypress:open
 ```
 
 ## Estado actual (dónde quedamos)
-- **HEAD / GitHub `main`: `ab19f97`** — "test(e2e): Cypress + contrato OpenAPI (pedidos) y demo
-  aislado de la Sesion 9 (E2E/API Contracts)". Copia local **sincronizada** con GitHub.
+- **HEAD / GitHub `main`: `f1580ff`** — "feat(auth): ingreso para guarda de seguridad (rol guard)".
+  Copia local **sincronizada** con GitHub. (Antes: `ab19f97`, Sesión 9.)
+- **Guarda de seguridad (rol `guard`), ya en `main`** — commit `f1580ff`: tercer rol "Guarda" en el
+  modal de ingreso (`frontend/index.html`); al guarda solo se le pide **celular + manzana** (sin
+  torre/apto). `entryGuest` (`backend/controllers/authController.js`) acepta `role: 'guard'` y omite
+  `validateApartment`. Ve **solo la vitrina pública** (no accede a "Mi Manzana" privada). Panel admin
+  (`frontend/js/admin.js`): contador y etiqueta "Guarda". Pruebas: `cypress/e2e/api-entry-guard.cy.js`
+  (+ `cy.task('removeResident')`). Verificado: **6/6 tests pasan**.
 - **Trabajo de Calidad/Pruebas (clase "Sesión 9 – Calidad del Software, Parte I"), ya en `main`:**
   - **Pruebas reales** — commit `ab19f97`: Cypress `devDependency` + `cypress.config.js`
     (`baseUrl` local), `cypress/e2e/api-orders.cy.js` (crea pedido y valida el contrato, con

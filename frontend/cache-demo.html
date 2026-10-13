@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo de Caché — Desempeño en APIs REST | Los Naranjos</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .mono { font-family: 'Space Mono', monospace; }
+    .badge-hit { background:#dcfce7; color:#047857; }
+    .badge-miss { background:#ffe4e6; color:#be123c; }
+    .log-row { animation: aparecer .18s ease-out; }
+    @keyframes aparecer {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen">
+  <div class="w-full max-w-5xl mx-auto px-4 py-8">
+
+    <!-- ENCABEZADO -->
+    <header class="mb-6">
+      <a href="/" class="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700">
+        <i class="fa-solid fa-arrow-left"></i> Volver a la Vitrina
+      </a>
+      <div class="flex items-center gap-3 mt-4">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 text-white grid place-items-center shadow-md shrink-0">
+          <i class="fa-solid fa-bolt text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-2xl font-extrabold leading-tight">Demo: midiendo el impacto real del caché</h1>
+          <p class="text-xs sm:text-sm text-slate-500">Desempeño en APIs REST · Caché — Sesión 8</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- INTRODUCCIÓN -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-5">
+      <p class="text-sm text-slate-600 leading-relaxed">
+        Esta demo guarda en un <span class="font-semibold">caché en memoria</span> (un <code class="mono bg-slate-100 px-1 rounded">Map</code> del navegador)
+        el resultado de una petición costosa. La <span class="font-semibold">primera vez</span> se consulta el origen
+        (<span class="badge-miss px-2 py-0.5 rounded font-bold text-xs">MISS</span>) y las siguientes se sirven desde el caché
+        (<span class="badge-hit px-2 py-0.5 rounded font-bold text-xs">HIT</span>) hasta que expire el TTL o se invalide.
+        La petición al servidor está <span class="font-semibold">simulada</span> para reproducir el ejemplo de la clase.
+      </p>
+    </section>
+
+    <!-- CONTROLES -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-5">
+      <h2 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-sliders text-orange-500"></i> Panel de control
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <label class="block">
+          <span class="text-xs font-semibold text-slate-500">Endpoint</span>
+          <select id="endpoint" class="mt-1 w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+            <option value="/api/productos">/api/productos (lento)</span></option>
+            <option value="/api/vitrinas">/api/vitrinas</option>
+            <option value="/api/comunicados">/api/comunicados</option>
+          </select>
+        </label>
+        <label class="block">
+          <span class="text-xs font-semibold text-slate-500">TTL (segundos)</span>
+          <input id="ttl" type="number" min="1" step="1" value="30"
+            class="mt-1 w-full border border-slate-300 rounded-xl px-3 py-2 text-sm mono focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </label>
+        <div class="flex items-end gap-2 sm:col-span-2">
+          <button id="btnRequest" class="flex-1 inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow-sm transition">
+            <i class="fa-solid fa-paper-plane"></i> Hacer petición
+          </button>
+          <button id="btnRequest3" class="flex-1 border border-orange-500 text-orange-600 hover:bg-orange-50 font-semibold text-sm px-4 py-2.5 rounded-xl transition">
+            Hacer 3 peticiones
+          </button>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-slate-100">
+        <button id="btnInvalidate" class="inline-flex items-center gap-2 text-sm font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 px-3 py-2 rounded-xl transition">
+          <i class="fa-solid fa-broom"></i> Invalidar caché
+        </button>
+        <button id="btnClear" class="inline-flex items-center gap-2 text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 px-3 py-2 rounded-xl transition">
+          <i class="fa-solid fa-rotate-left"></i> Limpiar registro
+        </button>
+        <span class="text-xs text-slate-400 ml-auto">Entradas en caché: <span id="cacheSize" class="mono font-bold text-slate-600">0</span></span>
+      </div>
+    </section>
+
+    <!-- ESTADÍSTICAS -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+        <p class="text-xs font-semibold text-slate-500">Tiempo medio MISS</p>
+        <p id="statMiss" class="mt-1 text-2xl font-extrabold text-rose-600 mono">—</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">sin caché</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+        <p class="text-xs font-semibold text-slate-500">Tiempo medio HIT</p>
+        <p id="statHit" class="mt-1 text-2xl font-extrabold text-emerald-600 mono">—</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">con caché</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+        <p class="text-xs font-semibold text-slate-500">Mejora</p>
+        <p id="statImprove" class="mt-1 text-2xl font-extrabold text-orange-500 mono">—</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">más rápido</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+        <p class="text-xs font-semibold text-slate-500">Peticiones</p>
+        <p id="statCounts" class="mt-1 text-2xl font-extrabold text-slate-700 mono">0 HIT / 0 MISS</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">HIT / MISS</p>
+      </div>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+      <!-- CÓDIGO DEL SLIDE -->
+      <section class="bg-slate-900 rounded-2xl shadow-sm p-5 overflow-hidden">
+        <h2 class="text-xs font-bold text-slate-300 mb-3 flex items-center gap-2">
+          <i class="fa-solid fa-code text-amber-400"></i> peticionConCache() — patrón Cache-Aside
+        </p></h2>
+        <pre class="mono text-[12px] leading-relaxed text-slate-200 overflow-x-auto"><code>async function peticionConCache(endpoint, ttl) {
+  const entrada = cache.get(endpoint);
+  if (entrada &amp;&amp; entrada.expiresAt > ahora) {
+    return { ...entrada.value, status: 'HIT' };
+  }
+  const resultado = await peticionReal(endpoint);
+  cache.set(endpoint, {
+    value: resultado,
+    expiresAt: ahora + ttl * 1000,
+  });
+  return { ...resultado, status: 'MISS' };
+}</code></pre>
+    </section>
+
+    <!-- REGISTRO -->
+    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+      <h2 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-terminal text-orange-500"></i> Registro de peticiones
+      </h2>
+      <div id="log" class="flex flex-col gap-2 max-h-80 overflow-y-auto">
+        <p id="logEmpty" class="text-sm text-slate-400 italic">Aún no hay peticiones. Pulsa "Hacer petición".</p>
+      </div>
+    </section>
+
+    <!-- ACTIVIDAD PRÁCTICA -->
+    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mt-5">
+      <h2 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-flask text-orange-500"></i> Actividad práctica
+      </h2>
+      <ol class="text-sm text-slate-600 space-y-2 list-decimal list-inside">
+        <li>Haz 3 peticiones al mismo endpoint: observa el primer <b>MISS</b> y los siguientes <b>HIT</b>.</li>
+        <li>Compara los tiempos promedio en las tarjetas: <b>MISS vs. HIT</b>.</li>
+        <li>Cambia el <b>TTL a 2 segundos</b>, espera y vuelve a pedir: ¿cuándo vuelve a ser MISS?</li>
+        <li>Usa <b>"Invalidar caché"</b> y observa que la próxima petición es MISS otra vez.</li>
+        <li>Prueba los <b>tres endpoints</b> y compara cómo cambia el impacto según la latencia original.</li>
+        <li>Discute con tu compañero: ¿qué TTL usarían para un <b>catálogo</b>? ¿Y para un <b>carrito de compras</b>?</li>
+      </ol>
+    </section>
+
+  </div>
+
+  <script src="./js/cache-demo.js" defer></script>
+</body>
+</html>

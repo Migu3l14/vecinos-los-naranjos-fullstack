@@ -384,16 +384,22 @@ export const guestCheckout = async (req, res) => {
   }
 };
 
-// POST /api/auth/entry — ingreso rápido por QR/enlace: rol + celular + manzana + torre/apto + T&C
+// POST /api/auth/entry — ingreso rápido por QR/enlace: rol + celular + manzana (+ torre/apto para
+// residentes) + T&C. El rol 'guard' (guarda de seguridad externo) solo requiere celular y manzana.
 export const entryGuest = async (req, res) => {
   try {
     const { phone, manzana, tower, apartment, role, acceptedTerms } = req.body;
 
-    if (!phone || !manzana || !tower || !apartment) {
-      return res.status(400).json({ success: false, message: 'Celular, manzana, torre y apartamento son obligatorios.' });
+    const isGuard = role === 'guard';
+
+    if (role !== 'buyer' && role !== 'seller' && role !== 'guard') {
+      return res.status(400).json({ success: false, message: 'Debes indicar si ingresas como Comprador, Vendedor o Guarda de seguridad.' });
     }
-    if (role !== 'buyer' && role !== 'seller') {
-      return res.status(400).json({ success: false, message: 'Debes indicar si ingresas como Comprador o como Vendedor.' });
+    if (!phone || !manzana) {
+      return res.status(400).json({ success: false, message: 'Celular y manzana son obligatorios.' });
+    }
+    if (!isGuard && (!tower || !apartment)) {
+      return res.status(400).json({ success: false, message: 'Celular, manzana, torre y apartamento son obligatorios.' });
     }
     if (acceptedTerms !== true) {
       return res.status(400).json({ success: false, message: 'Debes aceptar los Términos y Condiciones para continuar.' });
@@ -405,9 +411,15 @@ export const entryGuest = async (req, res) => {
     const vPhone = validatePhone(phone);
     if (vPhone) return res.status(400).json({ success: false, message: vPhone });
 
-    const check = await validateApartment(tower, apartment, manzana);
-    if (!check.valid) {
-      return res.status(400).json({ success: false, message: check.error });
+    // El guarda de seguridad no pertenece a una torre/apartamento: solo se le
+    // asigna una manzana. Los residentes (comprador/vendedor) sí validan torre + apto.
+    let normalized = { tower: null, towerId: null, apartment: null };
+    if (!isGuard) {
+      const check = await validateApartment(tower, apartment, manzana);
+      if (!check.valid) {
+        return res.status(400).json({ success: false, message: check.error });
+      }
+      normalized = check.normalized;
     }
 
     const cleanPhone = normalizePhone(phone);
@@ -415,9 +427,9 @@ export const entryGuest = async (req, res) => {
 
     if (resident) {
       resident = await Storage.updateById('residents', resident.id, {
-        tower: check.normalized.tower,
-        towerId: check.normalized.towerId,
-        apartment: check.normalized.apartment,
+        tower: normalized.tower,
+        towerId: normalized.towerId,
+        apartment: normalized.apartment,
         manzana: String(manzana),
         role,
         acceptedTermsAt: resident.acceptedTermsAt || new Date().toISOString(),
@@ -429,9 +441,9 @@ export const entryGuest = async (req, res) => {
         phone: cleanPhone,
         fullName: null,
         email: null,
-        tower: check.normalized.tower,
-        towerId: check.normalized.towerId,
-        apartment: check.normalized.apartment,
+        tower: normalized.tower,
+        towerId: normalized.towerId,
+        apartment: normalized.apartment,
         manzana: String(manzana),
         role,
         birthDate: null,
@@ -448,7 +460,7 @@ export const entryGuest = async (req, res) => {
     setSessionCookie(res, token, RESIDENT_SESSION_TTL_MS);
     res.status(201).json({
       success: true,
-      message: '¡Bienvenido a la Vitrina Digital Los Naranjos!',
+      message: isGuard ? '¡Bienvenido, guarda de seguridad!' : '¡Bienvenido a la Vitrina Digital Los Naranjos!',
       data: { residentId: resident.id, token, resident: toPublicProfile(resident) }
     });
   } catch (error) {

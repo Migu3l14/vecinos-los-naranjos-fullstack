@@ -345,9 +345,18 @@ const MM_MOCK = [
 ];
 
 let mmState = {
-  mode: API.isResidentLoggedIn() ? 'resident' : 'guest',
+  mode: (API.getStoredResidentProfile() && API.getStoredResidentProfile().role === 'guard')
+    ? 'guest'
+    : (API.isResidentLoggedIn() ? 'resident' : 'guest'),
   manzana: (API.getStoredResidentProfile() && API.getStoredResidentProfile().manzana) || '3'
 };
+
+// El guarda de seguridad (rol 'guard') ve solo la vitrina pública: no entra al
+// contenido privado de "Mi Manzana" aunque tenga sesión activa.
+function isGuardProfile() {
+  const prof = API.getStoredResidentProfile();
+  return !!(prof && prof.role === 'guard');
+}
 
 function mmUnreadCount() {
   return mmState.mode === 'resident' ? MM_MOCK.filter(i => !i.read).length : 0;
@@ -373,6 +382,8 @@ function bindMmAccordion() {
 function renderMiManzana() {
   const content = document.getElementById('miManzanaContent');
   if (!content) return;
+
+  if (isGuardProfile()) mmState.mode = 'guest';
 
   const badge = document.getElementById('mmUnreadBadge');
   const unread = mmUnreadCount();
@@ -1428,8 +1439,13 @@ function updateEntryRoleUI() {
   const active = 'border-orange-500 bg-orange-50 text-orange-700';
   const inactive = 'border-slate-200 bg-white text-slate-600';
   document.querySelectorAll('.entry-role-btn').forEach(b => {
-    b.className = `entry-role-btn py-3 rounded-xl border font-extrabold text-xs touch-btn flex items-center justify-center space-x-1.5 transition ${b.dataset.role === entrySelectedRole ? active : inactive}`;
+    b.className = `entry-role-btn py-3 rounded-xl border font-extrabold text-[11px] touch-btn flex flex-col items-center justify-center space-y-1 transition ${b.dataset.role === entrySelectedRole ? active : inactive}`;
   });
+  const isGuard = entrySelectedRole === 'guard';
+  const locationFields = document.getElementById('entryLocationFields');
+  if (locationFields) locationFields.classList.toggle('hidden', isGuard);
+  const guardNote = document.getElementById('entryGuardNote');
+  if (guardNote) guardNote.classList.toggle('hidden', !isGuard);
 }
 
 // Paso 1: con el celular decidimos si reconocemos a la persona o pedimos el formulario.
@@ -1452,7 +1468,7 @@ async function handleEntryLookup() {
   const r = await API.residentLookup(digits);
   if (r.success && r.found && r.data) {
     entryKnown = r.data;
-    entrySelectedRole = (r.data.role === 'seller') ? 'seller' : 'buyer';
+    entrySelectedRole = ['seller', 'guard'].includes(r.data.role) ? r.data.role : 'buyer';
     updateEntryRoleUI();
     if (r.data.manzana) document.getElementById('entryMz').value = String(r.data.manzana);
     if (r.data.apartment) document.getElementById('entryApt').value = r.data.apartment;
@@ -1462,9 +1478,11 @@ async function handleEntryLookup() {
       const sel = document.getElementById('entryTower');
       if ([...sel.options].some(o => o.value === r.data.tower)) sel.value = r.data.tower;
     }
-    const rol = r.data.role === 'seller' ? 'Emprendedor' : 'Comprador';
-    document.getElementById('entryRecognitionData').textContent =
-      `Manzana ${r.data.manzana || '—'} · ${r.data.tower || '—'} · Apto ${r.data.apartment || '—'} · ${rol}`;
+    const rol = r.data.role === 'seller' ? 'Emprendedor' : (r.data.role === 'guard' ? 'Guarda de seguridad' : 'Comprador');
+    const reconocido = r.data.role === 'guard'
+      ? `Manzana ${r.data.manzana || '—'} · ${rol}`
+      : `Manzana ${r.data.manzana || '—'} · ${r.data.tower || '—'} · Apto ${r.data.apartment || '—'} · ${rol}`;
+    document.getElementById('entryRecognitionData').textContent = reconocido;
     document.getElementById('entryTerms').checked = false;
     setEntryPhase('known');
   } else {
@@ -1493,7 +1511,7 @@ async function handleEntrySubmit() {
 
   let role, manzana, tower, apartment;
   if (entryPhase === 'known' && entryKnown) {
-    role = entryKnown.role === 'seller' ? 'seller' : 'buyer';
+    role = ['seller', 'guard'].includes(entryKnown.role) ? entryKnown.role : 'buyer';
     manzana = entryKnown.manzana;
     tower = entryKnown.tower;
     apartment = entryKnown.apartment;
@@ -1503,10 +1521,11 @@ async function handleEntrySubmit() {
     tower = document.getElementById('entryTower').value;
     apartment = document.getElementById('entryApt').value.trim();
   }
+  const isGuard = role === 'guard';
 
   const digits = phone.replace(/\D/g, '');
   if (!role) {
-    errEl.textContent = 'Selecciona si ingresas como Comprador o como Vendedor.';
+    errEl.textContent = 'Selecciona si ingresas como Comprador, Vendedor o Guarda.';
     errEl.classList.remove('hidden');
     return;
   }
@@ -1520,12 +1539,12 @@ async function handleEntrySubmit() {
     errEl.classList.remove('hidden');
     return;
   }
-  if (!tower) {
+  if (!tower && !isGuard) {
     errEl.textContent = 'Selecciona tu torre.';
     errEl.classList.remove('hidden');
     return;
   }
-  if (!apartment) {
+  if (!apartment && !isGuard) {
     errEl.textContent = 'Ingresa tu apartamento.';
     errEl.classList.remove('hidden');
     return;
@@ -1553,8 +1572,9 @@ async function handleEntrySubmit() {
   document.getElementById('entryModal').classList.add('hidden');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  mmState.mode = 'resident';
   mmState.manzana = String(manzana || '3');
+  // El guarda de seguridad no accede al contenido privado de "Mi Manzana".
+  mmState.mode = role === 'guard' ? 'guest' : 'resident';
   renderMiManzana();
 
   if (role === 'seller') {

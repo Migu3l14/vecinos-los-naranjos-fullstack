@@ -162,10 +162,11 @@ function renderResidents() {
     });
 
   const buyers = list.filter(r => r.role === 'buyer').length;
+  const guards = list.filter(r => r.role === 'guard').length;
   const sellers = list.filter(r => r.role === 'seller').length;
 
   container.innerHTML = `
-    <div class="grid grid-cols-3 gap-2">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
       <div class="bg-orange-50 border border-orange-200 rounded-xl p-3 text-center">
         <p class="text-xl font-extrabold text-orange-600">${residentsCache.length}</p>
         <p class="text-[10px] font-bold text-slate-500 uppercase">Total</p>
@@ -178,10 +179,14 @@ function renderResidents() {
         <p class="text-xl font-extrabold text-emerald-600">${sellers}</p>
         <p class="text-[10px] font-bold text-slate-500 uppercase">Emprendedores</p>
       </div>
+      <div class="bg-violet-50 border border-violet-200 rounded-2xl p-3 text-center">
+        <p class="text-xl font-extrabold text-violet-600">${guards}</p>
+        <p class="text-[10px] font-bold text-slate-500 uppercase">Guardas</p>
+      </div>
     </div>
     ${list.length === 0 ? '<p class="text-xs text-slate-400">Sin residentes que mostrar.</p>' : list.map(r => {
-      const rol = r.role === 'seller' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700';
-      const rolTxt = r.role === 'seller' ? 'Emprendedor' : 'Comprador';
+      const rol = r.role === 'seller' ? 'bg-emerald-100 text-emerald-700' : (r.role === 'guard' ? 'bg-violet-100 text-violet-700' : 'bg-blue-100 text-blue-700');
+      const rolTxt = r.role === 'seller' ? 'Emprendedor' : (r.role === 'guard' ? 'Guarda' : 'Comprador');
       const fecha = r.lastEntryAt || r.createdAt || '';
       return `<div class="border border-slate-200 rounded-2xl p-3.5 bg-white">
         <div class="flex items-center justify-between gap-2">

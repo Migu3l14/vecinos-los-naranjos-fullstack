@@ -17,6 +17,7 @@ import {
   adminResidents
 } from '../controllers/authController.js';
 import { authResident, authAny, authAdmin } from '../middleware/auth.js';
+import { cachePublic } from '../middleware/cache.js';
 
 const router = express.Router();
 
@@ -51,8 +52,8 @@ router.post('/resident-lookup', residentLookup);
 // Registro de personas que han ingresado (solo admin)
 router.get('/admin/residents', authAdmin, adminResidents);
 
-// Utilidades del conjunto
-router.get('/towers', getTowers);
+// Utilidades del conjunto (config estable: caché larga en navegador y CDN)
+router.get('/towers', cachePublic({ maxAge: 3600, sMaxAge: 86400, staleWhileRevalidate: 86400 }), getTowers);
 router.post('/validate-apartment', validateApartmentEndpoint);
 
 export default router;

@@ -8,11 +8,12 @@ import {
   getRecipientsCount
 } from '../controllers/announcementController.js';
 import { authAdmin } from '../middleware/auth.js';
+import { cachePublic } from '../middleware/cache.js';
 
 const router = express.Router();
 
-// Público: comunicados oficiales publicados, segmentados por manzana
-router.get('/', getPublicAnnouncements);
+// Público: comunicados oficiales publicados, segmentados por manzana (TTL corto)
+router.get('/', cachePublic({ maxAge: 30, sMaxAge: 120, staleWhileRevalidate: 120 }), getPublicAnnouncements);
 
 // Admin por manzana
 router.get('/recipients/count', authAdmin, getRecipientsCount);

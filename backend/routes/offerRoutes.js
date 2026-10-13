@@ -8,11 +8,12 @@ import {
   deleteOffer
 } from '../controllers/offerController.js';
 import { authResident } from '../middleware/auth.js';
+import { cachePublic } from '../middleware/cache.js';
 
 const router = express.Router();
 
-// GET /api/offers (público) — ofertas activas del día de hoy
-router.get('/', getOffers);
+// GET /api/offers (público) — ofertas activas del día: TTL corto
+router.get('/', cachePublic({ maxAge: 30, sMaxAge: 120, staleWhileRevalidate: 120 }), getOffers);
 
 // GET /api/offers/mine (protegido) — ofertas del vendedor autenticado
 router.get('/mine', authResident, getMyOffers);

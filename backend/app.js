@@ -21,6 +21,7 @@ import statsRoutes from './routes/statsRoutes.js';
 import supportRoutes from './routes/supportRoutes.js';
 import announcementRoutes from './routes/announcementRoutes.js';
 import { runSeeds } from './db/seed.js';
+import { noStore } from './middleware/cache.js';
 
 // Guarda de seguridad: en producción no se puede arrancar con el secreto JWT por defecto.
 if (ENV.NODE_ENV === 'production' && isUsingDefaultJwtSecret) {
@@ -101,6 +102,10 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Imágenes subidas por los usuarios (portadas, productos y ofertas)
 app.use('/uploads', express.static(process.env.UPLOADS_DIR || path.join(__dirname, 'uploads')));
+
+// Por defecto, ninguna respuesta de la API se cachea (puede contener datos de
+// sesión). Las lecturas públicas sobreescriben esto con cachePublic() en su ruta.
+app.use('/api', noStore());
 
 // Rutas de la API REST
 app.use('/api/categories', categoryRoutes);

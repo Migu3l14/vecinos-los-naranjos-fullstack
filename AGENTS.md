@@ -19,10 +19,13 @@ PQRS, valoraciones, comunicados oficiales por manzana ("Mi Manzana") y panel de 
 ## Stack
 - **Backend**: Node.js (ESM) + Express 4. Entry serverless: `api/index.js` (reusa `backend/app.js`).
 - **Frontend**: HTML + JS vanilla + Tailwind (CDN). Archivos: `frontend/index.html`,
-  `admin.html`, `mi-vitrina.html`, `recibo.html`, `cache-demo.html` (demo de caché, aislada);
-  lógica en `frontend/js/`.
+  `admin.html`, `mi-vitrina.html`, `recibo.html`, `cache-demo.html` y `testing-demo.html`
+  (demos aisladas de las sesiones 8 y 9); lógica en `frontend/js/`.
 - **Caché HTTP**: `backend/middleware/cache.js` (`cachePublic`, `noStore`) aplicado en rutas GET
   públicas. Desactivado por defecto en `/api` (no-store) y activado explícitamente donde aplica.
+- **Pruebas (Cypress)**: `cypress.config.js` + `cypress/e2e/` (API de pedidos + smoke de páginas).
+  Contrato de API en `openapi.yaml`. Cypress es `devDependency`; en Vercel se evita descargar su
+  navegador con `CYPRESS_INSTALL_BINARY=0` (ver `vercel.json`). Los tests corren **solo en local**.
 - **Persistencia**: `@upstash/redis` en producción; JSON local en `backend/data/*.json` en dev
   (capa en `backend/db/storage.js`). Subidas: `@vercel/blob` (prod) o `backend/uploads/` (dev).
 - **Auth**: JWT (`jsonwebtoken`) + bcryptjs; login admin por teléfono + OTP.
@@ -37,23 +40,38 @@ npm run dev # igual pero con --watch
 Páginas: cliente `/`, admin `/admin.html`, vitrina `/mi-vitrina.html`, recibo `/recibo.html`.
 Deploy: push a `main` → Vercel despliega automáticamente.
 
+Pruebas E2E (con el servidor corriendo en `:4000`):
+```bash
+npm test           # o: npm run test:e2e  → Cypress headless
+npm run cypress:open
+```
+
 ## Estado actual (dónde quedamos)
-- **HEAD / GitHub `main`: `4f8129b`** — "feat(frontend): demo de cache (Cache-Aside) con
-  HIT/MISS, TTL e invalidacion + actividad practica". Copia local **sincronizada** con GitHub.
+- **HEAD / GitHub `main`: `ab19f97`** — "test(e2e): Cypress + contrato OpenAPI (pedidos) y demo
+  aislado de la Sesion 9 (E2E/API Contracts)". Copia local **sincronizada** con GitHub.
+- **Trabajo de Calidad/Pruebas (clase "Sesión 9 – Calidad del Software, Parte I"), ya en `main`:**
+  - **Pruebas reales** — commit `ab19f97`: Cypress `devDependency` + `cypress.config.js`
+    (`baseUrl` local), `cypress/e2e/api-orders.cy.js` (crea pedido y valida el contrato, con
+    **limpieza** del pedido de prueba vía `cy.task('removeOrder')`) y `cypress/e2e/home.cy.js`
+    (smoke de la app + demos). Contrato en `openapi.yaml`. Verificado: **4/4 tests pasan**.
+  - **Demo (diapositivas 8, 9, 11, 13, 18)**: `frontend/testing-demo.html` + `frontend/js/testing-demo.js`
+    — pirámide de pruebas, recorrido E2E animado (flujo `POST /api/orders`) y validador de contrato;
+    página aislada en `/testing-demo.html` (no llama a la API real).
 - **Trabajo de Caché (clase "Sesión 8 – Desempeño en APIs REST"), ya en `main`:**
   - **Fase 1 (HTTP)** — commit `16c8679`: `backend/middleware/cache.js` (`cachePublic`, `noStore`).
     GET públicos con `Cache-Control` + `s-maxage`/`stale-while-revalidate` + `ETag`/`304`.
     TTLs usados: `categories` y `auth/towers` → `3600/86400`; `businesses`, `businesses/:id`,
     `stats` → `60/300`; `offers` y `announcements` → `30/120`. Rutas con sesión quedan `no-store`
   (p. ej. `/api/auth/me`, `/api/businesses/manage/:phone`). Verificado con curl/Invoke-WebRequest.
-- **Demo (diapositivas 11–12)**: `frontend/cache-demo.html` + `frontend/js/cache-demo.js` — patrón
-  Cache-Aside con HIT/MISS, TTL e invalidación manual; página aislada en `/cache-demo.html`
-  (no toca la API; `peticionReal` simulada). No depende del backend.
+- **Demo de caché (diapositivas 11–12)**: `frontend/cache-demo.html` + `frontend/js/cache-demo.js`
+  (patrón Cache-Aside con HIT/MISS, TTL e invalidación; página aislada, no toca la API).
 - Trabajo previo ya incluido: QR para compartir por WhatsApp (22 sep), flujo rol comprador/vendedor,
   10 torres por manzana, sesión persistente por celular (~1 año), header/branding/banner,
   "Mi Manzana" en acordeón, tab Residentes en admin, y los arreglos de seguridad (`d227a44`).
 
 ## Pendientes / próximos pasos (confirmar con el usuario)
+- **Pruebas (futuro)**: añadir E2E de UI (Cypress con selectores `data-cy`, hoy no existen en el
+  HTML real) y correr la suite en **CI (GitHub Actions)** antes del deploy. Opcional.
 - Verificar que los **iconos de redes sociales (Instagram/Facebook) se vean en móvil** al abrir una vitrina.
 - Configurar envío **real** de WhatsApp (llenar `WHATSAPP_API_TOKEN` y `WHATSAPP_PHONE_NUMBER_ID`).
 - **Migración final a GoDaddy** (hosting + base de datos real con negocios reales). Pospuesto.

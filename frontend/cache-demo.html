@@ -65,7 +65,7 @@
         <label class="block">
           <span class="text-xs font-semibold text-slate-500">Endpoint</span>
           <select id="endpoint" class="mt-1 w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
-            <option value="/api/productos">/api/productos (lento)</span></option>
+            <option value="/api/productos">/api/productos (lento)</option>
             <option value="/api/vitrinas">/api/vitrinas</option>
             <option value="/api/comunicados">/api/comunicados</option>
           </select>
@@ -125,7 +125,7 @@
       <section class="bg-slate-900 rounded-2xl shadow-sm p-5 overflow-hidden">
         <h2 class="text-xs font-bold text-slate-300 mb-3 flex items-center gap-2">
           <i class="fa-solid fa-code text-amber-400"></i> peticionConCache() — patrón Cache-Aside
-        </p></h2>
+        </h2>
         <pre class="mono text-[12px] leading-relaxed text-slate-200 overflow-x-auto"><code>async function peticionConCache(endpoint, ttl) {
   const entrada = cache.get(endpoint);
   if (entrada &amp;&amp; entrada.expiresAt > ahora) {

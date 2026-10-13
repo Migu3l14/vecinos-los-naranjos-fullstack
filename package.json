@@ -6,7 +6,10 @@
   "type": "module",
   "scripts": {
     "start": "node scripts/bootstrap-data.mjs && node backend/server.js",
-    "dev": "node --watch backend/server.js"
+    "dev": "node --watch backend/server.js",
+    "test": "cypress run",
+    "test:e2e": "cypress run",
+    "cypress:open": "cypress open"
   },
   "engines": {
     "node": ">=20"
@@ -36,6 +39,7 @@
     "multer": "^2.3.0"
   },
   "devDependencies": {
+    "cypress": "^16.1.1",
     "vercel": "^59.20.0"
   }
 }

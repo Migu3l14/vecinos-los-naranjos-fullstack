@@ -26,3 +26,8 @@ Thumbs.db
 # Archivos subidos por los usuarios (se guardan en el volumen del servidor)
 uploads/
 backend/uploads/
+
+# Cypress (artefactos de las pruebas E2E)
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/

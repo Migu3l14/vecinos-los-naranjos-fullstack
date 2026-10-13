@@ -110,6 +110,9 @@ async function verifySession() {
   if (me && me.reason === 'unauthorized') {
     API.logoutResident();
     API.logoutAdmin();
+    // Si se cerró sesión (p. ej. el residente ya no existe en el servidor),
+    // mostramos de nuevo el ingreso para que vuelva a registrarse.
+    maybeShowEntryModal();
   }
 }
 

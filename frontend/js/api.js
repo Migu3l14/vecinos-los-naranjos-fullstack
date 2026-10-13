@@ -622,7 +622,9 @@ export const API = {
       const res = await fetch(`${API_BASE}/auth/me`, {
         headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
       });
-      if (res.status === 401) return { ok: false, reason: 'unauthorized' };
+      // 401 = token inválido/expirado; 404 = el residente ya no existe en el
+      // servidor (p. ej. se reinició el registro). Ambos cierran la sesión local.
+      if (res.status === 401 || res.status === 404) return { ok: false, reason: 'unauthorized' };
       if (!res.ok) return { ok: false, reason: 'network' };
       const json = await res.json();
       if (!json.success) return { ok: false, reason: 'unauthorized' };

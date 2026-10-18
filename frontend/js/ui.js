@@ -196,13 +196,13 @@ export const UI = {
           <span class="absolute top-2.5 left-2.5 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
             Mz ${esc(biz.manzana)}
           </span>
-          <div class="absolute -bottom-6 left-4 w-14 h-14 rounded-full flex items-center justify-center text-white text-xl shadow-md ring-4 ring-white"
+          <div class="absolute -bottom-5 left-4 w-12 h-12 rounded-full flex items-center justify-center text-white text-[14px] sm:text-[16px] shadow-md ring-2 ring-white"
             style="background-color:${color}">
             <i class="fa-solid ${info.icon}"></i>
           </div>
         </div>
 
-        <div class="pt-8 px-4 pb-4 flex flex-col flex-1">
+        <div class="pt-7 px-4 pb-4 flex flex-col flex-1">
           ${tags.length ? `<div class="flex flex-wrap gap-1.5 mb-1.5">${tags.join('')}</div>` : ''}
           <h3 class="text-base font-extrabold text-slate-900 leading-tight line-clamp-1">${esc(biz.name)}</h3>
           <p class="text-[11px] font-semibold text-slate-400">${esc(info.name)}</p>

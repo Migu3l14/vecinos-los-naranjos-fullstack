@@ -226,6 +226,34 @@ async function loadDashboard() {
   }
 }
 
+// ---------- EXPORTAR DATOS (respaldo para migrar a una base de datos) ----------
+async function handleExportData() {
+  const btn = $('exportDataBtn');
+  const original = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Exportando...'; }
+  try {
+    const res = await API.adminExportData();
+    if (!res || !res.success) {
+      alert((res && res.message) || 'No se pudo exportar los datos.');
+      return;
+    }
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    const blob = new Blob([JSON.stringify(res, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `los-naranjos-export-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    alert(error.message || 'Error al exportar.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = original; }
+  }
+}
+
 // ---------- RESIDENTES ----------
 let residentsCache = [];
 let residentsFilter = '';
@@ -275,12 +303,12 @@ function renderResidents() {
       </div>
       <div class="bg-violet-50 border border-violet-200 rounded-2xl p-3 text-center">
         <p class="text-xl font-extrabold text-violet-600">${guards}</p>
-        <p class="text-[10px] font-bold text-slate-500 uppercase">Guardas</p>
+        <p class="text-[10px] font-bold text-slate-500 uppercase">Externos</p>
       </div>
     </div>
     ${list.length === 0 ? '<p class="text-xs text-slate-400">Sin residentes que mostrar.</p>' : list.map(r => {
       const rol = r.role === 'seller' ? 'bg-emerald-100 text-emerald-700' : (r.role === 'guard' ? 'bg-violet-100 text-violet-700' : 'bg-blue-100 text-blue-700');
-      const rolTxt = r.role === 'seller' ? 'Emprendedor' : (r.role === 'guard' ? 'Guarda' : 'Comprador');
+      const rolTxt = r.role === 'seller' ? 'Emprendedor' : (r.role === 'guard' ? 'Externo' : 'Comprador');
       const fecha = r.lastEntryAt || r.createdAt || '';
       return `<div class="border border-slate-200 rounded-2xl p-3.5 bg-white">
         <div class="flex items-center justify-between gap-2">
@@ -479,25 +507,36 @@ async function loadOrders() {
 }
 
 // ---------- BUSINESSES ----------
+const BIZ_STATUS = {
+  active: { label: 'Activa', cls: 'bg-emerald-100 text-emerald-700' },
+  paused: { label: 'Pausada', cls: 'bg-amber-100 text-amber-700' },
+  pending_payment: { label: 'Pendiente de pago', cls: 'bg-slate-200 text-slate-600' }
+};
+
 async function loadBusinesses() {
   const container = $('businessesListContainer');
   try {
-    const items = await API.getBusinesses();
+    const items = await API.getBusinesses({ includeAll: 'true' });
     if (items.length === 0) {
       container.innerHTML = '<p class="text-xs text-slate-400 bg-slate-50 p-4 rounded-xl text-center">No hay vitrinas.</p>';
       return;
     }
-    container.innerHTML = items.map(b => `
+    container.innerHTML = items.map(b => {
+      const st = BIZ_STATUS[b.status] || { label: b.status || '—', cls: 'bg-slate-100 text-slate-600' };
+      return `
       <div class="border border-slate-200 rounded-2xl p-3 flex items-center space-x-3">
         <img src="${b.coverImage}" class="w-12 h-12 rounded-xl object-cover flex-shrink-0" alt="${b.name}" />
         <div class="flex-1 min-w-0">
-          <h4 class="text-sm font-extrabold text-slate-900 truncate">${b.name}</h4>
+          <div class="flex items-center gap-2">
+            <h4 class="text-sm font-extrabold text-slate-900 truncate">${b.name}</h4>
+            <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full ${st.cls} flex-shrink-0">${st.label}</span>
+          </div>
           <span class="text-[10px] text-slate-400">Mz ${b.manzana} · ${categoryName(b.category)} · ${b.phone}</span>
           <div class="text-[10px] text-slate-500">IG: ${b.instagram || '—'} · FB: ${b.facebook || '—'}</div>
         </div>
         <button class="biz-del px-2.5 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-bold" data-id="${b.id}" title="Eliminar">🗑</button>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
 
     container.querySelectorAll('.biz-del').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -778,6 +817,8 @@ function init() {
   $('refreshAnnBtn').addEventListener('click', loadAnnouncements);
   const refreshDashBtn = $('refreshDashboardBtn');
   if (refreshDashBtn) refreshDashBtn.addEventListener('click', loadDashboard);
+  const exportDataBtn = $('exportDataBtn');
+  if (exportDataBtn) exportDataBtn.addEventListener('click', handleExportData);
   $('annPublishBtn').addEventListener('click', handleAnnPublish);
   $('annFile').addEventListener('change', handleAnnFileSelect);
   $('annFileClear').addEventListener('click', clearAnnFile);

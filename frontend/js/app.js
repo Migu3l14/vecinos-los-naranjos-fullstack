@@ -190,6 +190,12 @@ function setupEventListeners() {
   const step2NextBtn = document.getElementById('step2NextBtn');
   if (step2NextBtn) step2NextBtn.addEventListener('click', handleStep2Submit);
 
+  const previewBackBtn = document.getElementById('previewBackBtn');
+  if (previewBackBtn) previewBackBtn.addEventListener('click', () => showWizardStep(2));
+
+  const previewPayBtn = document.getElementById('previewPayBtn');
+  if (previewPayBtn) previewPayBtn.addEventListener('click', handlePreviewConfirm);
+
   const processPaymentBtn = document.getElementById('processPaymentBtn');
   if (processPaymentBtn) processPaymentBtn.addEventListener('click', handleProcessPayment);
 
@@ -782,7 +788,7 @@ async function handleOpenProfile(bizId) {
         productsHtml += `
           <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100">
             <div class="flex items-center space-x-2.5 min-w-0">
-              <img src="${prod.photo}" alt="${escHtml(prod.name)}" class="w-12 h-12 rounded-lg object-cover flex-shrink-0 bg-slate-200"/>
+              <img src="${prod.photo}" alt="${escHtml(prod.name)}" class="w-12 h-12 rounded-lg object-contain flex-shrink-0 bg-slate-200"/>
               <div class="min-w-0">
                 <h5 class="text-xs font-bold text-slate-800 leading-tight">${escHtml(prod.name)}</h5>
                 ${prod.price ? `<span class="text-xs font-extrabold text-emerald-600">${escHtml(prod.price)}</span>` : ''}
@@ -921,13 +927,12 @@ function resetRegisterWizard() {
   showWizardStep(1);
 }
 
-function showWizardStep(stepNumber) {
-  for (let i = 1; i <= 4; i++) {
-    const stepEl = document.getElementById(`wizardStep${i}`);
-    if (stepEl) {
-      stepEl.classList.toggle('hidden', i !== stepNumber);
-    }
-  }
+function showWizardStep(step) {
+  const steps = ['1', '2', 'preview', '3', '4'];
+  steps.forEach((s) => {
+    const el = document.getElementById(s === 'preview' ? 'wizardStepPreview' : `wizardStep${s}`);
+    if (el) el.classList.toggle('hidden', s !== String(step));
+  });
 }
 
 // Paso 1: Validar datos principales
@@ -963,8 +968,8 @@ function handleStep1Next() {
   showWizardStep(2);
 }
 
-// Paso 2: Crear la vitrina y pasar al Pago
-async function handleStep2Submit() {
+// Paso 2: Validar productos y pasar a la Vista Previa (aún NO se crea en el backend)
+function handleStep2Submit() {
   const regTerms = document.getElementById('regTerms');
   if (regTerms && !regTerms.checked) {
     alert('Debes aceptar los Términos y Condiciones para activar tu vitrina.');
@@ -999,8 +1004,32 @@ async function handleStep2Submit() {
 
   state.newBizData.products = products;
 
-  // Registrar en backend
+  // Mostrar la vista previa antes de crear la vitrina y pasar al pago
+  renderVitrinaPreview(state.newBizData);
+  showWizardStep('preview');
+}
+
+// Paso 2.5: Confirma la vista previa → crea la vitrina (pending_payment) y pasa al Pago
+async function handlePreviewConfirm() {
+  if (!state.newBizData) {
+    showWizardStep(1);
+    return;
+  }
+
+  const btn = document.getElementById('previewPayBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Creando vitrina...</span>';
+  }
+
+  // Recién aquí se registra en el backend (antes de abrir el pago)
   const res = await API.registerBusiness(state.newBizData);
+
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-lock"></i><span>Confirmar y pagar $31.600</span>';
+  }
+
   if (!res.success) {
     alert('Error al registrar la vitrina: ' + (res.message || 'Intenta de nuevo.'));
     return;
@@ -1011,8 +1040,74 @@ async function handleStep2Submit() {
   // Actualizar resumen en Paso 3 (Pantalla de Pago)
   document.getElementById('checkoutBizName').innerText = state.createdBiz.name;
   document.getElementById('checkoutBizManzana').innerText = `Manzana ${state.createdBiz.manzana}`;
-  
+
   showWizardStep(3);
+}
+
+// Renderiza un mock de la vitrina tal como se verá publicada (sin tocar el backend)
+function renderVitrinaPreview(biz) {
+  const container = document.getElementById('vitrinaPreview');
+  if (!container || !biz) return;
+
+  const cover = escHtml(biz.coverImage || '');
+  const category = escHtml(String(biz.category || '').toUpperCase());
+  const name = escHtml(biz.name || '');
+  const manzana = escHtml(String(biz.manzana || ''));
+  const shortDesc = escHtml(biz.shortDesc || '');
+  const fullDesc = escHtml(biz.fullDesc || biz.shortDesc || '');
+  const hours = escHtml(biz.hours || '');
+  const delivery = escHtml(biz.delivery || '');
+  const products = Array.isArray(biz.products) ? biz.products : [];
+
+  const productsHtml = products.length
+    ? products.map((p) => `
+        <div class="flex items-center gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100">
+          <img src="${escHtml(p.image || biz.coverImage || '')}" alt="${escHtml(p.name || '')}" class="w-12 h-12 rounded-lg object-contain flex-shrink-0 bg-slate-200" onerror="this.style.display='none'"/>
+          <div class="min-w-0">
+            <h5 class="text-xs font-bold text-slate-800 leading-tight">${escHtml(p.name || '')}</h5>
+            ${p.price ? `<span class="text-xs font-extrabold text-emerald-600">${escHtml(p.price)}</span>` : ''}
+          </div>
+        </div>`).join('')
+    : '<p class="text-xs text-slate-400 text-center py-3">A\u00fan no agregaste productos.</p>';
+
+  container.innerHTML = `
+    <div class="relative h-40 bg-slate-100">
+      <img src="${cover}" alt="${name}" class="w-full h-full object-contain" onerror="this.style.display='none'"/>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none"></div>
+      <span class="absolute top-3 left-3 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Mz ${manzana}</span>
+      <div class="absolute bottom-3 left-3 right-3 text-white">
+        <span class="bg-orange-500 text-white text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full">${category}</span>
+        <h2 class="text-lg font-extrabold leading-tight mt-1">${name}</h2>
+        <div class="flex items-center space-x-2 text-[11px] text-slate-200 mt-0.5">
+          <span class="font-semibold">&#128205; Manzana ${manzana} (Los Naranjos)</span>
+          <span>&bull;</span>
+          <span class="text-amber-400 font-bold">&#9733; 5.0 &middot; 1 recomendaci&oacute;n</span>
+        </div>
+      </div>
+    </div>
+    <div class="p-3 space-y-3">
+      <div>
+        <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sobre el emprendimiento</h4>
+        <p class="text-xs text-slate-600 mt-1 leading-relaxed">${fullDesc}</p>
+      </div>
+      <div class="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl text-[11px]">
+        <div>
+          <span class="text-slate-400 font-semibold block">&#128337; Horario</span>
+          <span class="font-bold text-slate-800">${hours}</span>
+        </div>
+        <div>
+          <span class="text-slate-400 font-semibold block">&#128757; Domicilio</span>
+          <span class="font-bold text-emerald-600">${delivery}</span>
+        </div>
+      </div>
+      <div>
+        <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Cat&aacute;logo de productos y precios</h4>
+        <div class="space-y-2">${productsHtml}</div>
+      </div>
+      <div class="bg-[#25D366]/10 border border-[#25D366]/30 text-[#128C4B] text-[11px] font-bold p-2.5 rounded-xl flex items-center justify-center space-x-2">
+        <i class="fa-brands fa-whatsapp"></i><span>Contactar por WhatsApp (vista previa)</span>
+      </div>
+    </div>`;
 }
 
 // Paso 3: Procesar Pago y Activar por 30 Días
@@ -1501,7 +1596,7 @@ async function handleEntryLookup() {
       const sel = document.getElementById('entryTower');
       if ([...sel.options].some(o => o.value === r.data.tower)) sel.value = r.data.tower;
     }
-    const rol = r.data.role === 'seller' ? 'Emprendedor' : (r.data.role === 'guard' ? 'Guarda de seguridad' : 'Comprador');
+    const rol = r.data.role === 'seller' ? 'Emprendedor' : (r.data.role === 'guard' ? 'Externo' : 'Comprador');
     const reconocido = r.data.role === 'guard'
       ? `Manzana ${r.data.manzana || '—'} · ${rol}`
       : `Manzana ${r.data.manzana || '—'} · ${r.data.tower || '—'} · Apto ${r.data.apartment || '—'} · ${rol}`;
@@ -1548,7 +1643,7 @@ async function handleEntrySubmit() {
 
   const digits = phone.replace(/\D/g, '');
   if (!role) {
-    errEl.textContent = 'Selecciona si ingresas como Comprador, Vendedor o Guarda.';
+    errEl.textContent = 'Selecciona si ingresas como Comprador, Vendedor o Externo.';
     errEl.classList.remove('hidden');
     return;
   }

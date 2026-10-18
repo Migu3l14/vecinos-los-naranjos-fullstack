@@ -20,6 +20,7 @@ import uploadRoutes from './routes/uploadRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
 import supportRoutes from './routes/supportRoutes.js';
 import announcementRoutes from './routes/announcementRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 import { runSeeds } from './db/seed.js';
 import { noStore } from './middleware/cache.js';
 
@@ -121,6 +122,7 @@ app.use('/api/uploads', writeLimiter, uploadRoutes);
 app.use('/api/stats', writeLimiter, statsRoutes);
 app.use('/api/support', writeLimiter, supportRoutes);
 app.use('/api/announcements', writeLimiter, announcementRoutes);
+app.use('/api/admin', writeLimiter, adminRoutes);
 
 // Estado de la API (Healthcheck)
 app.get('/api/health', (req, res) => {

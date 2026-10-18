@@ -415,7 +415,7 @@ export const entryGuest = async (req, res) => {
     const isGuard = role === 'guard';
 
     if (role !== 'buyer' && role !== 'seller' && role !== 'guard') {
-      return res.status(400).json({ success: false, message: 'Debes indicar si ingresas como Comprador, Vendedor o Guarda de seguridad.' });
+      return res.status(400).json({ success: false, message: 'Debes indicar si ingresas como Comprador, Vendedor o Externo.' });
     }
     if (!phone || !manzana) {
       return res.status(400).json({ success: false, message: 'Celular y manzana son obligatorios.' });

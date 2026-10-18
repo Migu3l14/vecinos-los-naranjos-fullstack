@@ -13,7 +13,7 @@ import { cachePublic } from '../middleware/cache.js';
 const router = express.Router();
 
 // GET /api/offers (público) — ofertas activas del día: TTL corto
-router.get('/', cachePublic({ maxAge: 30, sMaxAge: 120, staleWhileRevalidate: 120 }), getOffers);
+router.get('/', cachePublic({ maxAge: 30, sMaxAge: 60 }), getOffers);
 
 // GET /api/offers/mine (protegido) — ofertas del vendedor autenticado
 router.get('/mine', authResident, getMyOffers);

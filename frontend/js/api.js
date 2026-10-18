@@ -547,6 +547,15 @@ export const API = {
     }
   },
 
+  // Persiste el perfil del residente/vendedor guardado en el dispositivo
+  saveStoredResidentProfile(profile) {
+    try {
+      localStorage.setItem('residentProfile', JSON.stringify(profile));
+    } catch (error) {
+      /* sin acción */
+    }
+  },
+
   // Ingreso rápido por QR/enlace: guarda rol y datos de la comunidad, emite sesión
   async communityEntry(data) {
     try {
@@ -851,5 +860,15 @@ export const API = {
     return this.fetchAdmin(`${API_BASE}/businesses/${id}`, {
       method: 'DELETE'
     });
+  },
+
+  // GET /api/admin/export (super admin) — volcado completo de datos para migrar a una BD
+  async adminExportData() {
+    try {
+      return await this.fetchAdmin(`${API_BASE}/admin/export`);
+    } catch (error) {
+      console.error('Error al exportar datos:', error);
+      return { success: false, message: error.message || 'No se pudo exportar.' };
+    }
   }
 };

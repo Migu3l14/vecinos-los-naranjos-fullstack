@@ -3,12 +3,12 @@
 import { API } from './api.js';
 
 export const VALID_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-export const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+export const MAX_IMAGE_SIZE = 4 * 1024 * 1024; // 4MB (límite duro del cuerpo en Vercel)
 
 export function validateImageFile(file) {
   if (!file) return 'Selecciona una imagen.';
   if (!VALID_IMAGE_TYPES.includes(file.type)) return 'Formato no permitido. Usa JPG, PNG o WebP.';
-  if (file.size > MAX_IMAGE_SIZE) return 'La imagen supera el tamaño máximo (5MB).';
+  if (file.size > MAX_IMAGE_SIZE) return 'La imagen supera el tamaño máximo (4MB).';
   return null;
 }
 

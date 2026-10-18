@@ -254,7 +254,7 @@
     <div class="bg-white w-full max-w-md max-h-[90vh] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up">
       
       <div class="relative h-48 bg-slate-100 flex-shrink-0">
-        <img id="modalCoverImg" src="" alt="Portada" class="w-full h-full object-cover" />
+        <img id="modalCoverImg" src="" alt="Portada" class="w-full h-full object-contain" />
         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
         <button data-close="closeProfileModal" class="absolute top-4 right-4 bg-white/80 hover:bg-white text-slate-800 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow">
           <i class="fa-solid fa-xmark"></i>
@@ -432,7 +432,7 @@
               <label class="font-bold text-slate-700 block mb-1">Foto de Portada (opcional):</label>
               <input type="file" id="regCoverImg" accept="image/jpeg,image/png,image/webp" class="w-full p-2 border border-slate-200 rounded-xl bg-white text-[11px] focus:ring-2 focus:ring-orange-500 focus:outline-none" />
               <div id="regCoverImg_preview" class="hidden mt-2">
-                <img id="regCoverImg_img" alt="Vista previa de la portada" class="w-full h-28 object-cover rounded-xl border border-slate-200" />
+                <img id="regCoverImg_img" alt="Vista previa de la portada" class="w-full h-28 object-contain bg-slate-50 rounded-xl border border-slate-200" />
               </div>
               <input type="hidden" id="regCoverImg_url" />
               <p id="regCoverImg_err" class="hidden text-red-600 text-[10px] font-bold mt-1"></p>
@@ -462,7 +462,7 @@
               <div>
                 <input type="file" id="prod1Img" accept="image/jpeg,image/png,image/webp" class="w-full p-1.5 border border-slate-200 rounded-lg bg-white text-[10px]" />
                 <div id="prod1Img_preview" class="hidden mt-1">
-                  <img id="prod1Img_img" alt="" class="w-full h-16 object-cover rounded-lg border border-slate-200" />
+                  <img id="prod1Img_img" alt="" class="w-full h-16 object-contain bg-slate-50 rounded-lg border border-slate-200" />
                 </div>
                 <input type="hidden" id="prod1Img_url" />
                 <p id="prod1Img_err" class="hidden text-red-600 text-[10px] font-bold"></p>
@@ -479,7 +479,7 @@
               <div>
                 <input type="file" id="prod2Img" accept="image/jpeg,image/png,image/webp" class="w-full p-1.5 border border-slate-200 rounded-lg bg-white text-[10px]" />
                 <div id="prod2Img_preview" class="hidden mt-1">
-                  <img id="prod2Img_img" alt="" class="w-full h-16 object-cover rounded-lg border border-slate-200" />
+                  <img id="prod2Img_img" alt="" class="w-full h-16 object-contain bg-slate-50 rounded-lg border border-slate-200" />
                 </div>
                 <input type="hidden" id="prod2Img_url" />
                 <p id="prod2Img_err" class="hidden text-red-600 text-[10px] font-bold"></p>
@@ -496,9 +496,34 @@
             <button id="step2BackBtn" class="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">
               Atrás
             </button>
-            <button id="step2NextBtn" class="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-xs rounded-xl shadow-lg touch-btn flex items-center justify-center space-x-1.5">
-              <span>Continuar al Pago</span>
-              <i class="fa-solid fa-credit-card"></i>
+            <button id="step2NextBtn" class="flex-1 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs rounded-xl shadow-lg touch-btn flex items-center justify-center space-x-1.5">
+              <span>Ver vista previa</span>
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- PASO 2.5: VISTA PREVIA DE LA VITRINA ANTES DE PAGAR -->
+        <div id="wizardStepPreview" class="space-y-3 text-xs hidden">
+          <div class="flex items-center space-x-2 text-slate-500 font-bold">
+            <span class="w-5 h-5 rounded-full bg-sky-500 text-white flex items-center justify-center text-[11px]"><i class="fa-solid fa-eye"></i></span>
+            <span>Vista previa &middot; As&iacute; se ver&aacute; tu vitrina</span>
+          </div>
+
+          <div class="bg-sky-50 border border-sky-200 text-sky-800 text-[11px] font-semibold p-2.5 rounded-xl leading-tight flex items-start space-x-2">
+            <i class="fa-solid fa-circle-info text-sky-500 mt-0.5"></i>
+            <span>Esta es una vista previa. As&iacute; ver&aacute;n los vecinos tu vitrina cuando quede publicada. A&uacute;n no se ha activado (falta el pago).</span>
+          </div>
+
+          <div id="vitrinaPreview" class="rounded-2xl border border-slate-200 overflow-hidden bg-white"></div>
+
+          <div class="flex space-x-2 pt-1">
+            <button id="previewBackBtn" class="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">
+              Editar
+            </button>
+            <button id="previewPayBtn" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-lg touch-btn flex items-center justify-center space-x-1.5">
+              <i class="fa-solid fa-lock"></i>
+              <span>Confirmar y pagar $31.600</span>
             </button>
           </div>
         </div>
@@ -766,7 +791,7 @@
                   <i class="fa-solid fa-store"></i><span>Vendedor</span>
                 </button>
                 <button type="button" id="entryRoleGuard" data-role="guard" class="entry-role-btn py-3 rounded-xl border font-extrabold text-[11px] touch-btn flex flex-col items-center justify-center space-y-1 transition">
-                  <i class="fa-solid fa-shield-halved"></i><span>Guarda</span>
+                  <i class="fa-solid fa-id-badge"></i><span>Externo</span>
                 </button>
               </div>
             </div>
@@ -796,7 +821,7 @@
             </div>
 
             <p id="entryGuardNote" class="hidden text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl leading-tight">
-              Como guarda de seguridad te asignamos una manzana. No necesitas torre ni apartamento; puedes ver la vitrina pública y comprar si lo deseas.
+              Como persona externa (visita o guarda) te asignamos una manzana. No necesitas torre ni apartamento; puedes ver la vitrina pública y comprar si lo deseas.
             </p>
           </div>
 

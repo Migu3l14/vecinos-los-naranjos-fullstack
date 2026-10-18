@@ -18,8 +18,8 @@ import { cachePublic } from '../middleware/cache.js';
 
 const router = express.Router();
 
-// GET /api/businesses (Directorio con filtros) — público: caché corta (TTL 60s)
-router.get('/', cachePublic({ maxAge: 60, sMaxAge: 300, staleWhileRevalidate: 300 }), getBusinesses);
+// GET /api/businesses (Directorio con filtros) — público: caché corta (TTL 30s)
+router.get('/', cachePublic({ maxAge: 30, sMaxAge: 60 }), getBusinesses);
 
 // POST /api/businesses (Crear nueva vitrina — se vincula al dueño si hay sesión)
 router.post('/', optionalAuthResident, registerBusiness);
@@ -44,7 +44,7 @@ router.put('/mine/:id/products/:pid', authResident, updateMyProduct);
 router.delete('/mine/:id/products/:pid', authResident, deleteMyProduct);
 
 // GET /api/businesses/:id (Detalle de una vitrina) — público: caché corta
-router.get('/:id', cachePublic({ maxAge: 60, sMaxAge: 300, staleWhileRevalidate: 300 }), getBusinessById);
+router.get('/:id', cachePublic({ maxAge: 30, sMaxAge: 60 }), getBusinessById);
 
 // POST /api/businesses/:id/ratings (Público) — Valorar una vitrina
 router.post('/:id/ratings', rateBusiness);

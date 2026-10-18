@@ -31,3 +31,6 @@ backend/uploads/
 cypress/videos/
 cypress/screenshots/
 cypress/downloads/
+
+# Volcados de datos exportados (respaldos para migración a BD)
+exports/

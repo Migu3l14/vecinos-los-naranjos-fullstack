@@ -366,6 +366,17 @@ export const deleteBusiness = async (req, res) => {
     const [removed] = businesses.splice(index, 1);
     await saveBusinesses(businesses);
 
+    // Cascada: al eliminar la vitrina se eliminan sus ofertas (promociones) para
+    // que no queden huérfanas y visibles en el home ("Ofertas del día").
+    // El historial (pedidos, recibos/pagos, valoraciones) se conserva.
+    const offers = await Storage.read('offers');
+    if (Array.isArray(offers) && offers.length) {
+      const remaining = offers.filter(o => o.bizId !== removed.id);
+      if (remaining.length !== offers.length) {
+        await Storage.write('offers', remaining);
+      }
+    }
+
     res.json({ success: true, message: 'Vitrina eliminada correctamente.', data: { id: removed.id } });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al eliminar la vitrina', error: error.message });
@@ -420,9 +431,19 @@ export const updateMyBusiness = async (req, res) => {
       updates.ownerPhone = cleanPhone;
     }
 
+    // La vitrina queda siempre vinculada al residente autenticado (aunque cambie
+    // el número), para que nunca pierda el acceso a su propio panel.
+    updates.ownerResidentId = residentId;
+
     const updated = { ...businesses[index], ...updates, updatedAt: new Date().toISOString() };
     businesses[index] = updated;
     await saveBusinesses(businesses);
+
+    // Si cambió el número, se actualiza también la cuenta del dueño (residents)
+    // para que él vea y use el número nuevo al ingresar.
+    if (updates.phone !== undefined) {
+      await Storage.updateById('residents', residentId, { phone: updates.phone });
+    }
 
     res.json({ success: true, message: 'Vitrina actualizada correctamente.', data: updated });
   } catch (error) {

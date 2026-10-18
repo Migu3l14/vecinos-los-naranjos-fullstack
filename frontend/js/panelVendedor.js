@@ -261,7 +261,7 @@ function renderProducts() {
     const card = document.createElement('div');
     card.className = 'flex items-center gap-3 bg-white border border-slate-200 rounded-xl p-3';
     card.innerHTML = `
-      <img src="${p.photo || 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=100&q=80'}" alt="" class="w-14 h-14 rounded-lg object-cover bg-slate-100" onerror="this.style.display='none'"/>
+      <img src="${p.photo || 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=100&q=80'}" alt="" class="w-14 h-14 rounded-lg object-contain bg-slate-100" onerror="this.style.display='none'"/>
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2">
           <p class="text-sm font-extrabold truncate">${esc(p.name)}</p>
@@ -324,7 +324,7 @@ async function renderOffersList() {
     return `
       <div data-id="${off.id}" class="bg-white border border-slate-200 rounded-xl p-3">
         <div class="flex gap-3">
-          <img src="${esc(off.image || '')}" alt="" class="w-14 h-14 rounded-lg object-cover bg-slate-100 flex-shrink-0" onerror="this.style.display='none'" />
+          <img src="${esc(off.image || '')}" alt="" class="w-14 h-14 rounded-lg object-contain bg-slate-100 flex-shrink-0" onerror="this.style.display='none'" />
           <div class="flex-1 min-w-0">
             <p class="text-sm font-extrabold text-slate-800 leading-tight line-clamp-1">${esc(off.title)}</p>
             <p class="text-[11px] text-slate-500 mt-0.5 truncate">${esc(off.price || '')}${off.oldPrice ? ' · <s>' + esc(off.oldPrice) + '</s>' : ''}</p>
@@ -458,6 +458,17 @@ async function saveProfile() {
   const res = await API.updateMyBusiness(state.business.id, payload);
   if (res.success) {
     state.business = res.data;
+    // Si cambió el número, se refleja también en la sesión/dispositivo del dueño.
+    const savedPhone = res.data && res.data.phone;
+    if (savedPhone) {
+      const prof = API.getStoredResidentProfile();
+      if (prof) {
+        prof.phone = savedPhone;
+        API.saveStoredResidentProfile(prof);
+      }
+      const sessionPhoneEl = $('mvSessionPhone');
+      if (sessionPhoneEl) sessionPhoneEl.textContent = String(savedPhone).replace(/^57/, '');
+    }
     showMsg('Perfil actualizado correctamente.', true);
   } else {
     showMsg(res.message || 'No se pudo guardar.', false);

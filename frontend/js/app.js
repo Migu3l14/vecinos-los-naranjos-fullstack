@@ -172,6 +172,14 @@ function setupEventListeners() {
     });
   }
 
+  // Atajo del header: "Publicar mi negocio" (reusa el modal de registro)
+  const openRegisterShortcutBtn = document.getElementById('openRegisterShortcutBtn');
+  if (openRegisterShortcutBtn) {
+    openRegisterShortcutBtn.addEventListener('click', () => {
+      document.getElementById('openRegisterModalBtn')?.click();
+    });
+  }
+
   // Botones del Asistente de Registro (Wizard)
   const step1NextBtn = document.getElementById('step1NextBtn');
   if (step1NextBtn) step1NextBtn.addEventListener('click', handleStep1Next);

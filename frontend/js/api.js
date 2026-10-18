@@ -87,6 +87,11 @@ export const API = {
     return this.fetchAdmin(`${API_BASE}/support/requests`);
   },
 
+  // GET /api/stats/admin (solo super admin) — métricas del panel de control
+  async getAdminStats() {
+    return this.fetchAdmin(`${API_BASE}/stats/admin`);
+  },
+
   // Subir una imagen (JPG/PNG/WebP, máx. 5MB) → devuelve { data: { url } }
   async uploadImage(file) {
     try {
@@ -346,6 +351,7 @@ export const API = {
         localStorage.setItem('adminToken', memAdminToken);
         localStorage.setItem('adminPhone', data.data.phone || '');
         localStorage.setItem('adminManzana', data.data.manzana || '');
+        localStorage.setItem('adminScope', data.data.scope || 'manzana');
       }
       return data;
     } catch (error) {
@@ -358,11 +364,16 @@ export const API = {
     return memAdminToken || localStorage.getItem('adminToken') || '';
   },
 
+  getAdminScope() {
+    return localStorage.getItem('adminScope') || 'manzana';
+  },
+
   logoutAdmin() {
     memAdminToken = '';
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminPhone');
     localStorage.removeItem('adminManzana');
+    localStorage.removeItem('adminScope');
     this.clearSessionCookieRemote();
   },
 

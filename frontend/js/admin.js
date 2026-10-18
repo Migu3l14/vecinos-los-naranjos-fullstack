@@ -28,6 +28,15 @@ async function handleAdminSendCode() {
     adminOtpTimer = setInterval(setAdminOtpTimerLabel, 1000);
     buildAdminOtpBoxes();
     $('admPhone').disabled = true;
+    const hint = $('admDemoCodeHint');
+    if (hint) {
+      if (res.data.code) {
+        hint.textContent = `Código de demostración: ${res.data.code}`;
+        hint.classList.remove('hidden');
+      } else {
+        hint.classList.add('hidden');
+      }
+    }
   } else {
     showErr(err, res.message || 'No se pudo enviar el código.');
   }
@@ -89,12 +98,24 @@ async function handleAdminVerify() {
 function enterPanel(adminData) {
   $('adminLoginView').classList.add('hidden');
   $('adminPanelView').classList.remove('hidden');
+  const scope = (adminData && adminData.scope) || API.getAdminScope();
+  const isSuper = scope === 'super';
   const manzana = (adminData && adminData.manzana) || localStorage.getItem('adminManzana') || '';
   $('admSessionEmail').textContent = (adminData && adminData.name) || (manzana ? `Administración Mz ${manzana}` : '') || (adminData && adminData.phone) || '';
-  $('admManzanaBadge').classList.toggle('hidden', !manzana);
-  if (manzana) $('admManzanaBadge').textContent = `Administración Manzana ${manzana}`;
-  switchPanel('pqrs');
-  loadAll();
+  const badge = $('admManzanaBadge');
+  badge.classList.remove('hidden');
+  badge.textContent = isSuper ? '⭐ Super Administración' : `Administración Manzana ${manzana}`;
+  applyTabVisibility(isSuper);
+  switchPanel(isSuper ? 'dashboard' : 'announcements');
+  if (isSuper) loadAll();
+}
+
+// Muestra/oculta pestañas según el nivel del administrador
+function applyTabVisibility(isSuper) {
+  document.querySelectorAll('.adm-tab').forEach(t => {
+    const needsSuper = t.dataset.panel !== 'announcements';
+    t.classList.toggle('hidden', !isSuper && needsSuper);
+  });
 }
 
 function leavePanel() {
@@ -111,9 +132,11 @@ function switchPanel(name) {
     t.classList.toggle('text-orange-600', active);
     t.classList.toggle('text-slate-500', !active);
   });
-  ['pqrs', 'orders', 'businesses', 'residents', 'support', 'announcements'].forEach(p => {
-    $('panel-' + p).classList.toggle('hidden', p !== name);
+  ['dashboard', 'pqrs', 'orders', 'businesses', 'residents', 'support', 'announcements'].forEach(p => {
+    const el = $('panel-' + p);
+    if (el) el.classList.toggle('hidden', p !== name);
   });
+  if (name === 'dashboard') loadDashboard();
   if (name === 'pqrs') loadPqrs();
   if (name === 'orders') loadOrders();
   if (name === 'businesses') loadBusinesses();
@@ -124,12 +147,83 @@ function switchPanel(name) {
 
 // ---------- LOAD ALL ----------
 async function loadAll() {
+  loadDashboard();
   loadPqrs();
   loadOrders();
   loadBusinesses();
   loadResidents();
   loadSupport();
   loadAnnouncements();
+}
+
+// ---------- DASHBOARD (solo super admin) ----------
+async function loadDashboard() {
+  const cards = $('dashCards');
+  const bars = $('dashBars');
+  const barsLabels = $('dashBarsLabels');
+  const breakdowns = $('dashBreakdowns');
+  if (!cards) return;
+  cards.innerHTML = '<p class="text-xs text-slate-400 col-span-2">Cargando estadísticas...</p>';
+  try {
+    const res = await API.getAdminStats();
+    if (!res || !res.success) {
+      cards.innerHTML = `<p class="text-xs font-bold text-red-600 col-span-2">${(res && res.message) || 'No pudimos cargar las estadísticas.'}</p>`;
+      return;
+    }
+    const d = res.data;
+
+    const card = (label, value, color) => `
+      <div class="border border-slate-200 rounded-2xl p-3.5 bg-white">
+        <p class="text-2xl font-extrabold ${color}">${value}</p>
+        <p class="text-[10px] font-bold text-slate-500 uppercase mt-0.5">${label}</p>
+      </div>`;
+    cards.innerHTML = [
+      card('Visitas hoy', d.visits.today, 'text-orange-600'),
+      card('Visitas totales', d.visits.total, 'text-orange-600'),
+      card('Vitrinas activas', (d.businesses.byStatus && d.businesses.byStatus.active) || 0, 'text-emerald-600'),
+      card('Residentes', d.residents.total, 'text-blue-600')
+    ].join('');
+
+    // Barras de visitas (7 días)
+    const max = Math.max(1, ...d.visits.last7Days.map(x => x.visits));
+    bars.innerHTML = d.visits.last7Days.map(x => {
+      const h = Math.round((x.visits / max) * 100);
+      return `<div class="flex-1 bg-orange-200 rounded-t-md relative" style="height:${Math.max(h, 4)}%">
+        <span class="absolute -top-4 left-0 right-0 text-[9px] font-extrabold text-slate-600 text-center">${x.visits}</span>
+      </div>`;
+    }).join('');
+    barsLabels.innerHTML = d.visits.last7Days.map(x => {
+      const parts = x.date.split('-');
+      return `<div class="flex-1">${parts[2]}</div>`;
+    }).join('');
+
+    // Desgloses
+    const chips = (obj, colors) => {
+      const entries = Object.entries(obj || {});
+      if (!entries.length) return '<span class="text-[11px] text-slate-400">Sin datos</span>';
+      return entries.map(([k, v]) => {
+        const color = (colors && colors[k]) || 'bg-slate-100 text-slate-700';
+        return `<span class="inline-block text-[10px] font-extrabold px-2 py-1 rounded-full ${color} mr-1.5 mb-1.5">${k}: ${v}</span>`;
+      }).join('');
+    };
+    const block = (title, content) => `
+      <div class="border border-slate-200 rounded-2xl p-3.5 bg-white">
+        <p class="text-xs font-extrabold text-slate-700 mb-2">${title}</p>
+        <div>${content}</div>
+      </div>`;
+    breakdowns.innerHTML = [
+      block('Vitrinas por manzana', chips(d.businesses.byManzana, {
+        '1': 'bg-orange-100 text-orange-700', '2': 'bg-amber-100 text-amber-700',
+        '3': 'bg-emerald-100 text-emerald-700', '4': 'bg-blue-100 text-blue-700',
+        '5': 'bg-violet-100 text-violet-700', '6': 'bg-rose-100 text-rose-700'
+      })),
+      block('PQRS por estado', chips(d.pqrs.byStatus)),
+      block('Pedidos por estado', chips(d.orders.byStatus)),
+      block('Solicitudes de soporte', `<span class="text-[10px] font-extrabold px-2 py-1 rounded-full bg-sky-100 text-sky-700">${d.support.total} en total</span>`)
+    ].join('');
+  } catch (error) {
+    cards.innerHTML = `<p class="text-xs font-bold text-red-600 col-span-2">${error.message}</p>`;
+  }
 }
 
 // ---------- RESIDENTES ----------
@@ -682,6 +776,8 @@ function init() {
   $('refreshBusinessesBtn').addEventListener('click', loadBusinesses);
   $('refreshSupportBtn').addEventListener('click', loadSupport);
   $('refreshAnnBtn').addEventListener('click', loadAnnouncements);
+  const refreshDashBtn = $('refreshDashboardBtn');
+  if (refreshDashBtn) refreshDashBtn.addEventListener('click', loadDashboard);
   $('annPublishBtn').addEventListener('click', handleAnnPublish);
   $('annFile').addEventListener('change', handleAnnFileSelect);
   $('annFileClear').addEventListener('click', clearAnnFile);
@@ -696,7 +792,12 @@ function init() {
   if (API.getAdminToken() || localStorage.getItem('adminPhone')) {
     API.getMe().then(me => {
       if (me && me.ok && me.data && me.data.isAdmin) {
-        enterPanel({ manzana: me.data.manzana || localStorage.getItem('adminManzana') || '', phone: me.data.phone || '' });
+        if (me.data.scope) localStorage.setItem('adminScope', me.data.scope);
+        enterPanel({
+          manzana: me.data.manzana || localStorage.getItem('adminManzana') || '',
+          phone: me.data.phone || '',
+          scope: me.data.scope || API.getAdminScope()
+        });
       } else {
         API.logoutAdmin();
       }

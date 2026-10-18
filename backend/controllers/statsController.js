@@ -59,3 +59,64 @@ export const getStats = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error al obtener estadísticas', error: error.message });
   }
 };
+
+// GET /api/stats/admin — panel del super admin: visitas, vitrinas,
+// residentes, PQRS, pedidos y solicitudes de soporte.
+export const getAdminStats = async (req, res) => {
+  try {
+    const [stats, businesses, residents, pqrs, orders, support] = await Promise.all([
+      Storage.read('stats'),
+      Storage.read('businesses'),
+      Storage.read('residents'),
+      Storage.read('pqrs'),
+      Storage.read('orders'),
+      Storage.read('supportRequests')
+    ]);
+
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const key = dateKey(-i);
+      const row = stats.find(s => s.date === key);
+      last7Days.push({ date: key, visits: row ? (row.visits || 0) : 0 });
+    }
+
+    const countBy = (list, field) => list.reduce((acc, item) => {
+      const key = item?.[field] || 'sin-dato';
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+
+    res.json({
+      success: true,
+      data: {
+        visits: {
+          today: last7Days[6]?.visits || 0,
+          total: stats.reduce((acc, s) => acc + (s.visits || 0), 0),
+          last7Days
+        },
+        businesses: {
+          total: businesses.length,
+          byStatus: countBy(businesses, 'status'),
+          byManzana: countBy(businesses, 'manzana')
+        },
+        residents: {
+          total: residents.length,
+          byRole: countBy(residents, 'role')
+        },
+        pqrs: {
+          total: pqrs.length,
+          byStatus: countBy(pqrs, 'estado')
+        },
+        orders: {
+          total: orders.length,
+          byStatus: countBy(orders, 'estado')
+        },
+        support: {
+          total: support.length
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al obtener estadísticas de administración', error: error.message });
+  }
+};

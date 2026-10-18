@@ -13,7 +13,7 @@ import {
   updateMyProduct,
   deleteMyProduct
 } from '../controllers/businessController.js';
-import { authAdmin, authResident, optionalAuthResident } from '../middleware/auth.js';
+import { authSuperAdmin, authResident, optionalAuthResident } from '../middleware/auth.js';
 import { cachePublic } from '../middleware/cache.js';
 
 const router = express.Router();
@@ -49,10 +49,10 @@ router.get('/:id', cachePublic({ maxAge: 60, sMaxAge: 300, staleWhileRevalidate:
 // POST /api/businesses/:id/ratings (Público) — Valorar una vitrina
 router.post('/:id/ratings', rateBusiness);
 
-// PUT /api/businesses/:id (admin) — Editar perfil de vendedor
-router.put('/:id', authAdmin, updateBusiness);
+// PUT /api/businesses/:id (super admin) — Editar perfil de vendedor
+router.put('/:id', authSuperAdmin, updateBusiness);
 
-// DELETE /api/businesses/:id (admin) — Eliminar perfil de vendedor
-router.delete('/:id', authAdmin, deleteBusiness);
+// DELETE /api/businesses/:id (super admin) — Eliminar perfil de vendedor
+router.delete('/:id', authSuperAdmin, deleteBusiness);
 
 export default router;

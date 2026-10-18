@@ -44,9 +44,54 @@ export async function ensureTowersData() {
   }
 }
 
+// Garantiza que la colección adminUsers tenga los registros del archivo JSON.
+// En cloud (Redis) la colección puede venir vacía o desactualizada (sin el
+// campo `scope`); se sincroniza por id para que el super admin y los niveles
+// existan también en producción sin tocar Upstash a mano.
+export async function ensureAdminUsersData() {
+  try {
+    const file = path.join(__dirname, '../data/adminUsers.json');
+    if (!fs.existsSync(file)) return null;
+    const fromFile = JSON.parse(fs.readFileSync(file, 'utf-8'));
+    if (!Array.isArray(fromFile) || fromFile.length === 0) return null;
+
+    const existing = await Storage.read('adminUsers');
+    const current = Array.isArray(existing) ? existing : [];
+    const byId = new Map(current.map(a => [a.id, a]));
+    let changed = current.length !== fromFile.length;
+
+    for (const record of fromFile) {
+      const prev = byId.get(record.id);
+      if (!prev) {
+        changed = true;
+        continue;
+      }
+      // Actualiza campos de configuración si cambiaron en el archivo (p. ej. scope)
+      for (const key of ['phone', 'name', 'manzana', 'scope', 'active']) {
+        if (record[key] !== undefined && prev[key] !== record[key]) {
+          changed = true;
+          break;
+        }
+      }
+    }
+
+    if (changed) {
+      const merged = fromFile.map(record => ({ ...(byId.get(record.id) || {}), ...record }));
+      await Storage.write('adminUsers', merged);
+      console.log(`[SEED] adminUsers sincronizado (${merged.length} registros).`);
+      return merged;
+    }
+    return current;
+  } catch (err) {
+    console.error('[SEED] No se pudo inicializar adminUsers.', err?.message);
+    return null;
+  }
+}
+
 export async function runSeeds() {
   try {
     await ensureTowersData();
+    await ensureAdminUsersData();
   } catch (err) {
     console.error('[SEED] Error al sembrar datos iniciales.', err?.message);
   }

@@ -40,6 +40,7 @@
             <span id="admResendTimer" class="text-[10px] text-slate-400 font-bold"></span>
           </div>
           <div class="flex justify-between" id="admOtpBoxes"></div>
+          <div id="admDemoCodeHint" class="hidden bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-bold p-2.5 rounded-xl text-center"></div>
           <div id="admLoginError" class="hidden bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-2.5 rounded-xl"></div>
           <button id="admVerifyBtn" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-sm rounded-xl shadow touch-btn">
             Ingresar al panel
@@ -68,16 +69,35 @@
       </header>
 
       <!-- Tabs -->
-      <div class="grid grid-cols-6 border-b border-slate-200">
-        <button data-panel="pqrs" class="adm-tab py-3 text-xs font-extrabold border-b-2 border-transparent">PQRS</button>
-        <button data-panel="orders" class="adm-tab py-3 text-xs font-extrabold border-b-2 border-transparent">Pedidos</button>
-        <button data-panel="businesses" class="adm-tab py-3 text-xs font-extrabold border-b-2 border-transparent">Vitrinas</button>
-        <button data-panel="residents" class="adm-tab py-3 text-xs font-extrabold border-b-2 border-transparent">Residentes</button>
-        <button data-panel="support" class="adm-tab py-3 text-xs font-extrabold border-b-2 border-transparent">Soporte</button>
-        <button data-panel="announcements" class="adm-tab py-3 text-xs font-extrabold border-b-2 border-transparent">Comunicados</button>
+      <div id="admTabBar" class="flex overflow-x-auto border-b border-slate-200">
+        <button data-panel="dashboard" class="adm-tab flex-1 py-3 text-xs font-extrabold border-b-2 border-transparent whitespace-nowrap">Inicio</button>
+        <button data-panel="pqrs" class="adm-tab flex-1 py-3 text-xs font-extrabold border-b-2 border-transparent whitespace-nowrap">PQRS</button>
+        <button data-panel="orders" class="adm-tab flex-1 py-3 text-xs font-extrabold border-b-2 border-transparent whitespace-nowrap">Pedidos</button>
+        <button data-panel="businesses" class="adm-tab flex-1 py-3 text-xs font-extrabold border-b-2 border-transparent whitespace-nowrap">Vitrinas</button>
+        <button data-panel="residents" class="adm-tab flex-1 py-3 text-xs font-extrabold border-b-2 border-transparent whitespace-nowrap">Residentes</button>
+        <button data-panel="support" class="adm-tab flex-1 py-3 text-xs font-extrabold border-b-2 border-transparent whitespace-nowrap">Soporte</button>
+        <button data-panel="announcements" class="adm-tab flex-1 py-3 text-xs font-extrabold border-b-2 border-transparent whitespace-nowrap">Comunicados</button>
       </div>
 
       <div class="p-4">
+
+        <!-- ==== PANEL DASHBOARD (solo super admin) ==== -->
+        <div id="panel-dashboard" class="adm-panel space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-extrabold text-sm">Resumen de la plataforma</h3>
+            <button id="refreshDashboardBtn" class="text-xs font-bold text-orange-600">⟳ Actualizar</button>
+          </div>
+
+          <div id="dashCards" class="grid grid-cols-2 gap-3"></div>
+
+          <div class="border border-slate-200 rounded-2xl p-3.5 bg-white space-y-2">
+            <p class="text-xs font-extrabold text-slate-700">Visitas últimos 7 días</p>
+            <div id="dashBars" class="flex items-end gap-1.5 h-28"></div>
+            <div id="dashBarsLabels" class="flex gap-1.5 text-[9px] font-bold text-slate-400 text-center"></div>
+          </div>
+
+          <div id="dashBreakdowns" class="space-y-3"></div>
+        </div>
 
         <!-- ==== PANEL PQRS ==== -->
         <div id="panel-pqrs" class="adm-panel space-y-3">

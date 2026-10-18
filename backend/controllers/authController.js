@@ -163,12 +163,27 @@ export const verifyAdminOtp = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Administración no encontrada para este teléfono.' });
     }
 
-    const token = signToken({ role: 'admin', phone: admin.phone, manzana: String(admin.manzana) }, ADMIN_SESSION_TTL_MS / 1000);
+    const token = signToken({
+      role: 'admin',
+      phone: admin.phone,
+      manzana: admin.manzana ? String(admin.manzana) : null,
+      scope: admin.scope === 'super' ? 'super' : 'manzana'
+    }, ADMIN_SESSION_TTL_MS / 1000);
     setSessionCookie(res, token, ADMIN_SESSION_TTL_MS);
+    const scope = admin.scope === 'super' ? 'super' : 'manzana';
     res.json({
       success: true,
-      message: `Bienvenido, Administración Manzana ${admin.manzana}.`,
-      data: { token, role: 'admin', phone: admin.phone, manzana: String(admin.manzana), name: admin.name }
+      message: scope === 'super'
+        ? 'Bienvenido, Super Administración.'
+        : `Bienvenido, Administración Manzana ${admin.manzana}.`,
+      data: {
+        token,
+        role: 'admin',
+        phone: admin.phone,
+        manzana: admin.manzana ? String(admin.manzana) : null,
+        scope,
+        name: admin.name
+      }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al verificar el código admin', error: error.message });
@@ -292,7 +307,14 @@ export const getMe = async (req, res) => {
     if (req.user.role === 'admin') {
       return res.json({
         success: true,
-        data: { role: 'admin', phone: req.user.phone, manzana: req.user.manzana, isAdmin: true, resident: null }
+        data: {
+          role: 'admin',
+          phone: req.user.phone,
+          manzana: req.user.manzana || null,
+          scope: req.user.scope === 'super' ? 'super' : 'manzana',
+          isAdmin: true,
+          resident: null
+        }
       });
     }
 

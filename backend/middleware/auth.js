@@ -50,6 +50,23 @@ export const authAdmin = (req, res, next) => {
 };
 
 /**
+ * Middleware: protege rutas reservadas al SUPER ADMIN (global).
+ * Espera un JWT con { role: 'admin', scope: 'super' }.
+ * Los administradores de manzana (scope 'manzana' o sin scope) no pasan.
+ */
+export const authSuperAdmin = (req, res, next) => {
+  const token = extractToken(req);
+  const payload = token ? verifyToken(token) : null;
+
+  if (!payload || payload.role !== 'admin' || payload.scope !== 'super') {
+    return res.status(403).json({ success: false, message: 'Acceso restringido al Super Administrador.' });
+  }
+
+  req.user = payload;
+  next();
+};
+
+/**
  * Middleware: protege rutas que requieren un residente autenticado.
  * Espera un JWT con { role: 'resident', residentId }.
  */
@@ -95,4 +112,4 @@ export const authAny = (req, res, next) => {
   next();
 };
 
-export default { signToken, verifyToken, authAdmin, authResident, optionalAuthResident, authAny };
+export default { signToken, verifyToken, authAdmin, authSuperAdmin, authResident, optionalAuthResident, authAny };

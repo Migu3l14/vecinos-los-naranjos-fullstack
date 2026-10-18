@@ -1,9 +1,3 @@
 [
-  { "id": "adm-super", "phone": "573167017188", "name": "Super Administración", "scope": "super", "active": true, "createdAt": "2026-10-18T00:00:00.000Z" },
-  { "id": "adm-mz1", "phone": "573001234501", "name": "Administración Manzana 1", "manzana": "1", "scope": "manzana", "active": true, "createdAt": "2026-09-07T00:00:00.000Z" },
-  { "id": "adm-mz2", "phone": "573001234502", "name": "Administración Manzana 2", "manzana": "2", "scope": "manzana", "active": true, "createdAt": "2026-09-07T00:00:00.000Z" },
-  { "id": "adm-mz3", "phone": "573001234503", "name": "Administración Manzana 3", "manzana": "3", "scope": "manzana", "active": true, "createdAt": "2026-09-07T00:00:00.000Z" },
-  { "id": "adm-mz4", "phone": "573001234504", "name": "Administración Manzana 4", "manzana": "4", "scope": "manzana", "active": true, "createdAt": "2026-09-07T00:00:00.000Z" },
-  { "id": "adm-mz5", "phone": "573001234505", "name": "Administración Manzana 5", "manzana": "5", "scope": "manzana", "active": true, "createdAt": "2026-09-07T00:00:00.000Z" },
-  { "id": "adm-mz6", "phone": "573001234506", "name": "Administración Manzana 6", "manzana": "6", "scope": "manzana", "active": true, "createdAt": "2026-09-07T00:00:00.000Z" }
+  { "id": "adm-super", "phone": "573167017188", "name": "Super Administración", "scope": "super", "active": true, "createdAt": "2026-10-18T00:00:00.000Z" }
 ]

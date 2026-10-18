@@ -1,10 +1,10 @@
 [
   { "id": "all", "name": "Todos", "icon": "fa-cubes", "color": "bg-orange-500 text-white" },
-  { "id": "comida", "name": "Comidas", "icon": "fa-utensils", "color": "bg-amber-100 text-amber-700" },
-  { "id": "belleza", "name": "Belleza/Uñas", "icon": "fa-spa", "color": "bg-pink-100 text-pink-700" },
-  { "id": "postres", "name": "Postres", "icon": "fa-cake-candles", "color": "bg-purple-100 text-purple-700" },
-  { "id": "servicios", "name": "Técnicos", "icon": "fa-screwdriver-wrench", "color": "bg-blue-100 text-blue-700" },
-  { "id": "mascotas", "name": "Mascotas", "icon": "fa-paw", "color": "bg-emerald-100 text-emerald-700" },
-  { "id": "hogar", "name": "Tiendas y minimarket", "icon": "fa-broom", "color": "bg-teal-100 text-teal-700" },
-  { "id": "clases", "name": "Otros", "icon": "fa-graduation-cap", "color": "bg-indigo-100 text-indigo-700" }
+  { "id": "comida", "name": "Comidas", "icon": "fa-utensils", "color": "bg-amber-500 text-white" },
+  { "id": "belleza", "name": "Belleza/Uñas", "icon": "fa-spa", "color": "bg-pink-500 text-white" },
+  { "id": "postres", "name": "Postres", "icon": "fa-cake-candles", "color": "bg-violet-500 text-white" },
+  { "id": "servicios", "name": "Técnicos", "icon": "fa-screwdriver-wrench", "color": "bg-blue-500 text-white" },
+  { "id": "mascotas", "name": "Mascotas", "icon": "fa-paw", "color": "bg-teal-500 text-white" },
+  { "id": "hogar", "name": "Tiendas y minimarket", "icon": "fa-broom", "color": "bg-emerald-500 text-white" },
+  { "id": "clases", "name": "Otros", "icon": "fa-graduation-cap", "color": "bg-indigo-500 text-white" }
 ]

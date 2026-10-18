@@ -12,16 +12,15 @@ export const UI = {
 
     container.innerHTML = categories.map(cat => {
       const isActive = cat.id === currentCatId;
-      const activeClass = isActive 
-        ? 'ring-2 ring-orange-500 bg-orange-50 font-extrabold text-orange-600' 
-        : 'bg-white text-slate-700 hover:bg-slate-50';
+      const activeRing = isActive ? 'ring-2 ring-offset-2 ring-orange-500' : '';
+      const labelClass = isActive ? 'font-extrabold text-orange-600' : 'font-semibold text-slate-600';
 
       return `
-        <button data-id="${cat.id}" class="cat-btn p-2.5 rounded-2xl border border-slate-100 flex flex-col items-center justify-center text-center shadow-sm transition touch-btn ${activeClass}">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-1.5 ${cat.color}">
+        <button data-id="${cat.id}" class="cat-btn flex flex-col items-center gap-1.5 text-center transition touch-btn group">
+          <span class="w-full h-14 rounded-2xl flex items-center justify-center text-xl text-white shadow-sm transition group-active:scale-95 ${activeRing} ${cat.color}">
             <i class="fa-solid ${cat.icon}"></i>
-          </div>
-          <span class="text-[11px] leading-tight line-clamp-1">${cat.name}</span>
+          </span>
+          <span class="text-[11px] leading-tight line-clamp-1 ${labelClass}">${cat.name}</span>
         </button>
       `;
     }).join('');

@@ -190,21 +190,21 @@ export const UI = {
     return `
       <article class="biz-card bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg transition flex flex-col overflow-hidden">
         <div class="relative cursor-pointer open-profile-trigger" data-id="${biz.id}">
-          <div class="biz-cover h-40 sm:h-44 w-full bg-slate-100 overflow-hidden">
+          <div class="biz-cover h-28 sm:h-32 w-full bg-slate-100 overflow-hidden">
             <img src="${esc(biz.coverImage)}" alt="${esc(biz.name)}" loading="lazy" class="w-full h-full object-cover" />
           </div>
-          <span class="absolute top-2.5 left-2.5 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+          <span class="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
             Mz ${esc(biz.manzana)}
           </span>
-          <div class="absolute -bottom-5 left-4 w-12 h-12 rounded-full flex items-center justify-center text-white text-[14px] sm:text-[16px] shadow-md ring-2 ring-white"
+          <div class="absolute -bottom-4 left-3 w-10 h-10 rounded-full flex items-center justify-center text-white text-[14px] sm:text-[16px] shadow-md ring-2 ring-white"
             style="background-color:${color}">
             <i class="fa-solid ${info.icon}"></i>
           </div>
         </div>
 
-        <div class="pt-7 px-4 pb-4 flex flex-col flex-1">
-          ${tags.length ? `<div class="flex flex-wrap gap-1.5 mb-1.5">${tags.join('')}</div>` : ''}
-          <h3 class="text-base font-extrabold text-slate-900 leading-tight line-clamp-1">${esc(biz.name)}</h3>
+        <div class="pt-6 px-3 pb-3 flex flex-col flex-1">
+          ${tags.length ? `<div class="flex flex-wrap gap-1 mb-1">${tags.join('')}</div>` : ''}
+          <h3 class="text-sm font-extrabold text-slate-900 leading-tight line-clamp-1">${esc(biz.name)}</h3>
           <p class="text-[11px] font-semibold text-slate-400">${esc(info.name)}</p>
           <p class="text-xs text-slate-500 line-clamp-2 mt-1 leading-snug flex-1">${esc(biz.shortDesc)}</p>
 
@@ -215,12 +215,12 @@ export const UI = {
             ${biz.hours ? `<span class="text-slate-400 truncate text-right"><i class="fa-regular fa-clock text-[10px] mr-1"></i>${esc(biz.hours)}</span>` : ''}
           </div>
 
-          <div class="grid grid-cols-2 gap-2 mt-3">
-            <button data-id="${biz.id}" class="btn-profile py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl flex items-center justify-center space-x-1.5 touch-btn">
+          <div class="grid grid-cols-2 gap-2 mt-2.5">
+            <button data-id="${biz.id}" class="btn-profile py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl flex items-center justify-center space-x-1.5 touch-btn">
               <i class="fa-solid fa-store text-slate-600"></i>
               <span>Ver negocio</span>
             </button>
-            <button data-id="${biz.id}" class="btn-wa py-2.5 bg-[#25D366] hover:bg-[#1ebd59] text-white font-extrabold text-xs rounded-xl flex items-center justify-center space-x-1.5 shadow touch-btn">
+            <button data-id="${biz.id}" class="btn-wa py-2 bg-[#25D366] hover:bg-[#1ebd59] text-white font-extrabold text-xs rounded-xl flex items-center justify-center space-x-1.5 shadow touch-btn">
               <i class="fa-brands fa-whatsapp text-sm"></i>
               <span>WhatsApp</span>
             </button>

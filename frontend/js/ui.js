@@ -36,7 +36,7 @@ export const UI = {
       return `
         <button data-id="${cat.id}" class="cat-btn category-tile w-full h-[96px] sm:h-[108px] rounded-2xl flex flex-col items-center justify-center gap-2 text-white shadow-sm touch-btn ${activeRing}"
           style="background-color:${catColor(cat.id)}">
-          <i class="fa-solid ${cat.icon} text-[26px] sm:text-[30px] leading-none"></i>
+          <i class="fa-solid ${cat.icon} text-[38px] sm:text-[44px] leading-none"></i>
           <span class="text-[13px] sm:text-[15px] font-semibold leading-tight text-center px-1.5 line-clamp-2">${esc(cat.name)}</span>
         </button>
       `;
@@ -196,7 +196,7 @@ export const UI = {
           <span class="absolute top-2.5 left-2.5 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
             Mz ${esc(biz.manzana)}
           </span>
-          <div class="absolute -bottom-6 left-4 w-12 h-12 rounded-full flex items-center justify-center text-white text-base shadow-md ring-4 ring-white"
+          <div class="absolute -bottom-6 left-4 w-14 h-14 rounded-full flex items-center justify-center text-white text-xl shadow-md ring-4 ring-white"
             style="background-color:${color}">
             <i class="fa-solid ${info.icon}"></i>
           </div>

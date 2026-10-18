@@ -34,9 +34,9 @@ export const UI = {
       const activeRing = isActive ? 'ring-2 ring-offset-2 ring-slate-900/70' : '';
 
       return `
-        <button data-id="${cat.id}" class="cat-btn category-tile w-full h-[96px] sm:h-[108px] rounded-2xl flex flex-col items-center justify-center gap-2 text-white shadow-sm touch-btn ${activeRing}"
+        <button data-id="${cat.id}" class="cat-btn category-tile w-full h-[76px] sm:h-[84px] rounded-2xl flex flex-col items-center justify-center gap-1.5 text-white shadow-sm touch-btn ${activeRing}"
           style="background-color:${catColor(cat.id)}">
-          <i class="fa-solid ${cat.icon} text-[28px] sm:text-[32px] leading-none"></i>
+          <i class="fa-solid ${cat.icon} text-[14px] sm:text-[16px] leading-none"></i>
           <span class="text-[13px] sm:text-[15px] font-semibold leading-tight text-center px-1.5 line-clamp-2">${esc(cat.name)}</span>
         </button>
       `;

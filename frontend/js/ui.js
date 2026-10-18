@@ -4,23 +4,40 @@ const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
 ));
 
+// Paleta de color por categoría (identidad del mockup). Fallback: naranja marca.
+const CAT_PALETTE = {
+  all: '#FF7900',
+  comida: '#FF9238',
+  belleza: '#ED438D',
+  postres: '#8652D5',
+  servicios: '#3995EA',
+  mascotas: '#16BDBD',
+  hogar: '#5DBB61',
+  clases: '#6D5AE6'
+};
+const catColor = (id) => CAT_PALETTE[id] || '#FF7900';
+
+// Devuelve { name, icon } de una categoría a partir de la lista cargada
+const catInfo = (categories, id) => {
+  const c = (categories || []).find(x => x.id === id);
+  return { name: c ? c.name : 'Otros', icon: c ? c.icon : 'fa-store' };
+};
+
 export const UI = {
-  // Renderizar cuadrícula de categorías
+  // Renderizar cuadrícula de categorías como bloques de color con ícono blanco
   renderCategories(categories, currentCatId, onSelect) {
     const container = document.getElementById('categoriesGrid');
     if (!container) return;
 
     container.innerHTML = categories.map(cat => {
       const isActive = cat.id === currentCatId;
-      const activeRing = isActive ? 'ring-2 ring-offset-2 ring-orange-500' : '';
-      const labelClass = isActive ? 'font-extrabold text-orange-600' : 'font-semibold text-slate-600';
+      const activeRing = isActive ? 'ring-2 ring-offset-2 ring-slate-900/70' : '';
 
       return `
-        <button data-id="${cat.id}" class="cat-btn flex flex-col items-center gap-1.5 text-center transition touch-btn group">
-          <span class="w-full h-14 rounded-2xl flex items-center justify-center text-xl text-white shadow-sm transition group-active:scale-95 ${activeRing} ${cat.color}">
-            <i class="fa-solid ${cat.icon}"></i>
-          </span>
-          <span class="text-[11px] leading-tight line-clamp-1 ${labelClass}">${cat.name}</span>
+        <button data-id="${cat.id}" class="cat-btn category-tile w-full h-[96px] sm:h-[108px] rounded-2xl flex flex-col items-center justify-center gap-2 text-white shadow-sm touch-btn ${activeRing}"
+          style="background-color:${catColor(cat.id)}">
+          <i class="fa-solid ${cat.icon} text-[38px] sm:text-[44px] leading-none"></i>
+          <span class="text-[13px] sm:text-[15px] font-semibold leading-tight text-center px-1.5 line-clamp-2">${esc(cat.name)}</span>
         </button>
       `;
     }).join('');
@@ -87,8 +104,8 @@ export const UI = {
     });
   },
 
-  // Renderizar listado de vitrinas
-  renderBusinesses(businesses, onOpenProfile, onQuickWhatsApp) {
+  // Renderizar listado de vitrinas (tarjetas comerciales verticales)
+  renderBusinesses(businesses, categories, offerByBiz, onOpenProfile, onQuickWhatsApp) {
     const container = document.getElementById('businessList');
     const countBadge = document.getElementById('businessCountBadge');
     if (!container) return;
@@ -99,7 +116,7 @@ export const UI = {
 
     if (businesses.length === 0) {
       container.innerHTML = `
-        <div class="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+        <div class="col-span-full p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
           <span class="text-3xl">🔍</span>
           <h4 class="font-bold text-slate-700 text-sm mt-2">No encontramos vitrinas disponibles</h4>
           <p class="text-xs text-slate-500 mt-1">Prueba con otra palabra clave o selecciona otra manzana.</p>
@@ -108,45 +125,7 @@ export const UI = {
       return;
     }
 
-    container.innerHTML = businesses.map(biz => `
-      <div class="bg-white rounded-2xl border border-slate-100 p-3.5 shadow-sm hover:shadow-md transition space-y-3 relative overflow-hidden">
-        
-        <!-- Encabezado de la tarjeta -->
-        <div class="flex space-x-3 cursor-pointer open-profile-trigger" data-id="${biz.id}">
-          <div class="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100">
-            <img src="${biz.coverImage}" alt="${biz.name}" class="w-full h-full object-cover" />
-            <span class="absolute top-1 left-1 bg-black/75 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-              Mz ${biz.manzana}
-            </span>
-          </div>
-          
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between">
-              <span class="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">${biz.badge || 'Vecino Verificado'}</span>
-              <span class="text-xs font-bold text-amber-500 flex items-center">
-                <i class="fa-solid fa-star text-[10px] mr-1"></i> ${biz.rating}
-              </span>
-            </div>
-            <h3 class="text-sm font-extrabold text-slate-900 leading-tight mt-1 truncate">${biz.name}</h3>
-            <p class="text-xs text-slate-500 line-clamp-2 mt-1 leading-snug">${biz.shortDesc}</p>
-          </div>
-        </div>
-
-        <!-- Botones de Acción Inmediata -->
-        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 text-xs">
-          <button data-id="${biz.id}" class="btn-profile py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl flex items-center justify-center space-x-1.5 touch-btn">
-            <i class="fa-solid fa-store text-slate-600"></i>
-            <span>Ver Vitrina</span>
-          </button>
-          
-          <button data-id="${biz.id}" class="btn-wa py-2.5 bg-[#25D366] hover:bg-[#1ebd59] text-white font-extrabold rounded-xl flex items-center justify-center space-x-1.5 shadow touch-btn">
-            <i class="fa-brands fa-whatsapp text-sm"></i>
-            <span>WhatsApp</span>
-          </button>
-        </div>
-
-      </div>
-    `).join('');
+    container.innerHTML = businesses.map(biz => UI.businessCard(biz, categories, offerByBiz, onOpenProfile, onQuickWhatsApp)).join('');
 
     container.querySelectorAll('.open-profile-trigger, .btn-profile').forEach(el => {
       el.addEventListener('click', () => onOpenProfile(el.dataset.id));
@@ -159,9 +138,9 @@ export const UI = {
 
   // Renderizar listado de vitrinas intercalando tarjetas promocionales de
   // comunicados oficiales cada "every" tarjetas (requisito de segmentación).
-  renderBusinessesWithPromos(businesses, announcements, onOpenProfile, onQuickWhatsApp, onOpenAnn, every = 4) {
+  renderBusinessesWithPromos(businesses, announcements, categories, offerByBiz, onOpenProfile, onQuickWhatsApp, onOpenAnn, every = 4) {
     const blockSize = Math.max(1, Number(every) || 4);
-    const cards = businesses.map(biz => UI.businessCard(biz, onOpenProfile, onQuickWhatsApp));
+    const cards = businesses.map(biz => UI.businessCard(biz, categories, offerByBiz, onOpenProfile, onQuickWhatsApp));
     const promos = (announcements || []).map(ann => UI.annPromoCard(ann, onOpenAnn));
 
     const grid = [];
@@ -195,39 +174,59 @@ export const UI = {
     });
   },
 
-  // Tarjeta individual de vitrina (reutilizable por renderBusinesses)
-  businessCard(biz, onOpenProfile, onQuickWhatsApp) {
+  // Tarjeta individual de vitrina (comercial, vertical, reutilizable)
+  businessCard(biz, categories, offerByBiz, onOpenProfile, onQuickWhatsApp) {
+    const info = catInfo(categories, biz.category);
+    const color = catColor(biz.category);
+    const offer = offerByBiz && biz.id ? offerByBiz[biz.id] : null;
+    const ratingCount = Number(biz.ratingCount || biz.reviewsCount || 0);
+
+    // Etiquetas promocionales SOLO con datos reales: oferta activa, badge, envíos
+    const tags = [];
+    if (offer) tags.push(`<span class="text-[10px] font-bold text-white bg-red-500 px-2 py-0.5 rounded-full">% OFF</span>`);
+    if (biz.badge) tags.push(`<span class="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">${esc(biz.badge)}</span>`);
+    if (biz.delivery) tags.push(`<span class="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full">Envíos</span>`);
+
     return `
-      <div class="bg-white rounded-2xl border border-slate-100 p-3.5 shadow-sm hover:shadow-md transition space-y-3 relative overflow-hidden">
-        <div class="flex space-x-3 cursor-pointer open-profile-trigger" data-id="${biz.id}">
-          <div class="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100">
-            <img src="${biz.coverImage}" alt="${esc(biz.name)}" class="w-full h-full object-cover" />
-            <span class="absolute top-1 left-1 bg-black/75 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-              Mz ${esc(biz.manzana)}
+      <article class="biz-card bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg transition flex flex-col overflow-hidden">
+        <div class="relative cursor-pointer open-profile-trigger" data-id="${biz.id}">
+          <div class="biz-cover h-40 sm:h-44 w-full bg-slate-100 overflow-hidden">
+            <img src="${esc(biz.coverImage)}" alt="${esc(biz.name)}" loading="lazy" class="w-full h-full object-cover" />
+          </div>
+          <span class="absolute top-2.5 left-2.5 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+            Mz ${esc(biz.manzana)}
+          </span>
+          <div class="absolute -bottom-6 left-4 w-14 h-14 rounded-full flex items-center justify-center text-white text-xl shadow-md ring-4 ring-white"
+            style="background-color:${color}">
+            <i class="fa-solid ${info.icon}"></i>
+          </div>
+        </div>
+
+        <div class="pt-8 px-4 pb-4 flex flex-col flex-1">
+          ${tags.length ? `<div class="flex flex-wrap gap-1.5 mb-1.5">${tags.join('')}</div>` : ''}
+          <h3 class="text-base font-extrabold text-slate-900 leading-tight line-clamp-1">${esc(biz.name)}</h3>
+          <p class="text-[11px] font-semibold text-slate-400">${esc(info.name)}</p>
+          <p class="text-xs text-slate-500 line-clamp-2 mt-1 leading-snug flex-1">${esc(biz.shortDesc)}</p>
+
+          <div class="flex items-center justify-between gap-2 mt-2 text-[11px]">
+            <span class="text-amber-500 font-bold shrink-0">
+              <i class="fa-solid fa-star text-[10px] mr-1"></i>${esc(biz.rating || '5.0')}${ratingCount ? `<span class="text-slate-400 font-medium"> (${ratingCount})</span>` : ''}
             </span>
+            ${biz.hours ? `<span class="text-slate-400 truncate text-right"><i class="fa-regular fa-clock text-[10px] mr-1"></i>${esc(biz.hours)}</span>` : ''}
           </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between">
-              <span class="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">${esc(biz.badge || 'Vecino Verificado')}</span>
-              <span class="text-xs font-bold text-amber-500 flex items-center">
-                <i class="fa-solid fa-star text-[10px] mr-1"></i> ${esc(biz.rating)}${biz.ratingCount ? `·${biz.ratingCount}` : ''}
-              </span>
-            </div>
-            <h3 class="text-sm font-extrabold text-slate-900 leading-tight mt-1 truncate">${esc(biz.name)}</h3>
-            <p class="text-xs text-slate-500 line-clamp-2 mt-1 leading-snug">${esc(biz.shortDesc)}</p>
+
+          <div class="grid grid-cols-2 gap-2 mt-3">
+            <button data-id="${biz.id}" class="btn-profile py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl flex items-center justify-center space-x-1.5 touch-btn">
+              <i class="fa-solid fa-store text-slate-600"></i>
+              <span>Ver negocio</span>
+            </button>
+            <button data-id="${biz.id}" class="btn-wa py-2.5 bg-[#25D366] hover:bg-[#1ebd59] text-white font-extrabold text-xs rounded-xl flex items-center justify-center space-x-1.5 shadow touch-btn">
+              <i class="fa-brands fa-whatsapp text-sm"></i>
+              <span>WhatsApp</span>
+            </button>
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 text-xs">
-          <button data-id="${biz.id}" class="btn-profile py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl flex items-center justify-center space-x-1.5 touch-btn">
-            <i class="fa-solid fa-store text-slate-600"></i>
-            <span>Ver Vitrina</span>
-          </button>
-          <button data-id="${biz.id}" class="btn-wa py-2.5 bg-[#25D366] hover:bg-[#1ebd59] text-white font-extrabold rounded-xl flex items-center justify-center space-x-1.5 shadow touch-btn">
-            <i class="fa-brands fa-whatsapp text-sm"></i>
-            <span>WhatsApp</span>
-          </button>
-        </div>
-      </div>`;
+      </article>`;
   },
 
   // Tarjeta promocional de comunicado para intercalar en el feed

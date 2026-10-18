@@ -331,7 +331,19 @@ async function fetchFilteredBusinesses() {
 }
 
 function renderBusinessList() {
-  UI.renderBusinesses(state.businesses, handleOpenProfile, handleQuickWhatsApp);
+  // "Destacados": mejor calificados primero; a igual rating, los que tienen badge
+  const sorted = [...state.businesses].sort((a, b) => {
+    const ra = parseFloat(a.rating) || 0;
+    const rb = parseFloat(b.rating) || 0;
+    if (rb !== ra) return rb - ra;
+    return (b.badge ? 1 : 0) - (a.badge ? 1 : 0);
+  });
+
+  // Mapa bizId -> oferta activa (para la etiqueta "% OFF" solo con datos reales)
+  const offerByBiz = {};
+  (state.offers || []).forEach(o => { if (o.bizId) offerByBiz[o.bizId] = o; });
+
+  UI.renderBusinesses(sorted, state.categories, offerByBiz, handleOpenProfile, handleQuickWhatsApp);
 }
 
 window.closeAnnStory = () => document.getElementById('annStoryModal').classList.add('hidden');
@@ -576,11 +588,11 @@ function handleCategorySelect(catId) {
   const listSubtitle = document.getElementById('listSubtitle');
 
   if (listTitle && catObj) {
-    listTitle.innerText = catId === 'all' ? '⭐ Vitrinas en Los Naranjos' : `Categoría: ${catObj.name}`;
+    listTitle.innerText = catId === 'all' ? '⭐ Negocios destacados' : `Categoría: ${catObj.name}`;
   }
   if (listSubtitle && catObj) {
     listSubtitle.innerText = catId === 'all' 
-      ? 'Mostrando todas las vitrinas activas y verificadas' 
+      ? 'Los vecinos mejor valorados de Los Naranjos' 
       : `Vitrinas de ${catObj.name.toLowerCase()} en tu conjunto`;
   }
 

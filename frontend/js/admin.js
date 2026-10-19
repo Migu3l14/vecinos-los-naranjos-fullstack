@@ -345,12 +345,30 @@ function renderResidents() {
   });
 }
 
-function formatResidentDate(iso) {
+// Todas las fechas se guardan en UTC; se muestran siempre en hora de Colombia
+// para que no se corran de día según la zona horaria del dispositivo.
+const BOGOTA_TZ = 'America/Bogota';
+
+function fmtDateTime(iso) {
+  if (!iso) return '';
   try {
-    return new Date(iso).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' });
+    return new Date(iso).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short', timeZone: BOGOTA_TZ });
   } catch (e) {
     return iso || '';
   }
+}
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  try {
+    return new Date(iso).toLocaleDateString('es-CO', { dateStyle: 'short', timeZone: BOGOTA_TZ });
+  } catch (e) {
+    return iso || '';
+  }
+}
+
+function formatResidentDate(iso) {
+  return fmtDateTime(iso);
 }
 
 // ---------- PQRS ----------
@@ -424,7 +442,7 @@ function openPqrsDetail(id, items) {
   const notas = (currentPqrsDetail.notas || []).map(n => `
     <div class="bg-slate-50 p-2 rounded-lg">
       <p class="text-[11px] text-slate-700">${n.texto}</p>
-      <span class="text-[9px] text-slate-400">${n.autor || 'Administración'} · ${new Date(n.createdAt).toLocaleString('es-CO')}</span>
+      <span class="text-[9px] text-slate-400">${n.autor || 'Administración'} · ${fmtDateTime(n.createdAt)}</span>
     </div>`).join('') || '<p class="text-[11px] text-slate-400">Sin notas de seguimiento.</p>';
 
   $('pqrsDetailBody').innerHTML = `
@@ -435,7 +453,7 @@ function openPqrsDetail(id, items) {
       <div><span class="text-slate-400 block">Nombre</span><b>${currentPqrsDetail.nombre}</b></div>
       <div><span class="text-slate-400 block">Teléfono</span><b>${currentPqrsDetail.telefono || '—'}</b></div>
       <div><span class="text-slate-400 block">Correo (opcional)</span><b>${currentPqrsDetail.email || '—'}</b></div>
-      <div><span class="text-slate-400 block">Radicada</span><b>${new Date(currentPqrsDetail.createdAt).toLocaleDateString('es-CO')}</b></div>
+      <div><span class="text-slate-400 block">Radicada</span><b>${fmtDate(currentPqrsDetail.createdAt)}</b></div>
     </div>
     <div>
       <h5 class="font-extrabold text-slate-800 mb-1">Seguimiento</h5>
@@ -501,7 +519,7 @@ async function loadOrders() {
         </div>
         <div class="flex items-center justify-between text-[10px] text-slate-400">
           <span>${o.resident.fullName} · ${o.resident.tower} Apto ${o.resident.apartment}</span>
-          <span>${new Date(o.createdAt).toLocaleString('es-CO')}</span>
+          <span>${fmtDateTime(o.createdAt)}</span>
         </div>
         <div class="flex space-x-2">
           <select class="order-status flex-1 border border-slate-200 rounded-xl text-[10px] p-2" data-id="${o.id}">
@@ -589,7 +607,7 @@ async function loadSupport() {
       <div class="border border-slate-200 rounded-2xl p-3 space-y-2">
         <div class="flex items-center justify-between">
           <span class="text-[10px] font-extrabold text-orange-600 uppercase">${r.estado || 'Nueva'}</span>
-          <span class="text-[10px] text-slate-400">${new Date(r.createdAt).toLocaleString('es-CO')}</span>
+          <span class="text-[10px] text-slate-400">${fmtDateTime(r.createdAt)}</span>
         </div>
         <div>
           <p class="text-sm font-extrabold text-slate-900">📞 ${r.telefono}</p>
@@ -757,7 +775,7 @@ async function loadAnnouncements() {
                 <h4 class="text-sm font-extrabold text-slate-900 truncate">${a.title}</h4>
               </div>
             </div>
-            <span class="text-[10px] text-slate-400 flex-shrink-0">${new Date(a.createdAt).toLocaleDateString('es-CO')}</span>
+            <span class="text-[10px] text-slate-400 flex-shrink-0">${fmtDate(a.createdAt)}</span>
           </div>
           ${a.body ? `<p class="text-xs text-slate-500 line-clamp-2 px-1">${a.body}</p>` : ''}
           <div class="flex items-center justify-between pt-1">
@@ -798,7 +816,7 @@ async function loadAnnouncements() {
 
 // Vista previa reutilizable de un comunicado (también usada por el modal público)
 function renderAnnPreview(a) {
-  const fecha = a.createdAt ? new Date(a.createdAt).toLocaleString('es-CO') : '';
+  const fecha = fmtDateTime(a.createdAt);
   const media =
     a.kind === 'image' && a.mediaUrl
       ? `<img src="${a.mediaUrl}" class="w-full h-44 object-cover rounded-xl" alt="" />`

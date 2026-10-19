@@ -63,7 +63,7 @@ export const UI = {
     }
 
     container.innerHTML = offers.map(off => {
-      const fecha = off.date ? new Date(off.date.replace(/-/g, '/') + ' 12:00:00').toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Hoy';
+      const fecha = off.date ? new Date(off.date.replace(/-/g, '/') + ' 12:00:00').toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'America/Bogota' }) : 'Hoy';
       return `
       <div data-id="${off.id}" class="offer-card w-64 flex-shrink-0 bg-white rounded-2xl border border-orange-200/80 p-2.5 shadow-sm hover:shadow-md transition cursor-pointer touch-btn flex flex-col justify-between">
         <div class="relative h-28 rounded-xl overflow-hidden mb-2">
@@ -296,7 +296,7 @@ export const UI = {
   renderAnnStoryModal(ann) {
     const content = document.getElementById('annStoryContent');
     if (!content) return;
-    const fecha = ann.createdAt ? new Date(ann.createdAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+    const fecha = ann.createdAt ? new Date(ann.createdAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Bogota' }) : '';
     const cover = ann.kind === 'image' && ann.mediaUrl
       ? `<div class="relative h-56 flex-shrink-0 bg-slate-900">
            <img src="${esc(ann.mediaUrl)}" class="w-full h-full object-cover" alt="${esc(ann.title)}" />
@@ -331,8 +331,8 @@ export const UI = {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    const fromDate = new Date(receipt.coverageStartDate).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
-    const toDate = new Date(receipt.coverageEndDate).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+    const fromDate = new Date(receipt.coverageStartDate).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'America/Bogota' });
+    const toDate = new Date(receipt.coverageEndDate).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'America/Bogota' });
 
     container.innerHTML = `
       <div id="printableReceiptArea" class="receipt-paper p-4 text-slate-800 space-y-3 border-2 border-dashed border-orange-300 rounded-2xl bg-white shadow-md">

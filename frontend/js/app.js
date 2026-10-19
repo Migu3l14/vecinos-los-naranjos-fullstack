@@ -88,7 +88,7 @@ async function loadInitialData() {
 
     const todayLabel = document.getElementById('offersDateLabel');
     if (todayLabel) {
-      todayLabel.innerText = `Hoy · ${new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}`;
+      todayLabel.innerText = `Hoy · ${new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'short', timeZone: 'America/Bogota' })}`;
     }
 
     loadStatsAndRecordVisit();
@@ -670,7 +670,7 @@ function renderRatingWidget(biz) {
         <div class="bg-white rounded-xl p-2.5 border border-slate-100">
           <div class="flex items-center justify-between">
             <span class="text-amber-400 text-xs">${Array(r.stars).fill('★').join('')}</span>
-            <span class="text-[9px] text-slate-400">${new Date(r.createdAt).toLocaleDateString('es-CO')}</span>
+            <span class="text-[9px] text-slate-400">${new Date(r.createdAt).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}</span>
           </div>
           ${r.comment ? `<p class="text-[11px] text-slate-600 mt-1 leading-snug">${escHtml(r.comment)}</p>` : ''}
           <span class="text-[9px] text-slate-400 font-bold">— ${escHtml(r.author)}</span>

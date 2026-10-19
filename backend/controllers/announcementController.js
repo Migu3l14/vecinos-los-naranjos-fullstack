@@ -149,7 +149,7 @@ export const getRecipientsCount = async (req, res) => {
 
 // ---------- Interno: envío masivo ----------
 const buildBroadcastText = (ann) => {
-  const fecha = new Date(ann.createdAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+  const fecha = new Date(ann.createdAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Bogota' });
   return [
     '🛡️ *COMUNICADO OFICIAL*',
     `🍊 Vitrina Digital Los Naranjos · Manzana ${ann.manzana}`,

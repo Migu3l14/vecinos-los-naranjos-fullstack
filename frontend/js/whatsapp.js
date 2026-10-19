@@ -24,8 +24,8 @@ export const WhatsAppHelper = {
 
   // Construir comprobante oficial de pago para WhatsApp con enlace a la factura digital
   buildReceiptShareMessage(receipt) {
-    const fromDate = new Date(receipt.coverageStartDate).toLocaleDateString('es-CO');
-    const toDate = new Date(receipt.coverageEndDate).toLocaleDateString('es-CO');
+    const fromDate = new Date(receipt.coverageStartDate).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' });
+    const toDate = new Date(receipt.coverageEndDate).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' });
     const receiptWebUrl = `${window.location.origin}/recibo.html?id=${receipt.receiptId}`;
 
     return `🧾 *COMPROBANTE OFICIAL DE ACTIVACIÓN*

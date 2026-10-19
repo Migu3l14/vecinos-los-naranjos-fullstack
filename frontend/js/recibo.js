@@ -23,10 +23,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('rBizName').innerText = receipt.businessName;
     document.getElementById('rLocation').innerText = `Manzana ${receipt.manzana} (Los Naranjos)`;
     document.getElementById('rMethod').innerText = receipt.paymentMethod;
-    document.getElementById('rPayDate').innerText = new Date(receipt.paymentDate).toLocaleDateString('es-CO');
+    document.getElementById('rPayDate').innerText = new Date(receipt.paymentDate).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' });
 
-    const from = new Date(receipt.coverageStartDate).toLocaleDateString('es-CO');
-    const to = new Date(receipt.coverageEndDate).toLocaleDateString('es-CO');
+    const from = new Date(receipt.coverageStartDate).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' });
+    const to = new Date(receipt.coverageEndDate).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' });
     document.getElementById('rCoverage').innerText = `${from} al ${to}`;
     document.getElementById('rAmount').innerHTML = `$${receipt.amountCOP.toLocaleString('es-CO')} <span class="text-xs font-normal text-slate-500">COP</span>`;
     document.getElementById('rCode').innerText = receipt.verificationCode;

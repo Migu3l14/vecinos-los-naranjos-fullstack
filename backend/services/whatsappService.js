@@ -110,8 +110,8 @@ export const WhatsAppService = {
    */
   async sendAutomatedReceipt(receipt) {
     const phone = (receipt.phone || '').replace(/\D/g, '');
-    const fromDate = new Date(receipt.coverageStartDate).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
-    const toDate = new Date(receipt.coverageEndDate).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+    const fromDate = new Date(receipt.coverageStartDate).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'America/Bogota' });
+    const toDate = new Date(receipt.coverageEndDate).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'America/Bogota' });
     
     // Formato ultra-estético estilo Factura Electrónica / Recibo Bancario
     const formattedReceiptMessage = 
@@ -128,7 +128,7 @@ export const WhatsAppService = {
 💳 *N° Transacción:* \`${receipt.transactionId}\`
 💵 *Monto Total:* *$31.600 COP*
 💳 *Medio de Pago:* ${receipt.paymentMethod}
-📅 *Fecha de Pago:* ${new Date(receipt.paymentDate).toLocaleDateString('es-CO')}
+📅 *Fecha de Pago:* ${new Date(receipt.paymentDate).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}
 ⏱️ *Período:* ${fromDate} al ${toDate}
 ⏳ *Vigencia:* *30 Días Calendario*
 

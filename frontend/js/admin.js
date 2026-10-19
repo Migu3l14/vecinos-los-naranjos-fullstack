@@ -316,7 +316,10 @@ function renderResidents() {
             <p class="text-[13px] font-extrabold text-slate-800">+${r.phone || '—'}</p>
             <p class="text-[11px] text-slate-500 font-bold">Manzana ${r.manzana || '—'} · ${r.tower || '—'} · Apto ${r.apartment || '—'}</p>
           </div>
-          <span class="flex-shrink-0 text-[10px] font-extrabold px-2 py-1 rounded-full ${rol}">${rolTxt}</span>
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <span class="text-[10px] font-extrabold px-2 py-1 rounded-full ${rol}">${rolTxt}</span>
+            <button class="res-del px-2 py-1.5 bg-red-50 text-red-600 rounded-xl text-xs font-bold" data-id="${r.id}" data-phone="${r.phone || ''}" data-biz="${r.businessCount || 0}" title="Eliminar registro">🗑</button>
+          </div>
         </div>
         <div class="mt-2 flex items-center justify-between text-[10px] text-slate-400 font-bold">
           <span>${r.businessCount ? `🛍 ${r.businessCount} vitrina(s)` : 'Sin vitrina'}</span>
@@ -324,6 +327,22 @@ function renderResidents() {
         </div>
       </div>`;
     }).join('')}`;
+
+  container.querySelectorAll('.res-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const bizCount = Number(btn.dataset.biz || 0);
+      const extra = bizCount ? `\n\nTambién se eliminarán sus ${bizCount} vitrina(s) asociada(s).` : '';
+      if (!confirm(`¿Eliminar el registro de +${btn.dataset.phone || ''}?${extra}\n\nEsta acción no se puede deshacer.`)) return;
+      const res = await API.adminDeleteResident(btn.dataset.id);
+      if (res && res.success) {
+        loadResidents();
+        loadDashboard();
+        loadBusinesses();
+      } else {
+        alert((res && res.message) || 'No se pudo eliminar el registro.');
+      }
+    });
+  });
 }
 
 function formatResidentDate(iso) {

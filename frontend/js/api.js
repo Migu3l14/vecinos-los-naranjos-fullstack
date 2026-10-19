@@ -412,6 +412,17 @@ export const API = {
     }
   },
 
+  // DELETE /api/auth/admin/residents/:id (admin) — elimina el registro de una
+  // persona (en cascada elimina sus vitrinas asociadas).
+  async adminDeleteResident(id) {
+    try {
+      return await this.fetchAdmin(`${API_BASE}/auth/admin/residents/${id}`, { method: 'DELETE' });
+    } catch (error) {
+      console.error('Error al eliminar residente:', error);
+      return { success: false, message: error.message || 'No se pudo eliminar el registro.' };
+    }
+  },
+
   // Estructura del conjunto (torres para selectores)
   async getTowers() {
     try {

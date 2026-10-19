@@ -752,6 +752,51 @@ export const adminResidents = async (req, res) => {
   }
 };
 
+// DELETE /api/auth/admin/residents/:id (super admin) — elimina el registro de una
+// persona por su número. En cascada elimina las vitrinas asociadas a ese número
+// (y sus ofertas) para no dejar vitrinas huérfanas. El historial se conserva.
+export const deleteResident = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const residents = (await Storage.read('residents')) || [];
+    const index = residents.findIndex(r => r.id === id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'No se encontró el registro.' });
+    }
+
+    const [removed] = residents.splice(index, 1);
+    const clean = normalizePhone(removed.phone);
+
+    // Cascada: eliminar las vitrinas cuyo dueño/contacto sea este número
+    let removedBusinesses = 0;
+    if (clean) {
+      const businesses = (await Storage.read('businesses')) || [];
+      const removedBizIds = businesses
+        .filter(b => normalizePhone(b.ownerPhone) === clean || normalizePhone(b.phone) === clean)
+        .map(b => b.id);
+
+      if (removedBizIds.length) {
+        await Storage.write('businesses', businesses.filter(b => !removedBizIds.includes(b.id)));
+        const offers = (await Storage.read('offers')) || [];
+        if (offers.length) {
+          await Storage.write('offers', offers.filter(o => !removedBizIds.includes(o.bizId)));
+        }
+        removedBusinesses = removedBizIds.length;
+      }
+    }
+
+    await Storage.write('residents', residents);
+
+    res.json({
+      success: true,
+      message: 'Registro eliminado correctamente.',
+      data: { id: removed.id, removedBusinesses }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al eliminar el registro', error: error.message });
+  }
+};
+
 // ---------- Utilidades de conjunto ----------
 // POST /api/auth/logout — cierra la sesión (limpia la cookie httpOnly)
 export const logout = (req, res) => {

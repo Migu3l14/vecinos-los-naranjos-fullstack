@@ -14,7 +14,8 @@ import {
   requestOtp,
   verifyOtp,
   residentLookup,
-  adminResidents
+  adminResidents,
+  deleteResident
 } from '../controllers/authController.js';
 import { authResident, authAny, authSuperAdmin } from '../middleware/auth.js';
 import { cachePublic } from '../middleware/cache.js';
@@ -51,6 +52,7 @@ router.post('/resident-lookup', residentLookup);
 
 // Registro de personas que han ingresado (solo super admin)
 router.get('/admin/residents', authSuperAdmin, adminResidents);
+router.delete('/admin/residents/:id', authSuperAdmin, deleteResident);
 
 // Utilidades del conjunto (config estable: caché larga en navegador y CDN)
 router.get('/towers', cachePublic({ maxAge: 3600, sMaxAge: 86400, staleWhileRevalidate: 86400 }), getTowers);

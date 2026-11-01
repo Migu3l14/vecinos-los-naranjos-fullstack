@@ -1,0 +1,460 @@
+﻿{
+    "value":  [
+                  {
+                      "id":  "biz-1",
+                      "name":  "Una Nona - Pastas \u0026 LasaÃ±as",
+                      "category":  "comida",
+                      "keywords":  [
+                                       "lasaÃ±a",
+                                       "almuerzo",
+                                       "comida",
+                                       "cena",
+                                       "pastas",
+                                       "raviolis",
+                                       "pan de ajo",
+                                       "nona"
+                                   ],
+                      "manzana":  "3",
+                      "rating":  "4.8",
+                      "reviewsCount":  4,
+                      "phone":  "573001234501",
+                      "badge":  "Top Vecino",
+                      "coverImage":  "https://images.unsplash.com/photo-1574894709920-11b28e7367e3?auto=format\u0026fit=crop\u0026w=800\u0026q=80",
+                      "shortDesc":  "LasaÃ±as artesanales horneadas al dÃ­a: carne, pollo y mixta. Domicilio directo a tu torre.",
+                      "fullDesc":  "Somos vecinos de la Manzana 3. Preparamos pastas frescas y lasaÃ±as con receta tradicional italiana e ingredientes de primera. Hacemos entregas calientes y puntuales en todas las manzanas de Los Naranjos.",
+                      "hours":  "Mar a Dom: 11:30 AM - 9:00 PM",
+                      "delivery":  "Gratis en Los Naranjos",
+                      "instagram":  "@unanona.pastas",
+                      "facebook":  "https://www.facebook.com/unanona.pastas",
+                      "status":  "active",
+                      "subscriptionPlan":  "MembresÃ­a Mensual (30 dÃ­as)",
+                      "monthlyFee":  30000,
+                      "activatedAt":  "2026-08-30T00:00:00.000Z",
+                      "expiresAt":  "2026-09-29T23:59:59.000Z",
+                      "products":  [
+                                       {
+                                           "name":  "LasaÃ±a Personal (Carne o Pollo)",
+                                           "price":  "$16.000",
+                                           "image":  "https://images.unsplash.com/photo-1574894709920-11b28e7367e3?auto=format\u0026fit=crop\u0026w=300\u0026q=80"
+                                       },
+                                       {
+                                           "name":  "LasaÃ±a Familiar (4 personas)",
+                                           "price":  "$36.000",
+                                           "image":  "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format\u0026fit=crop\u0026w=300\u0026q=80"
+                                       },
+                                       {
+                                           "name":  "Raviolis de Espinaca y Ricotta",
+                                           "price":  "$18.000",
+                                           "image":  "https://images.unsplash.com/photo-1587740908075-9e245070dfaa?auto=format\u0026fit=crop\u0026w=300\u0026q=80"
+                                       }
+                                   ],
+                      "daysRemaining":  14,
+                      "ratings":  [
+                                      {
+                                          "id":  "r-biz-1-1",
+                                          "stars":  5,
+                                          "author":  "MarÃ­a Fernanda G.",
+                                          "comment":  "Las lasaÃ±as mÃ¡s ricas, llegan calientes y puntuales. Mi familia las adora.",
+                                          "createdAt":  "2026-09-04T10:00:00.000Z"
+                                      },
+                                      {
+                                          "id":  "r-biz-1-2",
+                                          "stars":  5,
+                                          "author":  "Carlos R.",
+                                          "comment":  "Muy buenas porciones y el pan de ajo es espectacular.",
+                                          "createdAt":  "2026-09-05T10:00:00.000Z"
+                                      },
+                                      {
+                                          "id":  "r-biz-1-3",
+                                          "stars":  4,
+                                          "author":  "Lina M.",
+                                          "comment":  "Ricas, solo pido que los raviolis lleguen con mÃ¡s salsa.",
+                                          "createdAt":  "2026-09-06T10:00:00.000Z"
+                                      },
+                                      {
+                                          "id":  "r-1788840775175",
+                                          "stars":  5,
+                                          "author":  "Pedro NÃºÃ±ez",
+                                          "comment":  "Excelente servicio y la lasaÃ±a llegÃ³ sÃºper caliente.",
+                                          "createdAt":  "2026-09-08T04:12:55.175Z"
+                                      }
+                                  ],
+                      "ratingCount":  4,
+                      "updatedAt":  "2026-09-16T20:23:09.674Z"
+                  },
+                  {
+                      "id":  "biz-2",
+                      "name":  "Glamour Nails \u0026 Spa",
+                      "category":  "belleza",
+                      "keywords":  [
+                                       "uÃ±as",
+                                       "manicure",
+                                       "pedicure",
+                                       "cejas",
+                                       "pestaÃ±as",
+                                       "semipermanente",
+                                       "belleza",
+                                       "spa"
+                                   ],
+                      "manzana":  "4",
+                      "rating":  "4.7",
+                      "reviewsCount":  3,
+                      "phone":  "573001234502",
+                      "badge":  "Recomendada",
+                      "coverImage":  "https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format\u0026fit=crop\u0026w=800\u0026q=80",
+                      "shortDesc":  "UÃ±as acrÃ­licas, semipermanente, cejas en henna y limpieza facial.",
+                      "fullDesc":  "AtenciÃ³n personalizada en mi apartamento en la Manzana 4 o servicio a tu domicilio en Los Naranjos con todos los protocolos de higiene.",
+                      "hours":  "Lun a SÃ¡b: 8:00 AM - 7:00 PM",
+                      "delivery":  "Apto Mz 4 o Domicilio",
+                      "instagram":  "@glamournails.spa",
+                      "facebook":  "https://www.facebook.com/glamournails.spa",
+                      "status":  "active",
+                      "subscriptionPlan":  "MembresÃ­a Mensual (30 dÃ­as)",
+                      "monthlyFee":  30000,
+                      "activatedAt":  "2026-08-30T00:00:00.000Z",
+                      "expiresAt":  "2026-09-29T23:59:59.000Z",
+                      "products":  [
+                                       {
+                                           "name":  "Manicure Semipermanente",
+                                           "price":  "$28.000",
+                                           "image":  "https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format\u0026fit=crop\u0026w=300\u0026q=80"
+                                       },
+                                       {
+                                           "name":  "Pedicure Spa Profundo",
+                                           "price":  "$22.000",
+                                           "image":  "https://images.unsplash.com/photo-1519014816548-bf5fe059798b?auto=format\u0026fit=crop\u0026w=300\u0026q=80"
+                                       },
+                                       {
+                                           "name":  "DiseÃ±o de Cejas + Henna",
+                                           "price":  "$18.000",
+                                           "image":  "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format\u0026fit=crop\u0026w=300\u0026q=80"
+                                       }
+                                   ],
+                      "daysRemaining":  14,
+                      "ratings":  [
+                                      {
+                                          "id":  "r-biz-2-1",
+                                          "stars":  5,
+                                          "author":  "Paola A.",
+                                          "comment":  "Mi semipermanente durÃ³ tres semanas perfectas. SÃºper recomendada.",
+                                          "createdAt":  "2026-09-04T10:00:00.000Z"
+                                      },
+                                      {
+                                          "id":  "r-biz-2-2",
+                                          "stars":  5,
+                                          "author":  "SofÃ­a T.",
+                                          "comment":  "AtenciÃ³n impecable y muy higiÃ©nica.",
+                                          "createdAt":  "2026-09-05T10:00:00.000Z"
+                                      },
+                                      {
+                                          "id":  "r-biz-2-3",
+                                          "stars":  4,
+                                          "author":  "Juliana P.",
+                                          "comment":  "Me quedaron hermosas las uÃ±as, demorÃ© poquito.",
+                                          "createdAt":  "2026-09-06T10:00:00.000Z"
+                                      }
+                                  ],
+                      "ratingCount":  3
+                  },
+                  {
+                      "id":  "biz-3",
+                      "name":  "Dulces de Ana (ReposterÃ­a)",
+                      "category":  "postres",
+                      "keywords":  [
+                                       "torta",
+                                       "pastel",
+                                       "postre",
+                                       "cumpleaÃ±os",
+                                       "galletas",
+                                       "chocolate",
+                                       "arequipe",
+                                       "dulce",
+                                       "ana"
+                                   ],
+                      "manzana":  "2",
+                      "rating":  "5.0",
+                      "reviewsCount":  3,
+                      "phone":  "573001234503",
+                      "badge":  "â­ 5.0 Estrellas",
+                      "coverImage":  "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format\u0026fit=crop\u0026w=800\u0026q=80",
+                      "shortDesc":  "Tortas personalizadas para cumpleaÃ±os, brownies melcochudos y postres de tres leches.",
+                      "fullDesc":  "ReposterÃ­a 100% casera elaborada con amor en la Manzana 2. Hacemos postres para el dÃ­a y tortas temÃ¡ticas para eventos familiares.",
+                      "hours":  "Todos los dÃ­as: 9:00 AM - 8:00 PM",
+                      "delivery":  "Entrega en porterÃ­a/torre",
+                      "instagram":  "@dulcesdeana.reposteria",
+                      "status":  "active",
+                      "subscriptionPlan":  "MembresÃ­a Mensual (30 dÃ­as)",
+                      "monthlyFee":  30000,
+                      "activatedAt":  "2026-08-30T00:00:00.000Z",
+                      "expiresAt":  "2026-09-29T23:59:59.000Z",
+                      "products":  [
+                                       {
+                                           "name":  "Torta de Chocolate \u0026 Frutos Rojos",
+                                           "price":  "$45.000",
+                                           "image":  "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format\u0026fit=crop\u0026w=300\u0026q=80"
+                                       },
+                                       {
+                                           "name":  "Caja de 4 Brownies Melcochudos",
+                                           "price":  "$14.000",
+                                           "image":  "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format\u0026fit=crop\u0026w=300\u0026q=80"
+                                       },
+                                       {
+                                           "name":  "Postre de Tres Leches Tradicional",
+                                           "price":  "$8.000",
+                                           "image":  "https://images.unsplash.com/photo-1587314168485-3236d6710814?auto=format\u0026fit=crop\u0026w=300\u0026q=80"
+                                       }
+                                   ],
+                      "daysRemaining":  14,
+                      "ratings":  [
+                                      {
+                                          "id":  "r-biz-3-1",
+                                          "stars":  5,
+                                          "author":  "AndrÃ©s V.",
+                                          "comment":  "La torta de chocolate estuvo espectacular en el cumple de mi hijo.",
+                                          "createdAt":  "2026-09-04T10:00:00.000Z"
+                                      },
+                                      {
+                                          "id":  "r-biz-3-2",
+                                          "stars":  5,
+                                          "author":  "Diana R.",
+                                          "comment":  "Los brownies melcochudos son adictivos.",
+                                          "createdAt":  "2026-09-05T10:00:00.000Z"
+                                      },
+                                      {
+                                          "id":  "r-biz-3-3",
+                                          "stars":  5,
+                                          "author":  "Esteban C.",
+                                          "comment":  "Postre de tres leches como el de la abuela. 100% recomendada.",
+                                          "createdAt":  "2026-09-06T10:00:00.000Z"
+                                      }
+                                  ],
+                      "ratingCount":  3
+                  },
+                  {
+                      "id":  "biz-4",
+                      "name":  "Don Carlos - PlomerÃ­a \u0026 Electricidad",
+                      "category":  "servicios",
+                      "keywords":  [
+                                       "plomero",
+                                       "electricista",
+                                       "fuga",
+                                       "tubo",
+                                       "corto",
+                                       "toma",
+                                       "instalacion",
+                                       "grifo",
+                                       "tecnico",
+                                       "carlos"
+                                   ],
+                      "manzana":  "1",
+                      "rating":  "4.5",
+                      "reviewsCount":  2,
+                      "phone":  "573001234504",
+                      "badge":  "TÃ©cnico Vecino",
+                      "coverImage":  "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format\u0026fit=crop\u0026w=800\u0026q=80",
+                      "shortDesc":  "SoluciÃ³n rÃ¡pida a fugas de agua, cambio de griferÃ­as, instalaciones elÃ©ctricas y lÃ¡mparas.",
+                      "fullDesc":  "Residente de la Manzana 1 con mÃ¡s de 15 aÃ±os de experiencia. AtenciÃ³n rÃ¡pida ante emergencias en cualquier apartamento de Los Naranjos.",
+                      "hours":  "Lun a SÃ¡b: 7:30 AM - 6:00 PM (Urgencias 24h)",
+                      "delivery":  "AtenciÃ³n inmediata",
+                      "status":  "active",
+                      "subscriptionPlan":  "MembresÃ­a Mensual (30 dÃ­as)",
+                      "monthlyFee":  30000,
+                      "activatedAt":  "2026-08-30T00:00:00.000Z",
+                      "expiresAt":  "2026-09-29T23:59:59.000Z",
+                      "products":  [
+                                       {
+                                           "name":  "RevisiÃ³n y ReparaciÃ³n de Fuga de Agua",
+                                           "price":  "Desde $25.000",
+                                           "image":  "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format\u0026fit=crop\u0026w=300\u0026q=80"
+                                       },
+                                       {
+                                           "name":  "InstalaciÃ³n de LÃ¡mparas / Ventiladores",
+                                           "price":  "Desde $30.000",
+                                           "image":  "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format\u0026fit=crop\u0026w=300\u0026q=80"
+                                       }
+                                   ],
+                      "daysRemaining":  14,
+                      "ratings":  [
+                                      {
+                                          "id":  "r-biz-4-1",
+                                          "stars":  5,
+                                          "author":  "Familia Mora",
+                                          "comment":  "LlegÃ³ en 20 minutos a arreglar una fuga urgente. Excelente servicio.",
+                                          "createdAt":  "2026-09-04T10:00:00.000Z"
+                                      },
+                                      {
+                                          "id":  "r-biz-4-2",
+                                          "stars":  4,
+                                          "author":  "Laura Q.",
+                                          "comment":  "Muy profesional y quedÃ³ bien todo. Solo demorÃ³ un poco en llegar.",
+                                          "createdAt":  "2026-09-05T10:00:00.000Z"
+                                      }
+                                  ],
+                      "ratingCount":  2
+                  },
+                  {
+                      "id":  "biz-5",
+                      "name":  "Patitas Felices (Paseador \u0026 BaÃ±o)",
+                      "category":  "mascotas",
+                      "keywords":  [
+                                       "perro",
+                                       "gato",
+                                       "mascotas",
+                                       "paseador",
+                                       "baÃ±o",
+                                       "veterinaria",
+                                       "cuidador",
+                                       "guarderia"
+                                   ],
+                      "manzana":  "5",
+                      "rating":  "4.5",
+                      "reviewsCount":  2,
+                      "phone":  "573001234505",
+                      "badge":  "Amigo de Peludos",
+                      "coverImage":  "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format\u0026fit=crop\u0026w=800\u0026q=80",
+                      "shortDesc":  "Paseos diarios dentro y alrededor de Los Naranjos, baÃ±o a domicilio y guarderÃ­a por horas.",
+                      "fullDesc":  "Cuidamos a tus mascotas con todo el amor y responsabilidad. Grupos pequeÃ±os de paseo con monitoreo en tiempo real por WhatsApp.",
+                      "hours":  "Lun a Dom: 6:00 AM - 7:00 PM",
+                      "delivery":  "Recogemos en tu torre",
+                      "status":  "active",
+                      "subscriptionPlan":  "MembresÃ­a Mensual (30 dÃ­as)",
+                      "monthlyFee":  30000,
+                      "activatedAt":  "2026-08-30T00:00:00.000Z",
+                      "expiresAt":  "2026-09-29T23:59:59.000Z",
+                      "products":  [
+                                       {
+                                           "name":  "Paseo de 1 Hora (Grupal seguro)",
+                                           "price":  "$8.000",
+                                           "image":  "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format\u0026fit=crop\u0026w=300\u0026q=80"
+                                       },
+                                       {
+                                           "name":  "BaÃ±o e Higiene Canina a Domicilio",
+                                           "price":  "$25.000",
+                                           "image":  "https://images.unsplash.com/photo-1535294435445-d7249524ef2e?auto=format\u0026fit=crop\u0026w=300\u0026q=80"
+                                       }
+                                   ],
+                      "daysRemaining":  14,
+                      "ratings":  [
+                                      {
+                                          "id":  "r-biz-5-1",
+                                          "stars":  5,
+                                          "author":  "Camila D.",
+                                          "comment":  "Mi perrito espera el paseo con ansias. SÃºper responsables.",
+                                          "createdAt":  "2026-09-04T10:00:00.000Z"
+                                      },
+                                      {
+                                          "id":  "r-biz-5-2",
+                                          "stars":  4,
+                                          "author":  "Jorge L.",
+                                          "comment":  "Buen servicio, mi perro regresa feliz y cansado.",
+                                          "createdAt":  "2026-09-05T10:00:00.000Z"
+                                      }
+                                  ],
+                      "ratingCount":  2
+                  },
+                  {
+                      "id":  "biz-6",
+                      "name":  "Minimarket \u0026 Abarrotes Express",
+                      "category":  "hogar",
+                      "keywords":  [
+                                       "tienda",
+                                       "mercado",
+                                       "leche",
+                                       "pan",
+                                       "huevos",
+                                       "aseo",
+                                       "gaseosa",
+                                       "snack",
+                                       "viveres"
+                                   ],
+                      "manzana":  "6",
+                      "rating":  "4.5",
+                      "reviewsCount":  2,
+                      "phone":  "573001234506",
+                      "badge":  "Entrega RÃ¡pida",
+                      "coverImage":  "https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format\u0026fit=crop\u0026w=800\u0026q=80",
+                      "shortDesc":  "VÃ­veres, lÃ¡cteos, productos de aseo y snacks con entrega en 10 minutos a tu puerta.",
+                      "fullDesc":  "Â¿Te faltÃ³ el cilantro, huevos o leche? PÃ­delo por WhatsApp y te lo subimos inmediatamente a tu apartamento.",
+                      "hours":  "Todos los dÃ­as: 7:00 AM - 10:00 PM",
+                      "delivery":  "10-15 minutos en Los Naranjos",
+                      "status":  "active",
+                      "subscriptionPlan":  "MembresÃ­a Mensual (30 dÃ­as)",
+                      "monthlyFee":  30000,
+                      "activatedAt":  "2026-08-30T00:00:00.000Z",
+                      "expiresAt":  "2026-09-29T23:59:59.000Z",
+                      "products":  [
+                                       {
+                                           "name":  "Panal de Huevos AA (30 und)",
+                                           "price":  "$17.500",
+                                           "image":  "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format\u0026fit=crop\u0026w=300\u0026q=80"
+                                       },
+                                       {
+                                           "name":  "Combo Desayuno (Leche + Pan + Queso)",
+                                           "price":  "$14.000",
+                                           "image":  "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format\u0026fit=crop\u0026w=300\u0026q=80"
+                                       }
+                                   ],
+                      "daysRemaining":  14,
+                      "ratings":  [
+                                      {
+                                          "id":  "r-biz-6-1",
+                                          "stars":  5,
+                                          "author":  "Natalia S.",
+                                          "comment":  "Pido y en 10 minutos tengo la compra en la puerta.",
+                                          "createdAt":  "2026-09-04T10:00:00.000Z"
+                                      },
+                                      {
+                                          "id":  "r-biz-6-2",
+                                          "stars":  4,
+                                          "author":  "Felipe G.",
+                                          "comment":  "Buenos precios y entrega veloz.",
+                                          "createdAt":  "2026-09-05T10:00:00.000Z"
+                                      }
+                                  ],
+                      "ratingCount":  2
+                  },
+                  {
+                      "id":  "biz-1788653665108",
+                      "name":  "Bonna Nona",
+                      "category":  "comida",
+                      "keywords":  [
+                                       "bonna nona",
+                                       "comida"
+                                   ],
+                      "manzana":  "3",
+                      "rating":  "5.0",
+                      "reviewsCount":  1,
+                      "phone":  "573184648857",
+                      "ownerResidentId":  null,
+                      "ownerPhone":  "573184648857",
+                      "badge":  "Nuevo Emprendimiento",
+                      "coverImage":  "https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format\u0026fit=crop\u0026w=800\u0026q=80",
+                      "shortDesc":  "Emprendimiento de la Manzana 3 en Los Naranjos.",
+                      "fullDesc":  "Somos vecinos de la Manzana 3. Ofrecemos productos y servicios de calidad para toda la comunidad de Los Naranjos.",
+                      "hours":  "Lunes a SÃ¡bado: 8:00 AM - 7:00 PM",
+                      "delivery":  "Domicilio / Entrega en Los Naranjos",
+                      "instagram":  "https://www.instagram.com/bona_nonna",
+                      "facebook":  null,
+                      "status":  "active",
+                      "subscriptionPlan":  "MembresÃ­a Mensual (30 dÃ­as)",
+                      "monthlyFee":  31600,
+                      "createdAt":  "2026-09-06T00:14:25.112Z",
+                      "activatedAt":  "2026-09-06T00:15:18.670Z",
+                      "expiresAt":  "2026-10-06T00:15:18.670Z",
+                      "products":  [
+                                       {
+                                           "id":  "p-1788653665113-0",
+                                           "name":  "Lasagna Mixta",
+                                           "description":  "",
+                                           "photo":  "https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format\u0026fit=crop\u0026w=800\u0026q=80",
+                                           "price":  "14.000",
+                                           "category":  "General",
+                                           "availability":  "activo"
+                                       }
+                                   ],
+                      "pausedReason":  null,
+                      "daysRemaining":  20
+                  }
+              ],
+    "Count":  7
+}

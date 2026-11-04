@@ -149,27 +149,23 @@ try {
   const openApiPath = path.resolve(process.cwd(), 'openapi.yaml');
   const openApiFile = fs.readFileSync(openApiPath, 'utf8');
   const swaggerDocument = YAML.parse(openApiFile);
+
+  const swaggerOptions = {
+    customSiteTitle: 'Vecinos Los Naranjos - API Docs',
+    swaggerOptions: {
+      url: '/api-docs.json',
+      deepLinking: true
+    }
+  };
+
   app.get('/api-docs.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.json(swaggerDocument);
   });
+
   app.use('/api-docs', swaggerUi.serve);
-  app.get('/api-docs', (req, res, next) => {
-    swaggerUi.setup(swaggerDocument, {
-      customSiteTitle: 'Vecinos Los Naranjos - API Docs',
-      swaggerOptions: {
-        url: '/api-docs.json'
-      }
-    })(req, res, next);
-  });
-  app.get('/api-docs/', (req, res, next) => {
-    swaggerUi.setup(swaggerDocument, {
-      customSiteTitle: 'Vecinos Los Naranjos - API Docs',
-      swaggerOptions: {
-        url: '/api-docs.json'
-      }
-    })(req, res, next);
-  });
+  app.get('/api-docs', swaggerUi.setup(swaggerDocument, swaggerOptions));
+  app.get('/api-docs/', swaggerUi.setup(swaggerDocument, swaggerOptions));
 } catch (e) {
   console.warn('No se pudo cargar openapi.yaml para Swagger UI:', e.message);
 }

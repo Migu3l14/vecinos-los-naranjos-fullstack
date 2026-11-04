@@ -45,7 +45,9 @@ app.use(helmet({
   contentSecurityPolicy: isProd ? {
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      'script-src': ["'self'", 'https://cdn.tailwindcss.com', 'https://cdn.jsdelivr.net', 'https://checkout.wompi.co', 'https://js.stripe.com'],
+      'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://cdn.tailwindcss.com', 'https://cdn.jsdelivr.net', 'https://checkout.wompi.co', 'https://js.stripe.com'],
+      'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      'font-src': ["'self'", 'data:', 'https://fonts.gstatic.com'],
       'img-src': ["'self'", 'data:', 'https:', 'https://images.unsplash.com'],
       'connect-src': ["'self'", 'https://production.wompi.co', 'https://sandbox.wompi.co', 'https://api.wompi.co']
     }
@@ -150,20 +152,18 @@ try {
   const openApiFile = fs.readFileSync(openApiPath, 'utf8');
   const swaggerDocument = YAML.parse(openApiFile);
 
-  const swaggerOptions = {
-    customSiteTitle: 'Vecinos Los Naranjos - API Docs',
-    swaggerOptions: {
-      url: '/api-docs.json',
-      deepLinking: true
-    }
-  };
-
   app.get('/api-docs.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.json(swaggerDocument);
   });
 
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, swaggerOptions));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(null, {
+    customSiteTitle: 'Vecinos Los Naranjos - API Docs',
+    swaggerOptions: {
+      url: '/api-docs.json',
+      deepLinking: true
+    }
+  }));
 } catch (e) {
   console.warn('No se pudo cargar openapi.yaml para Swagger UI:', e.message);
 }

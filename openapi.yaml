@@ -1,50 +1,743 @@
 openapi: 3.0.3
 info:
-  title: Vecinos Los Naranjos — API (contrato de pedidos y recibos)
+  title: Vecinos Los Naranjos — API
   description: >
-    Contrato mínimo de los endpoints usados por la plataforma para crear un pedido
-    de una vitrina y consultar el recibo de membresía. Sirve como documentación y
-    como base para validaciones automáticas (Sesión 9 — API Contracts).
-  version: 1.0.0
+    API completa de la plataforma Vitrina Digital Los Naranjos (comercio hiperlocal Jamundí).
+    Incluye autenticación, negocios, pedidos, pagos Wompi, PQRS, anuncios, soporte y administración.
+  version: 2.0.0
 servers:
   - url: http://localhost:4000
     description: Desarrollo local
-  - url: https://losnaranjos.com
-    description: Producción
+  - url: https://vecinos-los-naranjos-fullstack.vercel.app
+    description: Producción (Vercel)
+tags:
+  - name: Health
+  - name: Auth
+  - name: Categories
+  - name: Offers
+  - name: Businesses
+  - name: JoinRequests
+  - name: Subscriptions
+  - name: Payments
+  - name: PQRS
+  - name: Orders
+  - name: Uploads
+  - name: Stats
+  - name: Support
+  - name: Announcements
+  - name: Admin
 
 paths:
-  /api/orders:
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Healthcheck de la API
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: online }
+                  project: { type: string }
+                  community: { type: string }
+                  subscriptionDurationDays: { type: integer, example: 30 }
+                  timestamp: { type: string, format: date-time }
+
+  /api/auth/admin/otp/request:
     post:
-      summary: Crea un pedido de una vitrina (público)
-      description: >
-        Se crea tras capturar la identidad del residente (registrado o invitado).
-        Nace con estado "Recibido" y canal "whatsapp".
+      tags: [Auth]
+      summary: Solicitar OTP para admin/superadmin
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrderRequest'
+              type: object
+              required: [phone]
+              properties:
+                phone: { type: string, example: '3001234567' }
       responses:
-        '201':
-          description: Pedido creado correctamente.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrderCreated'
-        '400':
-          description: Datos incompletos (businessId, productos o identidad del residente).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+        '200': { description: OTP enviado }
+        '400': { description: Datos inválidos }
+
+  /api/auth/admin/otp/verify:
+    post:
+      tags: [Auth]
+      summary: Verificar OTP de admin y obtener sesión
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, code]
+              properties:
+                phone: { type: string }
+                code: { type: string, example: '123456' }
+      responses:
+        '200': { description: Autenticado correctamente }
+        '401': { description: Código inválido o expirado }
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Cerrar sesión
+      responses:
+        '200': { description: Sesión cerrada }
+
+  /api/auth/otp/request:
+    post:
+      tags: [Auth]
+      summary: Solicitar OTP para residente/visitante
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone: { type: string }
+      responses:
+        '200': { description: OTP enviado }
+
+  /api/auth/otp/verify:
+    post:
+      tags: [Auth]
+      summary: Verificar OTP y autenticar residente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, code]
+              properties:
+                phone: { type: string }
+                code: { type: string }
+      responses:
+        '200': { description: Autenticado }
+
+  /api/auth/resident/register:
+    post:
+      tags: [Auth]
+      summary: Registrar residente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName, phone, tower, apartment]
+              properties:
+                fullName: { type: string }
+                phone: { type: string }
+                tower: { type: string }
+                apartment: { type: string }
+                deliveryAddress: { type: string }
+                email: { type: string }
+      responses:
+        '201': { description: Residente registrado }
+        '400': { description: Datos inválidos }
+
+  /api/auth/resident/login:
+    post:
+      tags: [Auth]
+      summary: Login de residente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone: { type: string }
+      responses:
+        '200': { description: Sesión iniciada }
+
+  /api/auth/resident/profile:
     get:
-      summary: Lista pedidos (solo administrador)
+      tags: [Auth]
+      summary: Perfil del residente autenticado
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { description: Perfil del residente }
+        '401': { description: No autorizado }
+
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Usuario actual (residente/admin/superadmin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { description: Datos de sesión }
+        '401': { description: No autorizado }
+
+  /api/auth/guest/checkout:
+    post:
+      tags: [Auth]
+      summary: Checkout como invitado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+      responses:
+        '200': { description: Sesión invitado creada }
+
+  /api/auth/entry:
+    post:
+      tags: [Auth]
+      summary: Entrada con rol (residente, admin, guard)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, role]
+              properties:
+                phone: { type: string }
+                role: { type: string, enum: [resident, admin, guard] }
+                manzana: { type: string }
+                tower: { type: string }
+                apartment: { type: string }
+      responses:
+        '200': { description: Acceso concedido }
+        '400': { description: Datos inválidos }
+
+  /api/auth/resident-lookup:
+    post:
+      tags: [Auth]
+      summary: Buscar residente por teléfono
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone: { type: string }
+      responses:
+        '200': { description: Residente encontrado }
+        '404': { description: No encontrado }
+
+  /api/auth/admin/residents:
+    get:
+      tags: [Auth]
+      summary: Listar residentes (Super Admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { description: Lista de residentes }
+        '401': { description: No autorizado }
+        '403': { description: Requiere super admin }
+
+  /api/auth/admin/residents/{id}:
+    delete:
+      tags: [Auth]
+      summary: Eliminar residente con cascada (Super Admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Residente eliminado }
+        '401': { description: No autorizado }
+        '403': { description: Requiere super admin }
+        '404': { description: No encontrado }
+
+  /api/auth/towers:
+    get:
+      tags: [Auth]
+      summary: Listado de torres por manzana
+      responses:
+        '200': { description: Torres disponibles }
+
+  /api/auth/validate-apartment:
+    post:
+      tags: [Auth]
+      summary: Validar apartamento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                manzana: { type: string }
+                tower: { type: string }
+                apartment: { type: string }
+      responses:
+        '200': { description: Validación exitosa }
+        '400': { description: Inválido }
+
+  /api/categories:
+    get:
+      tags: [Categories]
+      summary: Listar categorías
+      responses:
+        '200': { description: Lista de categorías }
+
+  /api/offers:
+    get:
+      tags: [Offers]
+      summary: Listar ofertas públicas
+      responses:
+        '200': { description: Lista de ofertas }
+    post:
+      tags: [Offers]
+      summary: Crear oferta (Residente propietario de vitrina)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '201': { description: Oferta creada }
+        '401': { description: No autorizado }
+
+  /api/offers/mine:
+    get:
+      tags: [Offers]
+      summary: Mis ofertas
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { description: Lista de ofertas propias }
+        '401': { description: No autorizado }
+
+  /api/offers/{id}:
+    put:
+      tags: [Offers]
+      summary: Actualizar oferta
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: Oferta actualizada }
+        '401': { description: No autorizado }
+    delete:
+      tags: [Offers]
+      summary: Eliminar oferta
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Oferta eliminada }
+        '401': { description: No autorizado }
+
+  /api/offers/{id}/status:
+    put:
+      tags: [Offers]
+      summary: Activar/desactivar oferta
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                active: { type: boolean }
+      responses:
+        '200': { description: Estado actualizado }
+        '401': { description: No autorizado }
+
+  /api/businesses:
+    get:
+      tags: [Businesses]
+      summary: Listar vitrinas públicas
+      responses:
+        '200': { description: Lista de vitrinas }
+    post:
+      tags: [Businesses]
+      summary: Registrar vitrina
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '201': { description: Vitrina registrada }
+        '401': { description: No autorizado }
+
+  /api/businesses/manage/{phone}:
+    get:
+      tags: [Businesses]
+      summary: Gestionar vitrina por teléfono
+      parameters:
+        - name: phone
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Datos para gestión }
+        '404': { description: No encontrado }
+
+  /api/businesses/mine:
+    get:
+      tags: [Businesses]
+      summary: Mis vitrinas
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { description: Mis vitrinas }
+        '401': { description: No autorizado }
+
+  /api/businesses/mine/{id}:
+    put:
+      tags: [Businesses]
+      summary: Actualizar mi vitrina
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: Vitrina actualizada }
+        '401': { description: No autorizado }
+
+  /api/businesses/mine/{id}/products:
+    post:
+      tags: [Businesses]
+      summary: Agregar producto a mi vitrina
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '201': { description: Producto agregado }
+        '401': { description: No autorizado }
+
+  /api/businesses/mine/{id}/products/{pid}:
+    put:
+      tags: [Businesses]
+      summary: Actualizar producto
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: pid
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: Producto actualizado }
+        '401': { description: No autorizado }
+    delete:
+      tags: [Businesses]
+      summary: Eliminar producto
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: pid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Producto eliminado }
+        '401': { description: No autorizado }
+
+  /api/businesses/{id}:
+    get:
+      tags: [Businesses]
+      summary: Obtener vitrina por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Datos de la vitrina }
+        '404': { description: No encontrado }
+    put:
+      tags: [Businesses]
+      summary: Actualizar vitrina (Super Admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: Vitrina actualizada }
+        '401': { description: No autorizado }
+        '403': { description: Requiere super admin }
+    delete:
+      tags: [Businesses]
+      summary: Eliminar vitrina (Super Admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Vitrina eliminada }
+        '401': { description: No autorizado }
+        '403': { description: Requiere super admin }
+
+  /api/businesses/{id}/ratings:
+    post:
+      tags: [Businesses]
+      summary: Calificar vitrina
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rating: { type: integer, minimum: 1, maximum: 5 }
+                comment: { type: string }
+      responses:
+        '200': { description: Calificación registrada }
+
+  /api/join-requests:
+    post:
+      tags: [JoinRequests]
+      summary: Solicitud para unirse a la plataforma
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '201': { description: Solicitud enviada }
+
+  /api/subscriptions/checkout:
+    post:
+      tags: [Subscriptions]
+      summary: Checkout de suscripción
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: Redirección/URL de pago }
+
+  /api/subscriptions/webhook-wompi:
+    post:
+      tags: [Subscriptions]
+      summary: Webhook de Wompi para suscripciones
+      responses:
+        '200': { description: Webhook recibido }
+
+  /api/subscriptions/receipt/{id}:
+    get:
+      tags: [Subscriptions]
+      summary: Recibo de suscripción
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Recibo }
+        '401': { description: No autorizado }
+        '404': { description: No encontrado }
+
+  /api/payments/wompi-checkout:
+    post:
+      tags: [Payments]
+      summary: Crear checkout Wompi
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: URL de checkout }
+
+  /api/payments/wompi-webhook:
+    post:
+      tags: [Payments]
+      summary: Webhook Wompi
+      responses:
+        '200': { description: Webhook recibido }
+
+  /api/payments/receipt-by-business/{businessId}:
+    get:
+      tags: [Payments]
+      summary: Recibo aprobado más reciente por negocio
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Recibo encontrado }
+        '404': { description: Sin recibo aprobado aún }
+
+  /api/payments/transaction/{id}:
+    get:
+      tags: [Payments]
+      summary: Consultar transacción
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Datos de transacción }
+        '404': { description: No encontrado }
+
+  /api/pqrs:
+    get:
+      tags: [PQRS]
+      summary: Listar PQRS (Super Admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { description: Lista de PQRS }
+        '401': { description: No autorizado }
+        '403': { description: Requiere super admin }
+    post:
+      tags: [PQRS]
+      summary: Radicar PQRS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '201': { description: PQRS radicada }
+
+  /api/pqrs/{id}/status:
+    put:
+      tags: [PQRS]
+      summary: Cambiar estado de PQRS (Super Admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string }
+      responses:
+        '200': { description: Estado actualizado }
+        '401': { description: No autorizado }
+        '403': { description: Requiere super admin }
+
+  /api/pqrs/{id}/notes:
+    post:
+      tags: [PQRS]
+      summary: Agregar nota a PQRS (Super Admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note: { type: string }
+      responses:
+        '200': { description: Nota agregada }
+        '401': { description: No autorizado }
+        '403': { description: Requiere super admin }
+
+  /api/orders:
+    get:
+      tags: [Orders]
+      summary: Listar pedidos (Super Admin)
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Lista de pedidos.
+          description: Lista de pedidos
           content:
             application/json:
               schema:
@@ -53,33 +746,242 @@ paths:
                   success: { type: boolean }
                   data:
                     type: array
-                    items: { $ref: '#/components/schemas/Order' }
-        '401':
-          description: No autorizado.
+                    items:
+                      $ref: '#/components/schemas/Order'
+        '401': { description: No autorizado }
+        '403': { description: Requiere super admin }
+    post:
+      tags: [Orders]
+      summary: Crear pedido (público)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+      responses:
+        '201':
+          description: Pedido creado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Error' }
+              schema:
+                $ref: '#/components/schemas/OrderCreated'
+        '400':
+          description: Datos incompletos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /api/payments/receipt-by-business/{businessId}:
-    get:
-      summary: Obtiene el recibo aprobado más reciente de un negocio
+  /api/orders/{id}/status:
+    put:
+      tags: [Orders]
+      summary: Actualizar estado de pedido (Super Admin)
+      security:
+        - bearerAuth: []
       parameters:
-        - name: businessId
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  $ref: '#/components/schemas/OrderStatus'
+      responses:
+        '200': { description: Estado actualizado }
+        '401': { description: No autorizado }
+        '403': { description: Requiere super admin }
+
+  /api/uploads:
+    post:
+      tags: [Uploads]
+      summary: Subir imagen
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200': { description: Imagen subida }
+
+  /api/uploads/document:
+    post:
+      tags: [Uploads]
+      summary: Subir documento
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                document:
+                  type: string
+                  format: binary
+      responses:
+        '200': { description: Documento subido }
+
+  /api/stats:
+    get:
+      tags: [Stats]
+      summary: Estadísticas públicas
+      responses:
+        '200': { description: Estadísticas }
+
+  /api/stats/admin:
+    get:
+      tags: [Stats]
+      summary: Estadísticas admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { description: Estadísticas detalladas }
+        '401': { description: No autorizado }
+        '403': { description: Requiere super admin }
+
+  /api/stats/visit:
+    post:
+      tags: [Stats]
+      summary: Registrar visita
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: Visita registrada }
+
+  /api/support:
+    get:
+      tags: [Support]
+      summary: Canales de soporte
+      responses:
+        '200': { description: Canales disponibles }
+
+  /api/support/request:
+    post:
+      tags: [Support]
+      summary: Crear solicitud de soporte
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '201': { description: Solicitud creada }
+
+  /api/support/requests:
+    get:
+      tags: [Support]
+      summary: Listar solicitudes de soporte (Super Admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { description: Solicitudes }
+        '401': { description: No autorizado }
+        '403': { description: Requiere super admin }
+
+  /api/announcements:
+    get:
+      tags: [Announcements]
+      summary: Anuncios públicos por manzana
+      responses:
+        '200': { description: Anuncios }
+    post:
+      tags: [Announcements]
+      summary: Crear anuncio (Admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '201': { description: Anuncio creado }
+        '401': { description: No autorizado }
+        '403': { description: Requiere admin }
+
+  /api/announcements/recipients/count:
+    get:
+      tags: [Announcements]
+      summary: Contar destinatarios (Admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { description: Conteo }
+        '401': { description: No autorizado }
+        '403': { description: Requiere admin }
+
+  /api/announcements/admin:
+    get:
+      tags: [Announcements]
+      summary: Anuncios admin (Admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { description: Lista completa }
+        '401': { description: No autorizado }
+        '403': { description: Requiere admin }
+
+  /api/announcements/{id}/broadcast:
+    post:
+      tags: [Announcements]
+      summary: Enviar anuncio por WhatsApp (Admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
           in: path
           required: true
           schema: { type: string }
       responses:
+        '200': { description: Envío procesado }
+        '401': { description: No autorizado }
+        '403': { description: Requiere admin }
+
+  /api/announcements/{id}:
+    delete:
+      tags: [Announcements]
+      summary: Eliminar anuncio (Admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Anuncio eliminado }
+        '401': { description: No autorizado }
+        '403': { description: Requiere admin }
+
+  /api/admin/export:
+    get:
+      tags: [Admin]
+      summary: Exportar todos los datos (Super Admin)
+      security:
+        - bearerAuth: []
+      responses:
         '200':
-          description: Recibo encontrado.
+          description: Archivo de exportación
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  success: { type: boolean }
-                  data: { $ref: '#/components/schemas/Receipt' }
-        '404':
-          description: Sin recibo aprobado aún.
+              schema: { type: object }
+        '401': { description: No autorizado }
+        '403': { description: Requiere super admin }
 
 components:
   securitySchemes:
@@ -93,44 +995,27 @@ components:
       type: object
       required: [name, qty]
       properties:
-        name:
-          type: string
-        price:
-          type: number
-          nullable: true
-        qty:
-          type: integer
-          minimum: 1
+        name: { type: string }
+        price: { type: number, nullable: true }
+        qty: { type: integer, minimum: 1 }
 
     Resident:
       type: object
       required: [fullName, phone, tower, apartment, deliveryAddress]
       properties:
-        fullName:
-          type: string
-        phone:
-          type: string
-          description: Solo dígitos.
-        tower:
-          type: string
-        apartment:
-          type: string
-        deliveryAddress:
-          type: string
-        email:
-          type: string
-          nullable: true
-        authType:
-          type: string
-          enum: [guest, registered]
-          default: guest
+        fullName: { type: string }
+        phone: { type: string, description: Solo dígitos. }
+        tower: { type: string }
+        apartment: { type: string }
+        deliveryAddress: { type: string }
+        email: { type: string, nullable: true }
+        authType: { type: string, enum: [guest, registered], default: guest }
 
     OrderRequest:
       type: object
       required: [businessId, products, resident]
       properties:
-        businessId:
-          type: string
+        businessId: { type: string }
         products:
           type: array
           minItems: 1
@@ -143,14 +1028,9 @@ components:
       type: object
       required: [name]
       properties:
-        name:
-          type: string
-        price:
-          type: number
-          nullable: true
-        qty:
-          type: integer
-          minimum: 1
+        name: { type: string }
+        price: { type: number, nullable: true }
+        qty: { type: integer, minimum: 1 }
 
     OrderStatus:
       type: string
@@ -160,41 +1040,35 @@ components:
       type: object
       required: [id, orderId, businessId, products, resident, estado]
       properties:
-        id:
-          type: string
-          example: order-1750000000000
-        orderId:
-          type: string
-          pattern: '^ORD-\d{3,}$'
-          example: ORD-123456
-        businessId:
-          type: string
-        businessName:
-          type: string
+        id: { type: string, example: order-1750000000000 }
+        orderId: { type: string, pattern: '^ORD-\d{3,}$', example: ORD-123456 }
+        businessId: { type: string }
+        businessName: { type: string }
         products:
           type: array
           items:
             $ref: '#/components/schemas/OrderProduct'
         resident:
           $ref: '#/components/schemas/Resident'
-        channel:
-          type: string
-          example: whatsapp
+        channel: { type: string, example: whatsapp }
         estado:
           $ref: '#/components/schemas/OrderStatus'
-        createdAt:
-          type: string
-          format: date-time
+        createdAt: { type: string, format: date-time }
 
     OrderResponse:
       type: object
       required: [success, data]
       properties:
-        success:
-          type: boolean
-          example: true
-        message:
-          type: string
+        success: { type: boolean, example: true }
+        message: { type: string }
+        data:
+          $ref: '#/components/schemas/Order'
+
+    OrderCreated:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        message: { type: string }
         data:
           $ref: '#/components/schemas/Order'
 
@@ -202,53 +1076,25 @@ components:
       type: object
       required: [receiptId, transactionId, businessId, amountCOP, status]
       properties:
-        receiptId:
-          type: string
-          example: REC-LN-123456
-        transactionId:
-          type: string
-          example: TRX-123456
-        businessId:
-          type: string
-        businessName:
-          type: string
-        manzana:
-          type: string
-        concept:
-          type: string
-        amountCOP:
-          type: integer
-          example: 50000
-        currency:
-          type: string
-          example: COP
-        paymentMethod:
-          type: string
-        paymentDate:
-          type: string
-          format: date-time
-        coverageStartDate:
-          type: string
-          format: date-time
-        coverageEndDate:
-          type: string
-          format: date-time
-        durationDays:
-          type: integer
-          example: 30
-        status:
-          type: string
-          example: Aprobado y Activo
-        verificationCode:
-          type: string
-          example: VDLN-AB12CD
+        receiptId: { type: string, example: REC-LN-123456 }
+        transactionId: { type: string, example: TRX-123456 }
+        businessId: { type: string }
+        businessName: { type: string }
+        manzana: { type: string }
+        concept: { type: string }
+        amountCOP: { type: integer, example: 50000 }
+        currency: { type: string, example: COP }
+        paymentMethod: { type: string }
+        paymentDate: { type: string, format: date-time }
+        coverageStartDate: { type: string, format: date-time }
+        coverageEndDate: { type: string, format: date-time }
+        durationDays: { type: integer, example: 30 }
+        status: { type: string, example: Aprobado y Activo }
+        verificationCode: { type: string, example: VDLN-AB12CD }
 
     Error:
       type: object
       required: [success, message]
       properties:
-        success:
-          type: boolean
-          example: false
-        message:
-          type: string
+        success: { type: boolean, example: false }
+        message: { type: string }

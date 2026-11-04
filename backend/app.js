@@ -1,10 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import rateLimit from 'express-rate-limit';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yaml';
+import fs from 'fs';
 import ENV, { isUsingDefaultJwtSecret } from './config/env.js';
 
 import categoryRoutes from './routes/categoryRoutes.js';
@@ -53,16 +56,22 @@ app.use(helmet({
 const allowedOrigins = new Set([
   (ENV.APP_URL || '').replace(/\/$/, ''),
   `http://localhost:${PORT}`,
-  'http://127.0.0.1:3000'
+  'http://127.0.0.1:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173'
 ]);
 app.use(cors({
   origin(origin, callback) {
-    // Permitir sin origen (curl, apps nativas, mismo-origen) en cualquier entorno
+    // Permitir sin origen (curl, apps nativas, mismo-origen)
     if (!origin || allowedOrigins.has(origin)) return callback(null, true);
     if (isProd) return callback(new Error('Origen no permitido por CORS'));
     return callback(null, true);
   },
-  credentials: true // habilita el envío de la cookie de sesión httpOnly
+  credentials: true, // habilita el envío de la cookie de sesión httpOnly
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with'],
+  exposedHeaders: [],
+  maxAge: 86400
 }));
 
 // Parseo de cookies (necesario para la sesión httpOnly)
@@ -134,6 +143,18 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// Documentación Swagger/OpenAPI
+try {
+  const openApiPath = path.resolve(process.cwd(), 'openapi.yaml');
+  const openApiFile = fs.readFileSync(openApiPath, 'utf8');
+  const swaggerDocument = YAML.parse(openApiFile);
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+    customSiteTitle: 'Vecinos Los Naranjos - API Docs'
+  }));
+} catch (e) {
+  console.warn('No se pudo cargar openapi.yaml para Swagger UI:', e.message);
+}
 
 // 404 JSON para rutas API desconocidas
 app.use('/api', (req, res) => {

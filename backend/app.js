@@ -42,16 +42,7 @@ const isProd = ENV.NODE_ENV === 'production';
 
 // ---------- Middlewares de seguridad ----------
 app.use(helmet({
-  contentSecurityPolicy: isProd ? {
-    directives: {
-      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://cdn.tailwindcss.com', 'https://cdn.jsdelivr.net', 'https://checkout.wompi.co', 'https://js.stripe.com'],
-      'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      'font-src': ["'self'", 'data:', 'https://fonts.gstatic.com'],
-      'img-src': ["'self'", 'data:', 'https:', 'https://images.unsplash.com'],
-      'connect-src': ["'self'", 'https://production.wompi.co', 'https://sandbox.wompi.co', 'https://api.wompi.co']
-    }
-  } : false
+  contentSecurityPolicy: false
 }));
 
 // CORS: solo orígenes permitidos (mismo dominio y APP_URL)

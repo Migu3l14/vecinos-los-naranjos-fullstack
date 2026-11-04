@@ -163,9 +163,7 @@ try {
     res.json(swaggerDocument);
   });
 
-  app.use('/api-docs', swaggerUi.serve);
-  app.get('/api-docs', swaggerUi.setup(swaggerDocument, swaggerOptions));
-  app.get('/api-docs/', swaggerUi.setup(swaggerDocument, swaggerOptions));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, swaggerOptions));
 } catch (e) {
   console.warn('No se pudo cargar openapi.yaml para Swagger UI:', e.message);
 }

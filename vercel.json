@@ -10,7 +10,7 @@
       "src": "api/index.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["frontend/**", "backend/data/**"],
+        "includeFiles": ["frontend/**", "backend/data/**", "openapi.yaml"],
         "maxDuration": 60
       }
     }

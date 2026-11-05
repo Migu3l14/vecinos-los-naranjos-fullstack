@@ -5,7 +5,6 @@ import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import rateLimit from 'express-rate-limit';
-import swaggerUi from 'swagger-ui-express';
 import YAML from 'yaml';
 import fs from 'fs';
 import ENV, { isUsingDefaultJwtSecret } from './config/env.js';
@@ -138,8 +137,11 @@ app.get('/api/health', (req, res) => {
 });
 
 // Documentación Swagger/OpenAPI
+// Swagger UI se carga desde un CDN: en Vercel (serverless) los archivos estáticos
+// de swagger-ui-dist no se empaquetan, y como el catch-all devuelve index.html,
+// el navegador recibía HTML en lugar de JS y la página quedaba en blanco.
 try {
-  const openApiPath = path.resolve(process.cwd(), 'openapi.yaml');
+  const openApiPath = path.join(__dirname, '../openapi.yaml');
   const openApiFile = fs.readFileSync(openApiPath, 'utf8');
   const swaggerDocument = YAML.parse(openApiFile);
 
@@ -148,13 +150,32 @@ try {
     res.json(swaggerDocument);
   });
 
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(null, {
-    customSiteTitle: 'Vecinos Los Naranjos - API Docs',
-    swaggerOptions: {
-      url: '/api-docs.json',
-      deepLinking: true
-    }
-  }));
+  const SWAGGER_CDN = 'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.17.14';
+  app.get(['/api-docs', '/api-docs/'], (req, res) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(`<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vecinos Los Naranjos - API Docs</title>
+  <link rel="stylesheet" href="${SWAGGER_CDN}/swagger-ui.css" />
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="${SWAGGER_CDN}/swagger-ui-bundle.js"></script>
+  <script>
+    window.onload = function () {
+      window.ui = SwaggerUIBundle({
+        url: '/api-docs.json',
+        dom_id: '#swagger-ui',
+        deepLinking: true
+      });
+    };
+  </script>
+</body>
+</html>`);
+  });
 } catch (e) {
   console.warn('No se pudo cargar openapi.yaml para Swagger UI:', e.message);
 }

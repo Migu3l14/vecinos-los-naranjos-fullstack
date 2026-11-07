@@ -50,12 +50,15 @@ const allowedOrigins = new Set([
   `http://localhost:${PORT}`,
   'http://127.0.0.1:3000',
   'http://localhost:5173',
-  'http://127.0.0.1:5173'
+  'http://127.0.0.1:5173',
+  'https://vecinos-los-naranjos-fullstack.vercel.app'
 ]);
-app.use(cors({
+const corsOptions = {
   origin(origin, callback) {
     // Permitir sin origen (curl, apps nativas, mismo-origen)
-    if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+    if (!origin) return callback(null, true);
+    const normalized = origin.replace(/\/$/, '');
+    if (allowedOrigins.has(normalized)) return callback(null, true);
     if (isProd) return callback(new Error('Origen no permitido por CORS'));
     return callback(null, true);
   },
@@ -64,7 +67,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with'],
   exposedHeaders: [],
   maxAge: 86400
-}));
+};
+app.use(cors(corsOptions));
 
 // Parseo de cookies (necesario para la sesión httpOnly)
 app.use(cookieParser());

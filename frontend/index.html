@@ -16,6 +16,7 @@
 
   <!-- Estilos Locales del Frontend -->
   <link rel="stylesheet" href="./css/styles.css" />
+  <link rel="stylesheet" href="./css/vn-bienvenida.css" />
 
   <script src="https://checkout.wompi.co/widget.js" data-render="button"></script>
 
@@ -116,7 +117,6 @@
       <span class="bg-amber-200/70 text-amber-800 px-2 py-0.5 rounded-full text-[10px] font-bold">100% Vecinos</span>
     </div>
 
-    <!-- SECCIÓN: OFERTAS DEL DÍA (CARRUSEL VISUAL) -->
     <section id="offersSection" class="p-4 border-b border-slate-100">
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center space-x-2">
@@ -192,7 +192,7 @@
         </div>
       </div>
       <div id="statsWeekPanel" class="hidden mt-3 bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
-        <p class="text-[11px] font-bold text-slate-500 mb-2">Visitas · últimos 7 días</p>
+        <p class="text-[11px] font-bold text-slate-500 mb-2">Visitas · Últimos 7 días</p>
         <div class="flex items-end justify-between gap-1.5 h-20" id="statsWeekBars"></div>
       </div>
     </section>
@@ -242,7 +242,10 @@
     <footer class="p-4 text-center text-xs text-slate-400 border-t border-slate-100">
       <p class="font-semibold text-slate-600">Vitrina Digital Los Naranjos — Jamundí, Valle</p>
       <p class="text-[11px] mt-1">Conectando vecinos de las Manzanas 1 a 6 • Renovación cada 30 días</p>
-      <button id="openTermsBtn" class="mt-2 text-[11px] font-bold text-orange-500 hover:text-orange-600 underline underline-offset-2 touch-btn">Términos y Condiciones · Política de Confidencialidad</button>
+      <div class="mt-2 flex items-center justify-center gap-3 text-[11px] font-bold">
+        <button id="reopenWelcomeBtn" type="button" class="text-orange-500 hover:text-orange-600 underline underline-offset-2 touch-btn">Ver bienvenida</button>
+        <span class="text-slate-300">?</span>
+        <button id="openTermsBtn" class="text-[11px] font-bold text-orange-500 hover:text-orange-600 underline underline-offset-2 touch-btn">Términos y Condiciones · Política de Confidencialidad</button></div>
     </footer>
 
   </div>
@@ -253,8 +256,8 @@
   <div id="profileModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white w-full max-w-md max-h-[90vh] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up">
       
-      <div class="relative h-48 bg-slate-100 flex-shrink-0">
-        <img id="modalCoverImg" src="" alt="Portada" class="w-full h-full object-contain" />
+      <div class="relative h-48 bg-slate-100 flex-shrink-0 overflow-hidden">
+        <img id="modalCoverImg" src="" alt="Portada" class="w-full h-full object-cover object-center" />
         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
         <button data-close="closeProfileModal" class="absolute top-4 right-4 bg-white/80 hover:bg-white text-slate-800 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow">
           <i class="fa-solid fa-xmark"></i>
@@ -1169,6 +1172,7 @@
 
   <!-- SCRIPT MODULAR DEL FRONTEND -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+  <script src="./js/vn-bienvenida.js" defer data-tree="./images/arbol-naranjos.png"></script>
   <script type="module" src="./js/app.js"></script>
 
 </body>

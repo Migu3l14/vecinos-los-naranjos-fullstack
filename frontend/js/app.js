@@ -251,6 +251,8 @@ function setupEventListeners() {
   // Botón y enlaces del modal Términos y Condiciones
   const openTermsBtn = document.getElementById('openTermsBtn');
   if (openTermsBtn) openTermsBtn.addEventListener('click', openTermsModal);
+  const reopenWelcomeBtn = document.getElementById('reopenWelcomeBtn');
+  if (reopenWelcomeBtn) reopenWelcomeBtn.addEventListener('click', () => { try { localStorage.removeItem('vn_bienvenida_vista'); } catch(e){} location.href = location.pathname + '?bienvenida=1'; });
   document.querySelectorAll('.open-terms-link').forEach(a => a.addEventListener('click', openTermsModal));
 
   // Modal ingreso por QR/link: rol, datos y validación
@@ -1576,6 +1578,7 @@ function openEntryModal() {
 }
 
 window.closeEntryModal = () => document.getElementById('entryModal').classList.add('hidden');
+window.openEntryModal = openEntryModal;
 
 function updateEntryRoleUI() {
   const active = 'border-orange-500 bg-orange-50 text-orange-700';
@@ -1737,7 +1740,13 @@ async function handleEntrySubmit() {
 // hasta que la persona elija rol y guarde celular, manzana, torre y apartamento.
 function maybeShowEntryModal() {
   if (API.getStoredResidentProfile()) return;
-  setTimeout(() => openEntryModal(), 400);
+  const open = () => { if (!API.getStoredResidentProfile()) openEntryModal(); };
+  const welActive = document.querySelector('.vn-wel') && !localStorage.getItem('vn_bienvenida_vista');
+  if (welActive) {
+    document.addEventListener('vn:bienvenida:closed', open, { once: true });
+    return;
+  }
+  setTimeout(open, 400);
 }
 
 // Login de residente dentro del checkout → autocompleta torre/apto

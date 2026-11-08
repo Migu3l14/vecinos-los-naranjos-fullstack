@@ -251,8 +251,10 @@ function setupEventListeners() {
   // Botón y enlaces del modal Términos y Condiciones
   const openTermsBtn = document.getElementById('openTermsBtn');
   if (openTermsBtn) openTermsBtn.addEventListener('click', openTermsModal);
+  const goWelcome = () => { try { localStorage.removeItem('vn_bienvenida_vista'); } catch(e){} location.href = (location.pathname.endsWith('/') ? location.pathname : location.pathname.replace(/[^/]*$/, '')) + '?bienvenida=1'; };
   const reopenWelcomeBtn = document.getElementById('reopenWelcomeBtn');
-  if (reopenWelcomeBtn) reopenWelcomeBtn.addEventListener('click', () => { try { localStorage.removeItem('vn_bienvenida_vista'); } catch(e){} location.href = location.pathname + '?bienvenida=1'; });
+  if (reopenWelcomeBtn) reopenWelcomeBtn.addEventListener('click', goWelcome);
+  document.querySelectorAll('[data-reopen-welcome]').forEach((b) => b.addEventListener('click', goWelcome));
   document.querySelectorAll('.open-terms-link').forEach(a => a.addEventListener('click', openTermsModal));
 
   // Modal ingreso por QR/link: rol, datos y validación
@@ -2019,9 +2021,27 @@ function setupActionButtons() {
 // restaura al cerrar: evita que se deslice el fondo detras de la ventana.
 function setupModalScrollLock() {
   const modals = document.querySelectorAll('[id$="Modal"]');
+  let scrollY = 0;
   const sync = () => {
     const anyOpen = Array.from(modals).some((el) => !el.classList.contains('hidden'));
+    const locked = document.body.classList.contains('modal-open');
+    if (anyOpen && !locked) {
+      scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.width = '100%';
+    }
     document.body.classList.toggle('modal-open', anyOpen);
+    if (!anyOpen && locked) {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.width = '';
+      window.scrollTo(0, scrollY);
+    }
   };
   modals.forEach((el) => new MutationObserver(sync).observe(el, { attributes: true, attributeFilter: ['class'] }));
   sync();

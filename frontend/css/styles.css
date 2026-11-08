@@ -27,6 +27,7 @@ button, a, [role="button"], .touch-btn {
 /* Bloquea el scroll de la pagina de fondo mientras hay una ventana modal abierta */
 body.modal-open {
   overflow: hidden;
+  overscroll-behavior: none;
 }
 
 /* La pagina solo se desliza hacia arriba o hacia abajo: sin movimiento lateral.

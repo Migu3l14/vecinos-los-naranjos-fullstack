@@ -1009,7 +1009,8 @@ function handleStep2Submit() {
   showWizardStep('preview');
 }
 
-// Paso 2.5: Confirma la vista previa → crea la vitrina (pending_payment) y pasa al Pago
+// Paso 2.5: Confirma la vista previa → crea la vitrina ACTIVA con 1 mes gratis.
+// El pago se solicita desde el segundo mes (renovación), no al crear.
 async function handlePreviewConfirm() {
   if (!state.newBizData) {
     showWizardStep(1);
@@ -1019,15 +1020,14 @@ async function handlePreviewConfirm() {
   const btn = document.getElementById('previewPayBtn');
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Creando vitrina...</span>';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Creando tu vitrina...</span>';
   }
 
-  // Recién aquí se registra en el backend (antes de abrir el pago)
   const res = await API.registerBusiness(state.newBizData);
 
   if (btn) {
     btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-lock"></i><span>Confirmar y pagar $31.600</span>';
+    btn.innerHTML = '<i class="fa-solid fa-rocket"></i><span>Crear mi vitrina (1 mes gratis)</span>';
   }
 
   if (!res.success) {
@@ -1037,11 +1037,35 @@ async function handlePreviewConfirm() {
 
   state.createdBiz = res.data;
 
-  // Actualizar resumen en Paso 3 (Pantalla de Pago)
-  document.getElementById('checkoutBizName').innerText = state.createdBiz.name;
-  document.getElementById('checkoutBizManzana').innerText = `Manzana ${state.createdBiz.manzana}`;
+  // Refrescar el directorio para que la vitrina aparezca de inmediato
+  loadInitialData();
 
-  showWizardStep(3);
+  // Mostrar confirmación de activación (mes gratis). El pago se hará al renovar.
+  const receiptBox = document.getElementById('receiptDetailContainer');
+  if (receiptBox) {
+    const days = res.data.daysRemaining || 30;
+    receiptBox.innerHTML = `
+      <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 space-y-1">
+        <p class="font-extrabold">🎉 ¡Tu vitrina está activa con 1 mes gratis!</p>
+        <p><b>${res.data.name}</b> · Manzana ${res.data.manzana}</p>
+        <p>Días restantes de prueba: <b>${days}</b></p>
+        <p class="text-[11px] text-emerald-800 pt-1">Al terminar tu mes gratis, deberás realizar el pago de <b>$31.600 COP</b> para renovar y mantener tu vitrina visible. Podrás pagar desde “Mi Vitrina”.</p>
+      </div>`;
+  }
+  const title = document.getElementById('wizardStep4Title');
+  if (title) title.textContent = '¡Tu Vitrina ya está activa (1 mes gratis)!';
+  const sub = document.getElementById('wizardStep4Sub');
+  if (sub) sub.textContent = 'Ya es visible para la comunidad. El pago se solicitará desde el segundo mes.';
+
+  const viewBtn = document.getElementById('viewLiveStoreBtn');
+  if (viewBtn) viewBtn.onclick = () => { closeRegisterWizard(); if (state.createdBiz?.id) handleOpenProfile(state.createdBiz.id); };
+
+  const dl = document.getElementById('downloadReceiptBtn');
+  if (dl) dl.classList.add('hidden');
+  const wa = document.getElementById('shareReceiptWaBtn');
+  if (wa) wa.classList.add('hidden');
+
+  showWizardStep(4);
 }
 
 // Renderiza un mock de la vitrina tal como se verá publicada (sin tocar el backend)

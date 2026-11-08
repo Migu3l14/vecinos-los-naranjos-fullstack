@@ -233,9 +233,10 @@ function renderDashboard() {
   const st = biz.status;
   let stText;
   if (st === 'active') {
-    stText = `Vitrina activa · ${biz.daysRemaining || 0} días restantes`;
+    const trial = (biz.trialEndsAt || biz.trialUsed) ? ' (mes gratis)' : '';
+    stText = `Vitrina activa${trial} · ${biz.daysRemaining || 0} días restantes`;
   } else if (st === 'pending_payment') {
-    stText = 'Pendiente de activación por pago';
+    stText = 'Activando tu vitrina...';
   } else if (st === 'paused') {
     stText = biz.pausedReason || 'Vitrina pausada';
   } else {

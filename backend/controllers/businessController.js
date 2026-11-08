@@ -1,19 +1,34 @@
 import Storage from '../db/storage.js';
 import { validateFullName, validatePhone, enforceMaxLength } from '../utils/validation.js';
 
-// Función auxiliar para leer y verificar vigencias (Auto-pausa a los 30 días)
+// Función auxiliar para leer y verificar vigencias (Auto-pausa a los 30 días).
+// Compatibilidad: vitrinas antiguas con "pending_payment" se activan con 30 días
+// gratis para no perderlas ni ocultarlas mientras se migra al flujo actual.
 const loadAndValidateBusinesses = async () => {
   let businesses = await Storage.read('businesses');
   const now = new Date();
   let modified = false;
 
   businesses = businesses.map(biz => {
-    // Si la vitrina está activa pero ya pasaron los 30 días calendario
+    // Migración suave: tiendas creadas antes del flujo "mes gratis" (pendientes de pago)
+    // pasan a activas con 30 días desde ahora para que sean visibles y se conserven.
+    if (biz.status === 'pending_payment') {
+      biz.status = 'active';
+      biz.activatedAt = biz.activatedAt || now.toISOString();
+      biz.expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      biz.pausedReason = null;
+      biz.trialUsed = true;
+      biz.subscriptionPlan = biz.subscriptionPlan || 'Prueba gratis (30 días) — pago desde el mes 2';
+      modified = true;
+    }
+
+    // Si la vitrina está activa pero ya pasaron los 30 días, se pausa y requiere pago
     if (biz.status === 'active' && biz.expiresAt) {
       const expirationDate = new Date(biz.expiresAt);
       if (expirationDate < now) {
         biz.status = 'paused';
-        biz.pausedReason = 'Vencimiento de membresía mensual (30 días). Requiere renovación.';
+        biz.pausedReason = 'Tu mes gratis terminó. Realiza el pago para reactivar tu vitrina.';
+        biz.daysRemaining = 0;
         modified = true;
       }
     }
@@ -226,6 +241,8 @@ export const registerBusiness = async (req, res) => {
     }
 
     const businesses = await loadAndValidateBusinesses();
+    const now = new Date();
+    const trialEndsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
     const newBusiness = {
       id: `biz-${Date.now()}`,
@@ -238,7 +255,7 @@ export const registerBusiness = async (req, res) => {
       phone: cleanPhone,
       ownerResidentId: ownerResidentId || null,
       ownerPhone: cleanPhone,
-      badge: 'Nuevo Emprendimiento',
+      badge: 'Nuevo · Mes gratis',
       coverImage: coverImage || 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=800&q=80',
       shortDesc: enforceMaxLength(shortDesc || `Emprendimiento de la Manzana ${manzana} en Los Naranjos.`, 120),
       fullDesc: enforceMaxLength(fullDesc || `Somos vecinos de la Manzana ${manzana}. Ofrecemos productos y servicios de calidad para toda la comunidad de Los Naranjos.`, 500),
@@ -246,12 +263,16 @@ export const registerBusiness = async (req, res) => {
       delivery: enforceMaxLength(delivery || 'Entrega en tu torre / portería', 120),
       instagram: sanitizeSocial(instagram),
       facebook: sanitizeSocial(facebook),
-      status: 'pending_payment', // Inicia pendiente de pago
-      subscriptionPlan: 'Membresía Mensual (30 días)',
+      status: 'active',
+      subscriptionPlan: 'Prueba gratis (30 días) — pago desde el mes 2',
       monthlyFee: 31600,
-      createdAt: new Date().toISOString(),
-      activatedAt: null,
-      expiresAt: null,
+      trialUsed: true,
+      trialEndsAt: trialEndsAt.toISOString(),
+      createdAt: now.toISOString(),
+      activatedAt: now.toISOString(),
+      expiresAt: trialEndsAt.toISOString(),
+      daysRemaining: 30,
+      pausedReason: null,
       products: normalizeProducts(Array.isArray(products) && products.length > 0 ? products : [
         {
           name: 'Producto / Servicio Principal',
@@ -266,7 +287,7 @@ export const registerBusiness = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Vitrina creada exitosamente. Procede al pago para activarla.',
+      message: '¡Vitrina creada y activa! Tienes 1 mes gratis. Desde el segundo mes deberás realizar el pago para mantenerla visible.',
       data: newBusiness
     });
   } catch (error) {

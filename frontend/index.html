@@ -510,9 +510,9 @@
             <span>Vista previa &middot; As&iacute; se ver&aacute; tu vitrina</span>
           </div>
 
-          <div class="bg-sky-50 border border-sky-200 text-sky-800 text-[11px] font-semibold p-2.5 rounded-xl leading-tight flex items-start space-x-2">
-            <i class="fa-solid fa-circle-info text-sky-500 mt-0.5"></i>
-            <span>Esta es una vista previa. As&iacute; ver&aacute;n los vecinos tu vitrina cuando quede publicada. A&uacute;n no se ha activado (falta el pago).</span>
+          <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold p-2.5 rounded-xl leading-tight flex items-start space-x-2">
+            <i class="fa-solid fa-gift text-emerald-500 mt-0.5"></i>
+            <span>Vista previa. Al confirmar, tu vitrina se <b>activa de inmediato con 1 mes gratis</b>. Desde el segundo mes deberás pagar la membresía para mantenerla visible.</span>
           </div>
 
           <div id="vitrinaPreview" class="rounded-2xl border border-slate-200 overflow-hidden bg-white"></div>
@@ -522,8 +522,8 @@
               Editar
             </button>
             <button id="previewPayBtn" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-lg touch-btn flex items-center justify-center space-x-1.5">
-              <i class="fa-solid fa-lock"></i>
-              <span>Confirmar y pagar $31.600</span>
+              <i class="fa-solid fa-rocket"></i>
+              <span>Crear mi vitrina (1 mes gratis)</span>
             </button>
           </div>
         </div>
@@ -573,12 +573,12 @@
           </button>
         </div>
 
-        <!-- PASO 4: CONFIRMACIÓN Y RECIBO DIGITAL -->
+        <!-- PASO 4: CONFIRMACIÓN (activación con mes gratis / recibo tras pago de renovación) -->
         <div id="wizardStep4" class="space-y-3.5 text-xs hidden">
           <div class="text-center pt-1 pb-1">
             <span class="text-2xl">🎉</span>
-            <h4 class="text-sm font-extrabold text-slate-900 mt-0.5">¡Tu Vitrina ya está Activa!</h4>
-            <p class="text-[11px] text-slate-500">Tu negocio ya es visible en Los Naranjos por 30 días.</p>
+            <h4 id="wizardStep4Title" class="text-sm font-extrabold text-slate-900 mt-0.5">¡Tu Vitrina ya está activa!</h4>
+            <p id="wizardStep4Sub" class="text-[11px] text-slate-500">Tu negocio ya es visible en Los Naranjos.</p>
           </div>
 
           <!-- Contenedor del Recibo Digital -->

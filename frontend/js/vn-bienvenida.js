@@ -5,7 +5,7 @@
   'use strict';
   var KEY='vn_bienvenida_vista';
   var script=document.currentScript;
-  var TREE=(script&&script.getAttribute('data-tree'))||'images/arbol-naranjos.png';
+  var TREE=(script&&script.getAttribute('data-tree'))||'images/arbol-naranjos-hd.webp';
   var force=/[?&]bienvenida=1/.test(location.search);
   try{if(!force&&localStorage.getItem(KEY))return}catch(e){}
 
@@ -28,9 +28,14 @@
       '<button type="button" class="vn-go">Entrar a la vitrina</button></div>';
     document.body.appendChild(wel);
     document.body.style.overflow='hidden';
+    document.body.classList.add('vn-lock');document.documentElement.classList.add('vn-lock');
+    function stopScroll(e){e.preventDefault()}
+    wel.addEventListener('wheel',stopScroll,{passive:false});
+    wel.addEventListener('touchmove',stopScroll,{passive:false});
     var btn=wel.querySelector('.vn-go'),stage=wel.querySelector('.vn-stage'),canvas=wel.querySelector('.vn-canvas'),fb=wel.querySelector('.vn-fb');
     fb.decoding='async'; fb.src=TREE; fb.style.opacity='0';
     fb.onload=function(){ if(!wel.classList.contains('vn-has3d')) fb.style.opacity='1'; };
+    fb.onerror=function(){ if(!/\.png$/i.test(fb.src)) fb.src='images/arbol-naranjos.png'; };
     btn.focus();
 
     function close(){
@@ -38,6 +43,7 @@
       try{document.dispatchEvent(new CustomEvent('vn:bienvenida:closed'))}catch(e){}
       wel.classList.add('vn-out');
       document.body.style.overflow=prevOverflow;
+      document.body.classList.remove('vn-lock');document.documentElement.classList.remove('vn-lock');
       setTimeout(function(){stopped=true;if(wel.parentNode)wel.parentNode.removeChild(wel);if(prevFocus&&prevFocus.focus)try{prevFocus.focus()}catch(e){}},480);
     }
     var stopped=false;

@@ -12,13 +12,15 @@
   <!-- Google Fonts: Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com" />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@700&display=swap" rel="stylesheet" />
 
   <!-- Estilos Locales del Frontend -->
   <link rel="stylesheet" href="./css/styles.css" />
   <link rel="stylesheet" href="./css/vn-bienvenida.css" />
 
-  <script src="https://checkout.wompi.co/widget.js" data-render="button"></script>
+  <script src="https://checkout.wompi.co/widget.js" data-render="button" defer></script>
 
   <script src="./js/tailwind-config.js"></script>
 </head>
@@ -70,6 +72,10 @@
 
             <button id="openPqrsModalBtn" title="Radicar una PQRS" aria-label="Radicar una PQRS" class="bg-white hover:bg-orange-50 text-slate-800 shadow-sm w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold transition active:scale-95">
               <i class="fa-solid fa-headset"></i>
+            </button>
+
+            <button id="reopenWelcomeBtn" type="button" title="Ver bienvenida" aria-label="Ver bienvenida" class="bg-orange-500 hover:bg-orange-600 text-white shadow-sm w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold transition active:scale-95">
+              <i class="fa-solid fa-tree"></i>
             </button>
 
             <button id="openShareModalBtn" title="Compartir la página y QR" aria-label="Compartir la página y QR" class="bg-white hover:bg-orange-50 text-slate-800 shadow-sm w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold transition active:scale-95">
@@ -242,10 +248,7 @@
     <footer class="p-4 text-center text-xs text-slate-400 border-t border-slate-100">
       <p class="font-semibold text-slate-600">Vitrina Digital Los Naranjos — Jamundí, Valle</p>
       <p class="text-[11px] mt-1">Conectando vecinos de las Manzanas 1 a 6 • Renovación cada 30 días</p>
-      <div class="mt-2 flex items-center justify-center gap-3 text-[11px] font-bold">
-        <button id="reopenWelcomeBtn" type="button" class="text-orange-500 hover:text-orange-600 underline underline-offset-2 touch-btn">Ver bienvenida</button>
-        <span class="text-slate-300">?</span>
-        <button id="openTermsBtn" class="text-[11px] font-bold text-orange-500 hover:text-orange-600 underline underline-offset-2 touch-btn">Términos y Condiciones · Política de Confidencialidad</button></div>
+      <button id="openTermsBtn" class="mt-2 text-[11px] font-bold text-orange-500 hover:text-orange-600 underline underline-offset-2 touch-btn">TAcrminos y Condiciones A? PolA-tica de Confidencialidad</button>
     </footer>
 
   </div>
@@ -259,9 +262,6 @@
       <div class="relative h-48 bg-slate-100 flex-shrink-0 overflow-hidden">
         <img id="modalCoverImg" src="" alt="Portada" class="w-full h-full object-cover object-center" />
         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-        <button data-reopen-welcome type="button" title="Ver bienvenida" class="absolute top-4 left-4 bg-white/80 hover:bg-white text-orange-600 h-8 px-2.5 rounded-full flex items-center gap-1 font-extrabold text-[10px] shadow">
-          <i class="fa-solid fa-tree"></i><span>Bienvenida</span>
-        </button>
         <button data-close="closeProfileModal" class="absolute top-4 right-4 bg-white/80 hover:bg-white text-slate-800 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow">
           <i class="fa-solid fa-xmark"></i>
         </button>

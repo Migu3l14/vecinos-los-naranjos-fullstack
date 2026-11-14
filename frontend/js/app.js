@@ -35,18 +35,29 @@ const state = {
 };
 
 // Inicialización
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
   setupActionButtons();
   setupEventListeners();
   setupImageUpload('regCoverImg');
   setupImageUpload('prod1Img');
   setupImageUpload('prod2Img');
   setupModalScrollLock();
-  await loadInitialData();
-  maybeShowEntryModal();
-  renderMiManzana();
-  bindMmDemoToggle();
-  bindMmAccordion();
+
+  // La bienvenida es lo primero que se ve. Mientras está abierta no cargamos ni
+  // renderizamos la página pesada para que no compita por el hilo principal.
+  const startHeavy = async () => {
+    await loadInitialData();
+    maybeShowEntryModal();
+    renderMiManzana();
+    bindMmDemoToggle();
+    bindMmAccordion();
+  };
+  const welcome = document.querySelector('.vn-wel');
+  if (welcome && !welcome.classList.contains('vn-out')) {
+    document.addEventListener('vn:bienvenida:closed', startHeavy, { once: true });
+  } else {
+    startHeavy();
+  }
 });
 
 // Muestra un aviso con botón Reintentar cuando falla la carga inicial

@@ -1,42 +1,63 @@
 /* Bienvenida · Vitrina Digital Los Naranjos. Todas las clases llevan prefijo vn- */
-.vn-wel{--vn-ink:#1B3A2B;--vn-muted:#5B6F63;--vn-o:#FF8A1F;--vn-od:#E06A00;--vn-leaf:#1F6B43;--vn-card:#FFF8EE;--vn-glass:rgba(255,255,255,.55);--vn-line:rgba(27,58,43,.14);--vn-sh:rgba(27,58,43,.3);
+.vn-wel{--vn-ink:#1B3A2B;--vn-muted:#5B6F63;--vn-o:#FF8A1F;--vn-od:#E06A00;--vn-leaf:#1F6B43;--vn-card:#FFF8EE;--vn-bg:#EFE7DA;--vn-glass:rgba(255,255,255,.55);--vn-line:rgba(27,58,43,.14);--vn-sh:rgba(27,58,43,.3);
 position:fixed;inset:0;z-index:2147483000;width:100%;height:100vh;height:100dvh;height:var(--vn-vh,100dvh);max-height:100vh;max-height:100dvh;max-height:var(--vn-vh,100dvh);
-display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(8px,2vh,18px);
-padding:max(12px,env(safe-area-inset-top)) clamp(14px,4vw,24px) max(12px,env(safe-area-inset-bottom));
-box-sizing:border-box;overflow:hidden;overscroll-behavior:none;touch-action:none;color:var(--vn-ink);
+display:flex;align-items:center;justify-content:center;padding:0;box-sizing:border-box;overflow:hidden;overscroll-behavior:none;touch-action:none;color:var(--vn-ink);
 -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
 font-family:"Avenir Next","Segoe UI",system-ui,sans-serif;line-height:1.45;text-align:center;
-background:radial-gradient(80% 50% at 70% 18%,rgba(255,150,40,.42),transparent 70%),radial-gradient(70% 40% at 10% 100%,rgba(31,107,67,.3),transparent 70%),var(--vn-card);
-transition:opacity .4s ease,transform .4s ease}
+background:var(--vn-bg);transition:opacity .4s ease,transform .4s ease}
 html.vn-lock,body.vn-lock{overflow:hidden!important;overscroll-behavior:none}
 body.vn-lock{touch-action:none}
 .vn-wel *{box-sizing:border-box}
 .vn-wel.vn-out{opacity:0;transform:scale(1.02);pointer-events:none}
-@media(prefers-color-scheme:dark){.vn-wel{--vn-ink:#FFF3E3;--vn-muted:#A9BDB0;--vn-card:#14241C;--vn-glass:rgba(29,49,40,.72);--vn-line:rgba(255,243,227,.18);--vn-sh:rgba(0,0,0,.6)}}
-.vn-badge{flex:0 0 auto;max-width:100%;white-space:nowrap;background:var(--vn-glass);border:1px solid var(--vn-line);border-radius:999px;padding:6px 14px;font-size:clamp(.72rem,2.6vw,.8rem)}
-.vn-stage{position:relative;flex:1 1 auto;width:100%;max-width:520px;min-height:0;max-height:clamp(200px,50dvh,440px);touch-action:none}
-.vn-fb{position:absolute;display:block;left:50%;top:50%;height:min(100%,340px);width:auto;max-width:86%;object-fit:contain;transform:translate(-50%,-50%);filter:drop-shadow(0 16px 12px var(--vn-sh));opacity:0;transition:opacity .35s ease;z-index:1;-webkit-user-drag:none}
+@media(prefers-color-scheme:dark){.vn-wel{--vn-ink:#FFF3E3;--vn-muted:#A9BDB0;--vn-card:#14241C;--vn-bg:#0E1813;--vn-glass:rgba(29,49,40,.6);--vn-line:rgba(255,243,227,.18);--vn-sh:rgba(0,0,0,.6)}}
+
+/* En celular la tarjeta ocupa toda la pantalla; en tablet/escritorio se muestra el marco del mockup. */
+.vn-card{position:relative;display:flex;flex-direction:column;align-items:center;width:100%;height:100%;overflow:hidden;
+padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);
+background:radial-gradient(80% 50% at 70% 18%,rgba(255,150,40,.42),transparent 70%),radial-gradient(70% 40% at 10% 100%,rgba(31,107,67,.3),transparent 70%),var(--vn-card)}
+@media(min-width:561px) and (min-height:561px){
+  .vn-wel{padding:12px}
+  .vn-card{width:min(360px,100%);height:min(680px,100%);padding:0;border:8px solid var(--vn-ink);border-radius:36px;box-shadow:0 30px 50px -20px var(--vn-sh)}
+}
+
+.vn-badge{flex:0 0 auto;max-width:calc(100% - 28px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:16px;background:var(--vn-glass);border:1px solid var(--vn-line);border-radius:999px;padding:6px 14px;font-size:clamp(.72rem,2.6vw,.8rem);z-index:4}
+.vn-stage{position:relative;flex:1 1 auto;width:100%;min-height:0;touch-action:none;z-index:1}
+
+.vn-fb{position:absolute;display:block;left:50%;top:50%;height:78%;width:auto;max-width:86%;object-fit:contain;transform:translate(-50%,-50%);filter:drop-shadow(0 18px 14px var(--vn-sh));opacity:0;transition:opacity .35s ease;z-index:1;pointer-events:none;-webkit-user-drag:none}
+.vn-3d-ready .vn-fb{opacity:0!important}
+.vn-nogl .vn-fb{opacity:1!important}
+.vn-nogl .vn-c{display:none}
+
+.vn-c{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none;z-index:2;opacity:0;transition:opacity .35s ease}
+.vn-3d-ready .vn-c{opacity:1}
+.vn-c:active{cursor:grabbing}
+
 .vn-fl{position:absolute;max-width:min(46%,170px);background:var(--vn-glass);border:1px solid var(--vn-line);border-radius:16px;padding:7px 10px;font-weight:700;font-size:clamp(.72rem,2.4vw,.85rem);text-align:left;
-box-shadow:0 16px 20px -12px var(--vn-sh);pointer-events:none;animation:vn-float 5s ease-in-out infinite;transition:opacity .35s}
+box-shadow:0 16px 20px -12px var(--vn-sh);pointer-events:none;animation:vn-float 5s ease-in-out infinite;transition:opacity .35s;z-index:3}
 .vn-fl small{display:block;font-weight:500;color:var(--vn-muted);font-size:clamp(.62rem,2.1vw,.72rem)}
 .vn-fl.vn-sw{opacity:0}
-.vn-f1{left:2px;top:8%}.vn-f2{right:2px;bottom:10%;animation-delay:-2.5s}
+.vn-f1{left:8px;top:14%}.vn-f2{right:8px;bottom:18%;animation-delay:-2.5s}
 @keyframes vn-float{50%{transform:translateY(-8px)}}
-.vn-info{flex:0 0 auto;width:100%;max-width:min(360px,100%);display:flex;flex-direction:column;align-items:center}
-.vn-title{font-size:clamp(1.35rem,5.6vw,1.9rem);line-height:1.08;margin:0 0 6px;letter-spacing:-.02em;font-weight:800}
-.vn-sub{color:var(--vn-muted);font-size:clamp(.85rem,2.7vw,.95rem);margin:0 auto clamp(10px,1.8vh,18px);max-width:28ch}
+
+.vn-info{flex:0 0 auto;width:100%;padding:0 22px 22px;text-align:center;z-index:4}
+.vn-title{font-size:clamp(1.5rem,5.6vw,1.9rem);line-height:1.08;margin:0 0 6px;letter-spacing:-.02em;font-weight:800}
+.vn-sub{color:var(--vn-muted);font-size:clamp(.85rem,2.7vw,.95rem);margin:0 auto 18px;max-width:28ch}
 .vn-go{width:100%;max-width:100%;box-sizing:border-box;white-space:normal;border:0;border-radius:16px;padding:clamp(12px,1.7vh,15px) 14px;font:inherit;font-size:clamp(.95rem,2.8vw,1.05rem);font-weight:800;color:#2A1500;background:var(--vn-o);cursor:pointer;
 box-shadow:0 7px 0 var(--vn-od),0 16px 22px -8px var(--vn-sh);transition:transform .12s,box-shadow .12s}
 .vn-go:active{transform:translateY(5px);box-shadow:0 2px 0 var(--vn-od)}
 .vn-wel :focus-visible{outline:3px solid var(--vn-leaf);outline-offset:3px}
+
+.vn-toast{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 56px);transform:translateX(-50%);background:var(--vn-ink);color:var(--vn-bg);padding:8px 14px;border-radius:12px;font-size:.82rem;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;z-index:5}
+.vn-toast.vn-show{opacity:1}
+
 @media(max-height:600px){
-  .vn-wel{gap:clamp(6px,1.4vh,12px)}
-  .vn-stage{max-height:46dvh}
+  .vn-badge{margin-top:10px}
   .vn-fl{display:none}
+  .vn-info{padding-bottom:14px}
   .vn-sub{margin-bottom:10px}
 }
 @media(max-height:470px){
   .vn-badge,.vn-sub{display:none}
-  .vn-stage{max-height:42dvh}
+  .vn-title{margin-bottom:10px}
 }
-@media(prefers-reduced-motion:reduce){.vn-fl{animation:none}.vn-wel{transition:none}}
+@media(prefers-reduced-motion:reduce){.vn-fl{animation:none}.vn-wel{transition:none}.vn-c,.vn-fb{transition:none}}

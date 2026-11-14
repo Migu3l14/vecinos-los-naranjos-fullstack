@@ -39,7 +39,7 @@ box-shadow:0 16px 20px -12px var(--vn-sh);pointer-events:none;animation:vn-float
 .vn-f1{left:8px;top:14%}.vn-f2{right:8px;bottom:18%;animation-delay:-2.5s}
 @keyframes vn-float{50%{transform:translateY(-8px)}}
 
-.vn-info{flex:0 0 auto;width:100%;padding:0 0 22px;text-align:center;z-index:4}
+.vn-info{flex:0 0 auto;width:100%;padding:0 8px 22px;text-align:center;z-index:4}
 .vn-title{font-size:clamp(1.5rem,5.6vw,1.9rem);line-height:1.08;margin:0 0 6px;letter-spacing:-.02em;font-weight:800}
 .vn-sub{color:var(--vn-muted);font-size:clamp(.85rem,2.7vw,.95rem);margin:0 auto 18px;max-width:28ch}
 .vn-go{width:100%;max-width:100%;box-sizing:border-box;white-space:normal;border:0;border-radius:16px;padding:clamp(12px,1.7vh,15px) 14px;font:inherit;font-size:clamp(.95rem,2.8vw,1.05rem);font-weight:800;color:#2A1500;background:var(--vn-o);cursor:pointer;

@@ -867,7 +867,6 @@ async function handleOpenProfile(bizId) {
       event.stopPropagation();
       const prod = prods[Number(btn.dataset.prodwa)];
       if (!prod) return;
-      document.getElementById('profileModal').classList.add('hidden');
       const msg = WhatsAppHelper.buildProductMessage(biz, prod);
       openWhatsAppPreview(biz.name, biz.phone, msg);
     });

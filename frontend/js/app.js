@@ -829,18 +829,22 @@ async function handleOpenProfile(bizId) {
       grupos[cat].forEach((prod) => {
         const agotado = prod.availability === 'agotado';
         productsHtml += `
-          <button type="button" data-proddetail="${prod.index}" class="w-full text-left flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100 hover:border-orange-200 hover:bg-orange-50/50 transition-colors">
-            <div class="flex items-center space-x-2.5 min-w-0">
-              <img src="${escHtml(prod.photo)}" alt="${escHtml(prod.name)}" loading="lazy" class="w-14 h-14 rounded-lg object-cover flex-shrink-0 bg-slate-200"/>
+          <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100">
+            <button type="button" data-proddetail="${prod.index}" class="flex items-center space-x-2.5 min-w-0 flex-1 text-left">
+              <img src="${escHtml(prod.photo)}" alt="${escHtml(prod.name)}" class="w-12 h-12 rounded-lg object-contain flex-shrink-0 bg-slate-200"/>
               <div class="min-w-0">
                 <h5 class="text-xs font-bold text-slate-800 leading-tight">${escHtml(prod.name)}</h5>
                 ${prod.price ? `<span class="text-xs font-extrabold text-emerald-600">${escHtml(prod.price)}</span>` : ''}
                 ${agotado ? '<span class="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">Agotado</span>' : ''}
                 ${prod.description ? `<p class="text-[10px] text-slate-500 truncate">${escHtml(prod.description)}</p>` : ''}
               </div>
+            </button>
+            <div class="flex flex-col gap-1 flex-shrink-0">
+              <button type="button" data-prodwa="${prod.index}" data-cat="${escHtml(cat)}" class="prod-wa-btn px-2.5 py-1 bg-[#25D366] hover:bg-[#1ebd59] text-white text-[10px] font-bold rounded-lg flex items-center space-x-1 shadow">
+                <i class="fa-brands fa-whatsapp"></i><span>${agotado ? 'Contactar' : 'Pedir'}</span>
+              </button>
             </div>
-            <i class="fa-solid fa-chevron-right text-[10px] text-slate-300 flex-shrink-0"></i>
-          </button>`;
+          </div>`;
       });
       productsHtml += `</div></div>`;
     });
@@ -855,6 +859,17 @@ async function handleOpenProfile(bizId) {
     btn.addEventListener('click', () => {
       const prod = prods[Number(btn.dataset.proddetail)];
       if (prod) openProductDetail(biz, prod);
+    });
+  });
+
+  productsContainer.querySelectorAll('[data-prodwa]').forEach(btn => {
+    btn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const prod = prods[Number(btn.dataset.prodwa)];
+      if (!prod) return;
+      document.getElementById('profileModal').classList.add('hidden');
+      const msg = WhatsAppHelper.buildProductMessage(biz, prod);
+      openWhatsAppPreview(biz.name, biz.phone, msg);
     });
   });
 

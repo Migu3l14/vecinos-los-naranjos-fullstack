@@ -74,7 +74,7 @@ export const businessOwnedBy = (business, residentId, phone) => {
 // GET /api/businesses (Directorio público: Solo vitrinas activas)
 export const getBusinesses = async (req, res) => {
   try {
-    const { category, manzana, q, includeAll } = req.query;
+    const { category, manzana, q, includeAll, includeProducts } = req.query;
     let businesses = await loadAndValidateBusinesses();
 
     // Por defecto el público solo ve vitrinas activas
@@ -104,10 +104,17 @@ export const getBusinesses = async (req, res) => {
       });
     }
 
+    const data = includeProducts === 'false'
+      ? businesses.map((biz) => {
+        const { products, ...rest } = biz;
+        return { ...rest, productsCount: Array.isArray(products) ? products.length : 0 };
+      })
+      : businesses;
+
     res.json({
       success: true,
-      count: businesses.length,
-      data: businesses
+      count: data.length,
+      data
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error al consultar vitrinas', error: error.message });
@@ -219,6 +226,8 @@ export const registerBusiness = async (req, res) => {
       hours,
       delivery,
       coverImage,
+      coverImageOriginal,
+      coverImageCrop,
       products,
       instagram,
       facebook
@@ -257,6 +266,8 @@ export const registerBusiness = async (req, res) => {
       ownerPhone: cleanPhone,
       badge: 'Nuevo · Mes gratis',
       coverImage: coverImage || 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=800&q=80',
+      coverImageOriginal: coverImageOriginal || null,
+      coverImageCrop: normalizeCrop(coverImageCrop),
       shortDesc: enforceMaxLength(shortDesc || `Emprendimiento de la Manzana ${manzana} en Los Naranjos.`, 120),
       fullDesc: enforceMaxLength(fullDesc || `Somos vecinos de la Manzana ${manzana}. Ofrecemos productos y servicios de calidad para toda la comunidad de Los Naranjos.`, 500),
       hours: enforceMaxLength(hours || 'Lunes a Sábado: 8:00 AM - 7:00 PM', 120),
@@ -306,12 +317,35 @@ const sanitizeSocial = (value) => {
   return v;
 };
 
+const clampNumber = (value, min, max, fallback) => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+};
+
+// Metadatos de encuadre: solo números acotados, nunca objetos arbitrarios.
+const normalizeCrop = (crop) => {
+  if (!crop || typeof crop !== 'object' || Array.isArray(crop)) return null;
+  return {
+    aspect: clampNumber(crop.aspect, 0.25, 4, 1),
+    zoom: clampNumber(crop.zoom, 1, 5, 1),
+    cx: clampNumber(crop.cx, 0, 1, 0.5),
+    cy: clampNumber(crop.cy, 0, 1, 0.5),
+    sourceWidth: Math.round(clampNumber(crop.sourceWidth, 0, 20000, 0)),
+    sourceHeight: Math.round(clampNumber(crop.sourceHeight, 0, 20000, 0)),
+    outputWidth: Math.round(clampNumber(crop.outputWidth, 0, 5000, 0)),
+    outputHeight: Math.round(clampNumber(crop.outputHeight, 0, 5000, 0))
+  };
+};
+
 // Normaliza un producto al formato enriquecido (retrocompatible con {name, price, image})
 const normalizeProduct = (p, index = 0) => ({
   id: String(p.id || `p-${Date.now()}-${index}`),
   name: String(p.name || 'Producto / Servicio'),
   description: String(p.description || p.desc || ''),
   photo: String(p.photo || p.image || ''),
+  photoOriginal: String(p.photoOriginal || ''),
+  photoCrop: normalizeCrop(p.photoCrop),
   price: String(p.price || ''),
   category: String(p.category || 'General'),
   availability: ['activo', 'agotado'].includes(p.availability) ? p.availability : 'activo'
@@ -344,7 +378,8 @@ export const updateBusiness = async (req, res) => {
     const current = businesses[index];
     const allowed = [
       'name', 'category', 'manzana', 'phone', 'shortDesc', 'fullDesc',
-      'hours', 'delivery', 'coverImage', 'instagram', 'facebook', 'products', 'status'
+      'hours', 'delivery', 'coverImage', 'coverImageOriginal', 'coverImageCrop',
+      'instagram', 'facebook', 'products', 'status'
     ];
 
     const updates = {};
@@ -362,6 +397,8 @@ export const updateBusiness = async (req, res) => {
     if (updates.products !== undefined && !Array.isArray(updates.products)) {
       return res.status(400).json({ success: false, message: 'El campo products debe ser una lista.' });
     }
+    if (updates.products !== undefined) updates.products = normalizeProducts(updates.products);
+    if (updates.coverImageCrop !== undefined) updates.coverImageCrop = normalizeCrop(updates.coverImageCrop);
 
     const updated = { ...current, ...updates, updatedAt: new Date().toISOString() };
     businesses[index] = updated;
@@ -435,7 +472,8 @@ export const updateMyBusiness = async (req, res) => {
 
     const allowed = [
       'name', 'category', 'manzana', 'phone', 'shortDesc', 'fullDesc',
-      'hours', 'delivery', 'coverImage', 'instagram', 'facebook'
+      'hours', 'delivery', 'coverImage', 'coverImageOriginal', 'coverImageCrop',
+      'instagram', 'facebook'
     ];
 
     const updates = {};
@@ -451,6 +489,7 @@ export const updateMyBusiness = async (req, res) => {
       updates.phone = cleanPhone;
       updates.ownerPhone = cleanPhone;
     }
+    if (updates.coverImageCrop !== undefined) updates.coverImageCrop = normalizeCrop(updates.coverImageCrop);
 
     // La vitrina queda siempre vinculada al residente autenticado (aunque cambie
     // el número), para que nunca pierda el acceso a su propio panel.

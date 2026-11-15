@@ -85,7 +85,7 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 
 // Límite de tamaño del cuerpo de las peticiones
-app.use(express.json({ limit: '100kb' }));
+app.use(express.json({ limit: '512kb' }));
 
 // Límite de intentos en endpoints sensibles (login/registro/creación)
 const authLimiter = rateLimit({

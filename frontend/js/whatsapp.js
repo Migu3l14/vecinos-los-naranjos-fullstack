@@ -19,7 +19,16 @@ export const WhatsAppHelper = {
 
   // Construir mensaje para encargar un producto específico
   buildProductMessage(business, product) {
-    return `Hola, vi tu producto ${product.name} en la plataforma de Vecinos Los Naranjos y me interesa comprarlo/pedir información`;
+    const image = product.photo || product.image || '';
+    let absoluteImage = '';
+    if (image) {
+      try { absoluteImage = new URL(image, window.location.origin).href; } catch { absoluteImage = ''; }
+    }
+    const lines = [`Hola${business && business.name ? ` ${business.name}` : ''}, vi en *Vitrina Digital Los Naranjos* el producto *${product.name}* y me interesa pedirlo.`];
+    if (product.price) lines.push(`Precio: ${product.price}`);
+    if (product.description) lines.push(`Detalle: ${product.description}`);
+    if (absoluteImage) lines.push(`Foto: ${absoluteImage}`);
+    return lines.join('\n');
   },
 
   // Construir comprobante oficial de pago para WhatsApp con enlace a la factura digital

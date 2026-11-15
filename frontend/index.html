@@ -259,7 +259,7 @@
   <div id="profileModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white w-full max-w-md max-h-[90vh] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up">
       
-      <div class="relative h-48 bg-slate-100 flex-shrink-0 overflow-hidden">
+      <div class="relative aspect-video bg-slate-100 flex-shrink-0 overflow-hidden">
         <img id="modalCoverImg" src="" alt="Portada" class="w-full h-full object-cover object-center" />
         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
         <button data-close="closeProfileModal" class="absolute top-4 right-4 bg-white/80 hover:bg-white text-slate-800 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow">
@@ -340,6 +340,32 @@
         </button>
       </div>
 
+    </div>
+  </div>
+
+  <div id="productDetailModal" class="fixed inset-0 z-[60] hidden items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="absolute inset-0 bg-slate-900/75 backdrop-blur-sm" data-close-product-detail></div>
+    <div class="relative bg-white w-full max-w-sm max-h-[92vh] rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-y-auto animate-slide-up">
+      <div class="relative aspect-square bg-slate-100">
+        <img id="productDetailImg" src="" alt="" class="w-full h-full object-cover object-center" />
+        <button type="button" data-close-product-detail class="absolute top-3 right-3 bg-white/90 hover:bg-white text-slate-800 w-9 h-9 rounded-full flex items-center justify-center shadow">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <span id="productDetailAvailability" class="absolute bottom-3 left-3 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-500 text-white"></span>
+      </div>
+      <div class="p-4 space-y-3">
+        <div>
+          <span id="productDetailCategory" class="text-[10px] font-extrabold uppercase tracking-wider text-orange-600"></span>
+          <h3 id="productDetailName" class="text-xl font-extrabold text-slate-900 leading-tight mt-0.5"></h3>
+          <p id="productDetailBiz" class="text-[11px] font-semibold text-slate-400 mt-0.5"></p>
+          <p id="productDetailPrice" class="text-lg font-extrabold text-emerald-600 mt-1"></p>
+        </div>
+        <p id="productDetailDesc" class="text-sm text-slate-600 leading-relaxed whitespace-pre-line"></p>
+        <button id="productDetailWaBtn" type="button" class="w-full py-3 bg-[#25D366] hover:bg-[#1ebd59] text-white font-extrabold text-sm rounded-xl flex items-center justify-center space-x-2 shadow-lg touch-btn">
+          <i class="fa-brands fa-whatsapp text-lg"></i>
+          <span>Pedir este producto</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -436,13 +462,16 @@
             </div>
             <div>
               <label class="font-bold text-slate-700 block mb-1">Foto de Portada (opcional):</label>
-              <input type="file" id="regCoverImg" accept="image/jpeg,image/png,image/webp" class="w-full p-2 border border-slate-200 rounded-xl bg-white text-[11px] focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+              <input type="file" id="regCoverImg" accept="image/jpeg,image/png,image/webp" data-crop-aspect="1.7778" class="w-full p-2 border border-slate-200 rounded-xl bg-white text-[11px] focus:ring-2 focus:ring-orange-500 focus:outline-none" />
               <div id="regCoverImg_preview" class="hidden mt-2">
-                <img id="regCoverImg_img" alt="Vista previa de la portada" class="w-full h-28 object-cover object-center bg-slate-50 rounded-xl border border-slate-200" />
+                <img id="regCoverImg_img" alt="Vista previa de la portada" class="w-full aspect-video object-cover object-center bg-slate-50 rounded-xl border border-slate-200" />
               </div>
               <input type="hidden" id="regCoverImg_url" />
+              <input type="hidden" id="regCoverImg_original_url" />
+              <input type="hidden" id="regCoverImg_crop" />
+              <button type="button" data-crop-edit="regCoverImg" class="hidden mt-1.5 text-[10px] font-bold text-orange-600 hover:text-orange-700">Ajustar encuadre</button>
               <p id="regCoverImg_err" class="hidden text-red-600 text-[10px] font-bold mt-1"></p>
-              <p class="text-[10px] text-slate-400 mt-0.5">Sube una imagen desde tu dispositivo (JPG, PNG o WebP, máx. 5MB).</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">Sube una imagen desde tu dispositivo (JPG, PNG o WebP, máx. 20MB; se optimiza al guardar).</p>
             </div>
           </div>
 
@@ -454,44 +483,20 @@
 
         <!-- PASO 2: PRODUCTOS Y FOTOS -->
         <div id="wizardStep2" class="space-y-3 text-xs hidden">
-          <div class="flex items-center space-x-2 text-slate-500 font-bold mb-2">
-            <span class="w-5 h-5 rounded-full bg-orange-500 text-white flex items-center justify-center text-[11px]">2</span>
-            <span>Agrega tus Productos Estrella</span>
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <div class="flex items-center space-x-2 text-slate-500 font-bold">
+              <span class="w-5 h-5 rounded-full bg-orange-500 text-white flex items-center justify-center text-[11px]">2</span>
+              <span>Agrega tus Productos</span>
+            </div>
+            <span id="regProductsCount" class="text-[10px] font-bold text-slate-400">0 productos</span>
           </div>
 
-          <!-- Producto 1 -->
-          <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-            <span class="font-bold text-orange-600 block">Producto 1</span>
-            <input type="text" id="prod1Name" placeholder="Nombre (Ej: Semipermanente o Lasaña Familiar)" class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white" />
-            <div class="grid grid-cols-2 gap-2">
-              <input type="text" id="prod1Price" placeholder="Precio (Ej: $28.000)" class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white" />
-              <div>
-                <input type="file" id="prod1Img" accept="image/jpeg,image/png,image/webp" class="w-full p-1.5 border border-slate-200 rounded-lg bg-white text-[10px]" />
-                <div id="prod1Img_preview" class="hidden mt-1">
-                  <img id="prod1Img_img" alt="" class="w-full h-16 object-contain bg-slate-50 rounded-lg border border-slate-200" />
-                </div>
-                <input type="hidden" id="prod1Img_url" />
-                <p id="prod1Img_err" class="hidden text-red-600 text-[10px] font-bold"></p>
-              </div>
-            </div>
-          </div>
+          <div id="regProductsList" class="space-y-2"></div>
 
-          <!-- Producto 2 -->
-          <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-            <span class="font-bold text-orange-600 block">Producto 2 (Opcional)</span>
-            <input type="text" id="prod2Name" placeholder="Nombre (Ej: Manicure tradicional)" class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white" />
-            <div class="grid grid-cols-2 gap-2">
-              <input type="text" id="prod2Price" placeholder="Precio (Ej: $18.000)" class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white" />
-              <div>
-                <input type="file" id="prod2Img" accept="image/jpeg,image/png,image/webp" class="w-full p-1.5 border border-slate-200 rounded-lg bg-white text-[10px]" />
-                <div id="prod2Img_preview" class="hidden mt-1">
-                  <img id="prod2Img_img" alt="" class="w-full h-16 object-contain bg-slate-50 rounded-lg border border-slate-200" />
-                </div>
-                <input type="hidden" id="prod2Img_url" />
-                <p id="prod2Img_err" class="hidden text-red-600 text-[10px] font-bold"></p>
-              </div>
-            </div>
-          </div>
+          <button type="button" id="regAddProductBtn" class="w-full py-2.5 border-2 border-dashed border-orange-300 hover:border-orange-400 hover:bg-orange-50 text-orange-600 text-xs font-extrabold rounded-xl flex items-center justify-center space-x-1.5">
+            <i class="fa-solid fa-plus"></i>
+            <span>Agregar otro producto</span>
+          </button>
 
           <div class="flex items-start space-x-2 text-[11px] text-slate-600 pt-1">
             <input type="checkbox" id="regTerms" class="mt-0.5 w-4 h-4 accent-orange-500 flex-shrink-0" />
@@ -1172,6 +1177,8 @@
       </div>
     </div>
   </div>
+
+  <div id="imageCropperModal" class="hidden"></div>
 
   <!-- SCRIPT MODULAR DEL FRONTEND -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>

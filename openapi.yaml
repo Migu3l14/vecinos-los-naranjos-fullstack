@@ -381,8 +381,31 @@ paths:
     get:
       tags: [Businesses]
       summary: Listar vitrinas públicas
+      parameters:
+        - name: category
+          in: query
+          schema: { type: string }
+        - name: manzana
+          in: query
+          schema: { type: string }
+        - name: q
+          in: query
+          schema: { type: string }
+        - name: includeAll
+          in: query
+          description: Incluye vitrinas no activas (solo administración).
+          schema: { type: string, enum: ['true', 'false'] }
+        - name: includeProducts
+          in: query
+          description: Si es `false`, omite el arreglo `products` y devuelve `productsCount`.
+          schema: { type: string, enum: ['true', 'false'], default: 'true' }
       responses:
-        '200': { description: Lista de vitrinas }
+        '200':
+          description: Lista de vitrinas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessListResponse'
     post:
       tags: [Businesses]
       summary: Registrar vitrina
@@ -1091,6 +1114,73 @@ components:
         durationDays: { type: integer, example: 30 }
         status: { type: string, example: Aprobado y Activo }
         verificationCode: { type: string, example: VDLN-AB12CD }
+
+    CropMetadata:
+      type: object
+      description: Encuadre normalizado de una imagen ya recortada.
+      required: [aspect, zoom, cx, cy]
+      properties:
+        aspect: { type: number, minimum: 0.25, maximum: 4, example: 1.7778 }
+        zoom: { type: number, minimum: 1, maximum: 5, example: 1 }
+        cx: { type: number, minimum: 0, maximum: 1, example: 0.5 }
+        cy: { type: number, minimum: 0, maximum: 1, example: 0.5 }
+        sourceWidth: { type: integer, minimum: 0, maximum: 20000, example: 1600 }
+        sourceHeight: { type: integer, minimum: 0, maximum: 20000, example: 900 }
+        outputWidth: { type: integer, minimum: 0, maximum: 5000, example: 1600 }
+        outputHeight: { type: integer, minimum: 0, maximum: 5000, example: 900 }
+
+    BusinessProduct:
+      type: object
+      required: [id, name, price, category, availability]
+      properties:
+        id: { type: string, example: p-1750000000000-0 }
+        name: { type: string, example: Lasaña familiar }
+        description: { type: string }
+        photo: { type: string, description: URL de la imagen final recortada. }
+        photoOriginal: { type: string, description: URL de la imagen original para reeditar. }
+        photoCrop:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/CropMetadata'
+        price: { type: string, example: '$28.000' }
+        category: { type: string, example: General }
+        availability: { type: string, enum: [activo, agotado] }
+
+    Business:
+      type: object
+      required: [id, name, category, manzana, phone, status]
+      additionalProperties: true
+      properties:
+        id: { type: string, example: biz-1750000000000 }
+        name: { type: string }
+        category: { type: string }
+        manzana: { type: string }
+        phone: { type: string }
+        status: { type: string, enum: [active, pending_payment, paused, expired] }
+        coverImage: { type: string }
+        coverImageOriginal: { type: string, nullable: true }
+        coverImageCrop:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/CropMetadata'
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/BusinessProduct'
+        productsCount:
+          type: integer
+          description: Presente cuando se consulta con includeProducts=false.
+
+    BusinessListResponse:
+      type: object
+      required: [success, count, data]
+      properties:
+        success: { type: boolean, example: true }
+        count: { type: integer }
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Business'
 
     Error:
       type: object

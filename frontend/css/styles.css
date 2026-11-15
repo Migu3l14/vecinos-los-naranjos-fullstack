@@ -169,3 +169,35 @@ body {
 .biz-card:hover .biz-cover img {
   transform: scale(1.05);
 }
+
+.vn-crop-stage {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: #0f172a;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+
+.vn-crop-stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.vn-crop-stage canvas.is-dragging {
+  cursor: grabbing;
+}
+
+.vn-crop-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  border-radius: inherit;
+}

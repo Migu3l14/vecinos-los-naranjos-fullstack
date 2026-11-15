@@ -2,7 +2,7 @@ import { API } from './api.js';
 import { UI } from './ui.js';
 import { WhatsAppHelper } from './whatsapp.js';
 import { openWompiCheckout } from './wompi.js';
-import { setupImageUpload, resetImageUpload } from './upload.js';
+import { setupImageUpload, resetImageUpload, waitForImageUpload, waitForImageUploads } from './upload.js';
 import { openShareModal } from './share.js';
 
 // Atajo para document.getElementById
@@ -18,6 +18,7 @@ const state = {
   currentSearch: '',
   selectedBusiness: null,
   selectedOffer: null,
+  selectedProduct: null,
   
   // Estado temporal del proceso de registro y pago
   newBizData: null,
@@ -39,8 +40,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupActionButtons();
   setupEventListeners();
   setupImageUpload('regCoverImg');
-  setupImageUpload('prod1Img');
-  setupImageUpload('prod2Img');
   setupModalScrollLock();
 
   // La bienvenida es lo primero que se ve. Mientras está abierta no cargamos ni
@@ -86,7 +85,7 @@ async function loadInitialData() {
     const [categories, offers, businesses] = await Promise.all([
       API.getCategories(),
       API.getOffers(),
-      API.getBusinesses()
+      API.getBusinesses({ includeProducts: 'false' })
     ]);
 
     state.categories = categories;
@@ -200,6 +199,19 @@ function setupEventListeners() {
 
   const step2NextBtn = document.getElementById('step2NextBtn');
   if (step2NextBtn) step2NextBtn.addEventListener('click', handleStep2Submit);
+
+  const addProductBtn = document.getElementById('regAddProductBtn');
+  if (addProductBtn) addProductBtn.addEventListener('click', () => createRegisterProductRow());
+
+  const regProductsList = document.getElementById('regProductsList');
+  if (regProductsList) {
+    regProductsList.addEventListener('click', (e) => {
+      const removeBtn = e.target.closest('[data-reg-remove]');
+      if (!removeBtn) return;
+      removeBtn.closest('[data-reg-product]')?.remove();
+      refreshRegisterProductRows();
+    });
+  }
 
   const previewBackBtn = document.getElementById('previewBackBtn');
   if (previewBackBtn) previewBackBtn.addEventListener('click', () => showWizardStep(2));
@@ -319,6 +331,20 @@ function setupEventListeners() {
     });
   });
 
+  document.querySelectorAll('[data-close-product-detail]').forEach((el) => {
+    el.addEventListener('click', closeProductDetail);
+  });
+
+  const productWaBtn = document.getElementById('productDetailWaBtn');
+  if (productWaBtn) {
+    productWaBtn.addEventListener('click', () => {
+      if (!state.selectedProduct) return;
+      const { biz, product } = state.selectedProduct;
+      const msg = WhatsAppHelper.buildProductMessage(biz, product);
+      openWhatsAppPreview(biz.name, biz.phone, msg);
+    });
+  }
+
   // Atajo "Renovar Vitrina" del panel del emprendedor (abre directamente el modal de gestión)
   const renewShortcutBtn = document.getElementById('renewShortcutBtn');
   if (renewShortcutBtn) renewShortcutBtn.addEventListener('click', () => {
@@ -337,6 +363,7 @@ async function fetchFilteredBusinesses() {
   if (state.currentCategory !== 'all') params.category = state.currentCategory;
   if (state.currentManzana !== 'all') params.manzana = state.currentManzana;
   if (state.currentSearch.trim() !== '') params.q = state.currentSearch;
+  params.includeProducts = 'false';
 
   let filtered;
   try {
@@ -778,10 +805,11 @@ async function handleOpenProfile(bizId) {
 
   const productsContainer = document.getElementById('modalProductsList');
 
-  const prods = (biz.products || []).map(p => ({
+  const prods = (biz.products || []).map((p, index) => ({
+    index,
     name: String(p.name || ''),
     description: String(p.description || ''),
-    photo: String(p.photo || p.image || ''),
+    photo: String(p.photo || p.image || biz.coverImage || ''),
     price: String(p.price || ''),
     category: String(p.category || 'General'),
     availability: p.availability === 'agotado' ? 'agotado' : 'activo'
@@ -798,12 +826,12 @@ async function handleOpenProfile(bizId) {
         <div class="mt-2">
           <p class="text-[10px] font-extrabold uppercase tracking-wide text-slate-400 px-1 mb-1">${escHtml(cat)}</p>
           <div class="space-y-2">`;
-      grupos[cat].forEach((prod, i) => {
+      grupos[cat].forEach((prod) => {
         const agotado = prod.availability === 'agotado';
         productsHtml += `
-          <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100">
+          <button type="button" data-proddetail="${prod.index}" class="w-full text-left flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100 hover:border-orange-200 hover:bg-orange-50/50 transition-colors">
             <div class="flex items-center space-x-2.5 min-w-0">
-              <img src="${prod.photo}" alt="${escHtml(prod.name)}" class="w-12 h-12 rounded-lg object-contain flex-shrink-0 bg-slate-200"/>
+              <img src="${escHtml(prod.photo)}" alt="${escHtml(prod.name)}" loading="lazy" class="w-14 h-14 rounded-lg object-cover flex-shrink-0 bg-slate-200"/>
               <div class="min-w-0">
                 <h5 class="text-xs font-bold text-slate-800 leading-tight">${escHtml(prod.name)}</h5>
                 ${prod.price ? `<span class="text-xs font-extrabold text-emerald-600">${escHtml(prod.price)}</span>` : ''}
@@ -811,12 +839,8 @@ async function handleOpenProfile(bizId) {
                 ${prod.description ? `<p class="text-[10px] text-slate-500 truncate">${escHtml(prod.description)}</p>` : ''}
               </div>
             </div>
-            <div class="flex flex-col gap-1 flex-shrink-0">
-              <button data-prodwa="${i}" data-cat="${escHtml(cat)}" class="prod-wa-btn px-2.5 py-1 bg-[#25D366] hover:bg-[#1ebd59] text-white text-[10px] font-bold rounded-lg flex items-center space-x-1 shadow">
-                <i class="fa-brands fa-whatsapp"></i><span>${agotado ? 'Contactar' : 'Pedir'}</span>
-              </button>
-            </div>
-          </div>`;
+            <i class="fa-solid fa-chevron-right text-[10px] text-slate-300 flex-shrink-0"></i>
+          </button>`;
       });
       productsHtml += `</div></div>`;
     });
@@ -827,12 +851,10 @@ async function handleOpenProfile(bizId) {
   });
   renderRatingWidget(biz);
 
-  productsContainer.querySelectorAll('[data-prodwa]').forEach(btn => {
+  productsContainer.querySelectorAll('[data-proddetail]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const prod = prods[Number(btn.dataset.prodwa)];
-      document.getElementById('profileModal').classList.add('hidden');
-      const msg = WhatsAppHelper.buildProductMessage(biz, { name: prod.name });
-      openWhatsAppPreview(biz.name, biz.phone, msg);
+      const prod = prods[Number(btn.dataset.proddetail)];
+      if (prod) openProductDetail(biz, prod);
     });
   });
 
@@ -843,6 +865,42 @@ async function handleOpenProfile(bizId) {
   };
 
   document.getElementById('profileModal').classList.remove('hidden');
+}
+
+function openProductDetail(biz, product) {
+  state.selectedProduct = { biz, product };
+  const img = document.getElementById('productDetailImg');
+  img.src = product.photo || biz.coverImage || '';
+  img.alt = product.name || 'Producto';
+  img.style.display = '';
+  img.onerror = () => { img.style.display = 'none'; };
+
+  document.getElementById('productDetailCategory').textContent = product.category || 'General';
+  document.getElementById('productDetailName').textContent = product.name || '';
+  document.getElementById('productDetailBiz').textContent = `Manzana ${biz.manzana} · ${biz.name}`;
+  document.getElementById('productDetailPrice').textContent = product.price || '';
+  document.getElementById('productDetailPrice').classList.toggle('hidden', !product.price);
+  const desc = document.getElementById('productDetailDesc');
+  desc.textContent = product.description || 'Este producto no tiene descripción adicional.';
+  desc.classList.toggle('text-slate-400', !product.description);
+
+  const agotado = product.availability === 'agotado';
+  const availability = document.getElementById('productDetailAvailability');
+  availability.textContent = agotado ? 'Agotado' : 'Disponible';
+  availability.className = `absolute bottom-3 left-3 text-[10px] font-extrabold px-2.5 py-1 rounded-full text-white ${agotado ? 'bg-red-500' : 'bg-emerald-500'}`;
+
+  const waBtn = document.getElementById('productDetailWaBtn');
+  waBtn.innerHTML = `<i class="fa-brands fa-whatsapp text-lg"></i><span>${agotado ? 'Consultar disponibilidad' : 'Pedir este producto'}</span>`;
+  document.getElementById('productDetailModal').classList.remove('hidden');
+  document.getElementById('productDetailModal').classList.add('flex');
+}
+
+function closeProductDetail() {
+  const modal = document.getElementById('productDetailModal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  state.selectedProduct = null;
 }
 
 // Modal Oferta
@@ -917,6 +975,84 @@ function socialUrl(value) {
 // ==========================================
 // ASISTENTE DE REGISTRO, PAGO Y ACTIVACIÓN
 // ==========================================
+let regProductSeq = 0;
+
+function readCropInput(id) {
+  const input = document.getElementById(id);
+  if (!input || !input.value) return null;
+  try {
+    const crop = JSON.parse(input.value);
+    return crop && typeof crop === 'object' ? crop : null;
+  } catch {
+    return null;
+  }
+}
+
+function refreshRegisterProductRows() {
+  const list = document.getElementById('regProductsList');
+  if (!list) return;
+  const rows = [...list.querySelectorAll('[data-reg-product]')];
+  rows.forEach((row, index) => {
+    const label = row.querySelector('[data-reg-label]');
+    if (label) label.textContent = `Producto ${index + 1}`;
+  });
+  let empty = list.querySelector('[data-reg-empty]');
+  if (rows.length === 0) {
+    if (!empty) {
+      list.insertAdjacentHTML('beforeend', '<p data-reg-empty class="text-center text-[11px] text-slate-400 py-3">Aún no hay productos. Agrega el que quieras.</p>');
+    }
+  } else if (empty) {
+    empty.remove();
+  }
+  const count = document.getElementById('regProductsCount');
+  if (count) count.textContent = `${rows.length} producto${rows.length === 1 ? '' : 's'}`;
+}
+
+function createRegisterProductRow() {
+  const list = document.getElementById('regProductsList');
+  if (!list) return;
+  regProductSeq += 1;
+  const baseId = `regProdImg${regProductSeq}`;
+  const row = document.createElement('div');
+  row.dataset.regProduct = '1';
+  row.dataset.baseId = baseId;
+  row.className = 'p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2';
+  row.innerHTML = `
+    <div class="flex items-center justify-between gap-2">
+      <span data-reg-label class="font-bold text-orange-600 block">Producto ${regProductSeq}</span>
+      <button type="button" data-reg-remove class="text-slate-400 hover:text-red-500 w-7 h-7 rounded-lg flex items-center justify-center" title="Quitar producto">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <input type="text" data-field="name" placeholder="Nombre (Ej: Semipermanente o Lasaña Familiar)" class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white" />
+    <div class="grid grid-cols-2 gap-2">
+      <input type="text" data-field="price" placeholder="Precio (Ej: $28.000)" class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white" />
+      <div>
+        <input type="file" id="${baseId}" accept="image/jpeg,image/png,image/webp" data-crop-aspect="1" class="w-full p-1.5 border border-slate-200 rounded-lg bg-white text-[10px]" />
+        <div id="${baseId}_preview" class="hidden mt-1">
+          <img id="${baseId}_img" alt="" class="w-16 h-16 object-cover bg-slate-50 rounded-lg border border-slate-200" />
+        </div>
+        <input type="hidden" id="${baseId}_url" />
+        <input type="hidden" id="${baseId}_original_url" />
+        <input type="hidden" id="${baseId}_crop" />
+        <button type="button" data-crop-edit="${baseId}" class="hidden mt-1 text-[10px] font-bold text-orange-600 hover:text-orange-700">Ajustar encuadre</button>
+        <p id="${baseId}_err" class="hidden text-red-600 text-[10px] font-bold"></p>
+      </div>
+    </div>`;
+  list.appendChild(row);
+  setupImageUpload(baseId);
+  refreshRegisterProductRows();
+}
+
+function resetRegisterProducts(initialCount = 1) {
+  const list = document.getElementById('regProductsList');
+  if (!list) return;
+  regProductSeq = 0;
+  list.innerHTML = '';
+  for (let i = 0; i < initialCount; i += 1) createRegisterProductRow();
+  refreshRegisterProductRows();
+}
+
 function resetRegisterWizard() {
   state.newBizData = null;
   state.createdBiz = null;
@@ -927,14 +1063,7 @@ function resetRegisterWizard() {
   document.getElementById('regShortDesc').value = '';
   document.getElementById('regHours').value = '';
   resetImageUpload('regCoverImg');
-
-  document.getElementById('prod1Name').value = '';
-  document.getElementById('prod1Price').value = '';
-  resetImageUpload('prod1Img');
-
-  document.getElementById('prod2Name').value = '';
-  document.getElementById('prod2Price').value = '';
-  resetImageUpload('prod2Img');
+  resetRegisterProducts(1);
 
   const regTerms = document.getElementById('regTerms');
   if (regTerms) regTerms.checked = false;
@@ -951,14 +1080,13 @@ function showWizardStep(step) {
 }
 
 // Paso 1: Validar datos principales
-function handleStep1Next() {
+async function handleStep1Next() {
   const name = document.getElementById('regName').value.trim();
   const manzana = document.getElementById('regMz').value;
   const category = document.getElementById('regCat').value;
   const phone = document.getElementById('regPhone').value.trim();
   const shortDesc = document.getElementById('regShortDesc').value.trim();
   const hours = document.getElementById('regHours').value.trim();
-  const coverImage = document.getElementById('regCoverImg_url').value.trim();
   const instagram = document.getElementById('regInstagram').value.trim();
   const facebook = document.getElementById('regFacebook').value.trim();
 
@@ -966,6 +1094,11 @@ function handleStep1Next() {
     alert('Por favor ingresa el nombre de tu emprendimiento y tu número de WhatsApp.');
     return;
   }
+
+  await waitForImageUpload('regCoverImg');
+  const coverImage = document.getElementById('regCoverImg_url').value.trim();
+  const coverImageOriginal = document.getElementById('regCoverImg_original_url')?.value.trim() || '';
+  const coverImageCrop = readCropInput('regCoverImg_crop');
 
   state.newBizData = {
     name,
@@ -975,6 +1108,8 @@ function handleStep1Next() {
     shortDesc: shortDesc || `Emprendimiento de la Manzana ${manzana} en Los Naranjos.`,
     hours: hours || 'Lunes a Sábado: 8:00 AM - 7:00 PM',
     coverImage: coverImage || 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=800&q=80',
+    coverImageOriginal: coverImageOriginal || null,
+    coverImageCrop,
     delivery: 'Domicilio / Entrega en Los Naranjos',
     instagram: instagram || null,
     facebook: facebook || null
@@ -984,38 +1119,38 @@ function handleStep1Next() {
 }
 
 // Paso 2: Validar productos y pasar a la Vista Previa (aún NO se crea en el backend)
-function handleStep2Submit() {
+async function handleStep2Submit() {
   const regTerms = document.getElementById('regTerms');
   if (regTerms && !regTerms.checked) {
     alert('Debes aceptar los Términos y Condiciones para activar tu vitrina.');
     return;
   }
 
+  const rows = [...document.querySelectorAll('[data-reg-product]')];
+  await waitForImageUploads(rows.map((row) => row.dataset.baseId));
+
   const products = [];
-
-  const p1Name = document.getElementById('prod1Name').value.trim();
-  const p1Price = document.getElementById('prod1Price').value.trim();
-  const p1Img = document.getElementById('prod1Img_url').value.trim();
-
-  if (p1Name) {
+  rows.forEach((row) => {
+    const baseId = row.dataset.baseId;
+    const name = row.querySelector('[data-field="name"]')?.value.trim() || '';
+    if (!name) return;
+    const price = row.querySelector('[data-field="price"]')?.value.trim() || '$20.000';
+    const photo = document.getElementById(`${baseId}_url`)?.value.trim() || '';
+    const photoOriginal = document.getElementById(`${baseId}_original_url`)?.value.trim() || '';
+    const photoCrop = readCropInput(`${baseId}_crop`);
+    const image = photo || state.newBizData.coverImage;
     products.push({
-      name: p1Name,
-      price: p1Price || '$20.000',
-      image: p1Img || state.newBizData.coverImage
+      name,
+      price,
+      image,
+      photo: image,
+      photoOriginal: photoOriginal || null,
+      photoCrop,
+      description: '',
+      category: 'General',
+      availability: 'disponible'
     });
-  }
-
-  const p2Name = document.getElementById('prod2Name').value.trim();
-  const p2Price = document.getElementById('prod2Price').value.trim();
-  const p2Img = document.getElementById('prod2Img_url').value.trim();
-
-  if (p2Name) {
-    products.push({
-      name: p2Name,
-      price: p2Price || '$25.000',
-      image: p2Img || state.newBizData.coverImage
-    });
-  }
+  });
 
   state.newBizData.products = products;
 
@@ -1098,20 +1233,23 @@ function renderVitrinaPreview(biz) {
   const delivery = escHtml(biz.delivery || '');
   const products = Array.isArray(biz.products) ? biz.products : [];
 
+  const previewProducts = products.slice(0, 8);
   const productsHtml = products.length
-    ? products.map((p) => `
+    ? previewProducts.map((p) => `
         <div class="flex items-center gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100">
-          <img src="${escHtml(p.image || biz.coverImage || '')}" alt="${escHtml(p.name || '')}" class="w-12 h-12 rounded-lg object-contain flex-shrink-0 bg-slate-200" onerror="this.style.display='none'"/>
+          <img src="${escHtml(p.photo || p.image || biz.coverImage || '')}" alt="${escHtml(p.name || '')}" loading="lazy" class="w-12 h-12 rounded-lg object-cover flex-shrink-0 bg-slate-200" onerror="this.style.display='none'"/>
           <div class="min-w-0">
             <h5 class="text-xs font-bold text-slate-800 leading-tight">${escHtml(p.name || '')}</h5>
             ${p.price ? `<span class="text-xs font-extrabold text-emerald-600">${escHtml(p.price)}</span>` : ''}
           </div>
-        </div>`).join('')
+        </div>`).join('') + (products.length > previewProducts.length
+      ? `<p class="text-[11px] text-slate-400 text-center pt-1">y ${products.length - previewProducts.length} producto${products.length - previewProducts.length === 1 ? '' : 's'} más</p>`
+      : '')
     : '<p class="text-xs text-slate-400 text-center py-3">A\u00fan no agregaste productos.</p>';
 
   container.innerHTML = `
-    <div class="relative h-40 bg-slate-100">
-      <img src="${cover}" alt="${name}" class="w-full h-full object-contain" onerror="this.style.display='none'"/>
+    <div class="relative aspect-video bg-slate-100">
+      <img src="${cover}" alt="${name}" class="w-full h-full object-cover object-center" onerror="this.style.display='none'"/>
       <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none"></div>
       <span class="absolute top-3 left-3 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Mz ${manzana}</span>
       <div class="absolute bottom-3 left-3 right-3 text-white">
@@ -1419,7 +1557,10 @@ function closeRegisterWizard() {
   document.getElementById('registerWizardModal').classList.add('hidden');
 }
 
-window.closeProfileModal = () => document.getElementById('profileModal').classList.add('hidden');
+window.closeProfileModal = () => {
+  closeProductDetail();
+  document.getElementById('profileModal').classList.add('hidden');
+};
 window.closeOfferModal = () => document.getElementById('offerModal').classList.add('hidden');
 window.closeWaPreview = () => document.getElementById('waPreviewModal').classList.add('hidden');
 window.closeRegisterWizard = closeRegisterWizard;

@@ -159,12 +159,15 @@
         <div>
           <label class="font-bold text-xs text-slate-700 block mb-1">Foto de portada</label>
           <div class="flex items-center gap-3">
-            <div id="mvCover_preview" class="hidden flex-shrink-0">
-              <img id="mvCover_img" src="" alt="" class="w-14 h-14 rounded-xl object-cover object-center bg-slate-100 border border-slate-200" />
+            <div id="mvCover_preview" class="hidden flex-shrink-0 w-24">
+              <img id="mvCover_img" src="" alt="" class="w-24 aspect-video rounded-xl object-cover object-center bg-slate-100 border border-slate-200" />
             </div>
             <div class="flex-1 min-w-0">
-              <input type="file" id="mvCover" accept="image/jpeg,image/png,image/webp" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-orange-100 file:text-orange-700 file:font-bold file:text-[11px] file:cursor-pointer" />
+              <input type="file" id="mvCover" accept="image/jpeg,image/png,image/webp" data-crop-aspect="1.7778" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-orange-100 file:text-orange-700 file:font-bold file:text-[11px] file:cursor-pointer" />
               <input type="hidden" id="mvCover_url" />
+              <input type="hidden" id="mvCover_original_url" />
+              <input type="hidden" id="mvCover_crop" />
+              <button type="button" data-crop-edit="mvCover" class="hidden mt-1.5 text-[10px] font-bold text-orange-600 hover:text-orange-700">Ajustar encuadre</button>
               <p id="mvCover_err" class="hidden text-[10px] font-bold text-red-500 mt-1"></p>
             </div>
           </div>
@@ -232,11 +235,14 @@
             <label class="font-bold text-xs text-slate-700 block mb-1">Foto del producto</label>
             <div class="flex items-center gap-3">
               <div id="mvpPhoto_preview" class="hidden flex-shrink-0">
-                <img id="mvpPhoto_img" src="" alt="" class="w-14 h-14 rounded-xl object-cover object-center bg-slate-100 border border-slate-200" />
+                <img id="mvpPhoto_img" src="" alt="" class="w-16 h-16 rounded-xl object-cover object-center bg-slate-100 border border-slate-200" />
               </div>
               <div class="flex-1 min-w-0">
-                <input type="file" id="mvpPhoto" accept="image/jpeg,image/png,image/webp" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-orange-100 file:text-orange-700 file:font-bold file:text-[11px] file:cursor-pointer" />
+                <input type="file" id="mvpPhoto" accept="image/jpeg,image/png,image/webp" data-crop-aspect="1" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-orange-100 file:text-orange-700 file:font-bold file:text-[11px] file:cursor-pointer" />
                 <input type="hidden" id="mvpPhoto_url" />
+                <input type="hidden" id="mvpPhoto_original_url" />
+                <input type="hidden" id="mvpPhoto_crop" />
+                <button type="button" data-crop-edit="mvpPhoto" class="hidden mt-1.5 text-[10px] font-bold text-orange-600 hover:text-orange-700">Ajustar encuadre</button>
                 <p id="mvpPhoto_err" class="hidden text-[10px] font-bold text-red-500 mt-1"></p>
               </div>
             </div>
@@ -330,6 +336,8 @@
 
     </div>
   </div>
+
+  <div id="imageCropperModal" class="hidden"></div>
 
   <script type="module" src="./js/api.js"></script>
   <script type="module" src="./js/panelVendedor.js"></script>

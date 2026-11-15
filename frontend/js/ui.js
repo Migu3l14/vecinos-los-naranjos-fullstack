@@ -190,7 +190,7 @@ export const UI = {
     return `
       <article class="biz-card bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg transition flex flex-col overflow-hidden">
         <div class="relative cursor-pointer open-profile-trigger" data-id="${biz.id}">
-          <div class="biz-cover h-28 sm:h-32 w-full bg-slate-100 overflow-hidden">
+          <div class="biz-cover aspect-video w-full bg-slate-100 overflow-hidden">
             <img src="${esc(biz.coverImage)}" alt="${esc(biz.name)}" loading="lazy" class="w-full h-full object-cover object-center" />
           </div>
           <span class="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">

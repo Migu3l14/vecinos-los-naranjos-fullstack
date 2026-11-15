@@ -1,11 +1,13 @@
 // Panel del Vendedor — gestión de la propia vitrina y sus productos
 import { API } from './api.js';
-import { setupImageUpload, resetImageUpload } from './upload.js';
+import { setupImageUpload, resetImageUpload, setImageUploadValue, waitForImageUpload } from './upload.js';
 
 const state = {
   business: null,
-  categories: []
+  categories: [],
+  productsShown: 30
 };
+const PRODUCT_PAGE_SIZE = 30;
 
 function $(id) { return document.getElementById(id); }
 function show(...ids) {
@@ -216,12 +218,11 @@ function renderDashboard() {
   }
   $('mvManzana').value = String(biz.manzana || '1');
   $('mvPhone').value = (biz.phone || '').replace(/^57/, '');
-  resetImageUpload('mvCover');
-  if (biz.coverImage) {
-    $('mvCover_url').value = biz.coverImage;
-    $('mvCover_img').src = biz.coverImage;
-    $('mvCover_preview').classList.remove('hidden');
-  }
+  setImageUploadValue('mvCover', {
+    url: biz.coverImage || '',
+    originalUrl: biz.coverImageOriginal || '',
+    crop: biz.coverImageCrop || null
+  });
   $('mvShortDesc').value = biz.shortDesc || '';
   $('mvFullDesc').value = biz.fullDesc || '';
   $('mvHours').value = biz.hours || '';
@@ -257,12 +258,13 @@ function renderProducts() {
     list.innerHTML = '<p class="text-center text-xs text-slate-400 py-6">Aún no tienes productos. Agrega el primero.</p>';
     return;
   }
-  products.forEach(p => {
+  const visible = products.slice(0, state.productsShown);
+  visible.forEach(p => {
     const agotado = p.availability === 'agotado';
     const card = document.createElement('div');
     card.className = 'flex items-center gap-3 bg-white border border-slate-200 rounded-xl p-3';
     card.innerHTML = `
-      <img src="${p.photo || 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=100&q=80'}" alt="" class="w-14 h-14 rounded-lg object-contain bg-slate-100" onerror="this.style.display='none'"/>
+      <img src="${esc(p.photo || p.image || 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=100&q=80')}" alt="" loading="lazy" class="w-14 h-14 rounded-lg object-cover bg-slate-100 flex-shrink-0" onerror="this.style.display='none'"/>
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2">
           <p class="text-sm font-extrabold truncate">${esc(p.name)}</p>
@@ -278,6 +280,14 @@ function renderProducts() {
     `;
     list.appendChild(card);
   });
+  if (products.length > visible.length) {
+    const more = document.createElement('button');
+    more.type = 'button';
+    more.dataset.mvproductsMore = '1';
+    more.className = 'w-full py-2.5 border border-slate-300 text-slate-600 text-xs font-bold rounded-xl bg-white hover:bg-slate-50';
+    more.textContent = `Cargar más productos (${products.length - visible.length})`;
+    list.appendChild(more);
+  }
 }
 
 function esc(s) {
@@ -426,12 +436,11 @@ function openProductForm(product) {
   $('mvProductId').value = product ? product.id : '';
   $('mvpName').value = product ? product.name : '';
   $('mvpDescription').value = product ? product.description : '';
-  resetImageUpload('mvpPhoto');
-  if (product && product.photo) {
-    $('mvpPhoto_url').value = product.photo;
-    $('mvpPhoto_img').src = product.photo;
-    $('mvpPhoto_preview').classList.remove('hidden');
-  }
+  setImageUploadValue('mvpPhoto', {
+    url: product ? (product.photo || product.image || '') : '',
+    originalUrl: product ? (product.photoOriginal || '') : '',
+    crop: product ? (product.photoCrop || null) : null
+  });
   $('mvpPrice').value = product ? product.price : '';
   $('mvpCategory').value = product ? product.category : '';
   $('mvpAvailability').value = product ? product.availability : 'activo';
@@ -439,12 +448,18 @@ function openProductForm(product) {
 }
 
 async function saveProfile() {
+  await waitForImageUpload('mvCover');
+  const cropRaw = $('mvCover_crop') ? $('mvCover_crop').value : '';
+  let coverImageCrop = null;
+  try { coverImageCrop = cropRaw ? JSON.parse(cropRaw) : null; } catch { coverImageCrop = null; }
   const payload = {
     name: $('mvName').value.trim(),
     category: $('mvCategory').value,
     manzana: $('mvManzana').value,
     phone: $('mvPhone').value.trim(),
     coverImage: $('mvCover_url').value.trim(),
+    coverImageOriginal: $('mvCover_original_url') ? $('mvCover_original_url').value.trim() : '',
+    coverImageCrop,
     shortDesc: $('mvShortDesc').value.trim(),
     fullDesc: $('mvFullDesc').value.trim(),
     hours: $('mvHours').value.trim(),
@@ -477,12 +492,18 @@ async function saveProfile() {
 }
 
 async function saveProduct() {
+  await waitForImageUpload('mvpPhoto');
   const businessId = state.business.id;
   const pid = $('mvProductId').value;
+  const cropRaw = $('mvpPhoto_crop') ? $('mvpPhoto_crop').value : '';
+  let photoCrop = null;
+  try { photoCrop = cropRaw ? JSON.parse(cropRaw) : null; } catch { photoCrop = null; }
   const payload = {
     name: $('mvpName').value.trim(),
     description: $('mvpDescription').value.trim(),
     photo: $('mvpPhoto_url').value.trim(),
+    photoOriginal: $('mvpPhoto_original_url') ? $('mvpPhoto_original_url').value.trim() : '',
+    photoCrop,
     price: $('mvpPrice').value.trim(),
     category: $('mvpCategory').value.trim() || 'General',
     availability: $('mvpAvailability').value
@@ -577,6 +598,11 @@ function bindEvents() {
   });
 
   $('mvProductsList').addEventListener('click', (e) => {
+    if (e.target.closest('[data-mvproducts-more]')) {
+      state.productsShown += PRODUCT_PAGE_SIZE;
+      renderProducts();
+      return;
+    }
     const btn = e.target.closest('[data-act]');
     if (!btn) return;
     const pid = btn.dataset.pid;

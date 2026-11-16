@@ -1,6 +1,13 @@
 import Storage from '../db/storage.js';
+import { findOwnedBusinesses } from './businessController.js';
 
 const ESTADOS = ['Recibido', 'En Preparación', 'En Camino', 'Entregado', 'Cancelado'];
+
+// Devuelve los ids de las vitrinas del residente autenticado (vendedor).
+const ownedBusinessIds = async (user) => {
+  const owned = await findOwnedBusinesses(user);
+  return new Set(owned.map(b => String(b.id)));
+};
 
 const generateOrderId = () => `ORD-${Date.now().toString().slice(-6)}`;
 
@@ -90,6 +97,50 @@ export const getAllOrders = async (req, res) => {
   }
 };
 
+// GET /api/orders/mine (vendedor) — pedidos de mis vitrinas
+export const getMyOrders = async (req, res) => {
+  try {
+    if (!req.user || !req.user.residentId) {
+      return res.status(401).json({ success: false, message: 'Sesión de residente requerida.' });
+    }
+    const ids = await ownedBusinessIds(req.user);
+    const { estado } = req.query;
+    let orders = await Storage.read('orders');
+    orders = orders.filter(o => ids.has(String(o.businessId)));
+    if (estado && ESTADOS.includes(estado)) {
+      orders = orders.filter(o => o.estado === estado);
+    }
+    orders = [...orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json({ success: true, count: orders.length, data: orders });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al listar tus pedidos', error: error.message });
+  }
+};
+
+// PUT /api/orders/mine/:id/status (vendedor) — actualizar estado de un pedido propio
+export const updateMyOrderStatus = async (req, res) => {
+  try {
+    if (!req.user || !req.user.residentId) {
+      return res.status(401).json({ success: false, message: 'Sesión de residente requerida.' });
+    }
+    const { id } = req.params;
+    const { estado } = req.body;
+    if (!ESTADOS.includes(estado)) {
+      return res.status(400).json({ success: false, message: `Estado inválido. Opciones: ${ESTADOS.join(', ')}` });
+    }
+    const ids = await ownedBusinessIds(req.user);
+    const order = await Storage.findById('orders', id);
+    if (!order || !ids.has(String(order.businessId))) {
+      return res.status(404).json({ success: false, message: 'Pedido no encontrado o no tienes permisos sobre él.' });
+    }
+
+    const updated = await Storage.updateById('orders', id, { estado, updatedAt: new Date().toISOString() });
+    res.json({ success: true, message: `Pedido marcado como "${estado}".`, data: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al actualizar pedido', error: error.message });
+  }
+};
+
 // PUT /api/orders/:id/status (admin) — actualizar estado del pedido
 export const updateOrderStatus = async (req, res) => {
   try {
@@ -108,4 +159,4 @@ export const updateOrderStatus = async (req, res) => {
   }
 };
 
-export default { createOrder, getAllOrders, updateOrderStatus };
+export default { createOrder, getAllOrders, getMyOrders, updateMyOrderStatus, updateOrderStatus };

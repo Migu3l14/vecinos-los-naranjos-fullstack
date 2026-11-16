@@ -357,7 +357,7 @@ const normalizeProducts = (products) => {
 };
 
 // Devuelve las vitrinas propiedad de un residente (modelo único Residente/Vendedor)
-const findOwnedBusinesses = async (reqUser) => {
+export const findOwnedBusinesses = async (reqUser) => {
   const residentId = reqUser && reqUser.residentId;
   const phone = reqUser && reqUser.phone;
   const businesses = await loadAndValidateBusinesses();

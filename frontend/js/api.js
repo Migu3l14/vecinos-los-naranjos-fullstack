@@ -814,6 +814,29 @@ export const API = {
     return this.fetchAdmin(`${API_BASE}/orders`);
   },
 
+  // GET /api/orders/mine - pedidos de mis vitrinas (vendedor)
+  async getMyOrders() {
+    try {
+      return await this.fetchResident(`${API_BASE}/orders/mine`);
+    } catch (error) {
+      console.error('Error al obtener mis pedidos:', error);
+      return { success: false, data: [], message: error.message };
+    }
+  },
+
+  // PUT /api/orders/mine/:id/status - actualizar estado de un pedido propio
+  async updateMyOrderStatus(id, estado) {
+    try {
+      return await this.fetchResident(`${API_BASE}/orders/mine/${encodeURIComponent(id)}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ estado })
+      });
+    } catch (error) {
+      console.error('Error al actualizar el estado del pedido:', error);
+      return { success: false, message: error.message };
+    }
+  },
+
   async updateOrderStatus(id, estado) {
     return this.fetchAdmin(`${API_BASE}/orders/${id}/status`, {
       method: 'PUT',

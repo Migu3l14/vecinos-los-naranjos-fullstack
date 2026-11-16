@@ -123,10 +123,11 @@
     <div id="mvDashView" class="hidden">
 
       <!-- Tabs -->
-      <div class="grid grid-cols-3 border-b border-slate-200">
+      <div class="grid grid-cols-4 border-b border-slate-200">
         <button data-mvt-panel="perfil" class="mvt-tab py-3 text-xs font-extrabold border-b-2 border-orange-500 text-orange-600">Perfil</button>
         <button data-mvt-panel="productos" class="mvt-tab py-3 text-xs font-extrabold border-b-2 border-transparent text-slate-500">Productos</button>
         <button data-mvt-panel="ofertas" class="mvt-tab py-3 text-xs font-extrabold border-b-2 border-transparent text-slate-500">Ofertas</button>
+        <button data-mvt-panel="pedidos" class="mvt-tab py-3 text-xs font-extrabold border-b-2 border-transparent text-slate-500">Pedidos</button>
       </div>
 
       <!-- ===== Sub-vista: PERFIL ===== -->
@@ -276,6 +277,21 @@
         </button>
         <div id="mvOfferMsg" class="hidden mt-3"></div>
         <div id="mvOffersList" class="mt-4 space-y-3"></div>
+      </div>
+
+      <!-- ===== Sub-vista: PEDIDOS ===== -->
+      <div id="mvtPedidos" class="p-4 hidden">
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <h3 class="text-sm font-extrabold text-slate-800">Pedidos recibidos</h3>
+            <p class="text-[11px] text-slate-500">Actualiza el estado y avísale al comprador por WhatsApp.</p>
+          </div>
+          <button id="mvRefreshOrdersBtn" class="px-3 py-2 border border-slate-200 text-slate-600 text-[11px] font-bold rounded-xl bg-white hover:bg-slate-50">
+            <i class="fa-solid fa-rotate mr-1"></i> Actualizar
+          </button>
+        </div>
+        <div id="mvOrderMsg" class="hidden mb-3"></div>
+        <div id="mvOrdersList" class="space-y-3"></div>
       </div>
 
       <!-- ===== Formulario de oferta (modal-lite) ===== -->

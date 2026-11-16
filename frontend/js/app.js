@@ -954,8 +954,23 @@ async function handleOpenProfile(bizId) {
     openWhatsAppPreview(biz.name, biz.phone, msg);
   };
 
+  const repeatBtn = document.getElementById('repeatOrderBtn');
+  if (repeatBtn) repeatBtn.onclick = () => repeatLastOrder(biz);
+
   updateCartBar(biz.id);
+  updateRepeatOrderBar(biz.id);
   document.getElementById('profileModal').classList.remove('hidden');
+}
+
+function repeatLastOrder(biz) {
+  const last = readLastOrder();
+  if (!last || String(last.businessId) !== String(biz.id)) return;
+  const products = last.products.map(p => ({ ...p, qty: clampQty(p.qty || 1) }));
+  window.closeProfileModal();
+  openCheckoutFor(biz, products, {
+    observations: last.observations || '',
+    paymentMethod: last.paymentMethod || 'Efectivo'
+  });
 }
 
 function openProductDetail(biz, product) {
@@ -1797,6 +1812,43 @@ async function ensureTowers(selectIds, ops = {}) {
 // CARRITO POR VITRINA (un pedido por negocio, persistido en localStorage)
 // ============================================================
 const CART_KEY = 'vn_carts_v1';
+const LAST_ORDER_KEY = 'vn_last_order_v1';
+
+function readLastOrder() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(LAST_ORDER_KEY) || 'null');
+    if (!raw || !raw.businessId || !Array.isArray(raw.products) || raw.products.length === 0) return null;
+    return raw;
+  } catch (error) {
+    return null;
+  }
+}
+
+function saveLastOrder(order) {
+  try {
+    localStorage.setItem(LAST_ORDER_KEY, JSON.stringify(order));
+  } catch (error) {
+    /* sin acción */
+  }
+}
+
+function updateRepeatOrderBar(bizId) {
+  const bar = document.getElementById('repeatOrderBar');
+  const totalEl = document.getElementById('repeatOrderTotal');
+  if (!bar) return;
+  const last = readLastOrder();
+  if (!last || String(last.businessId) !== String(bizId)) {
+    bar.classList.add('hidden');
+    return;
+  }
+  const total = cartTotal(last.products);
+  if (totalEl) {
+    totalEl.textContent = total > 0
+      ? `${formatCOP(total)}${hasUnknownPrice(last.products) ? ' +' : ''}`
+      : '';
+  }
+  bar.classList.remove('hidden');
+}
 
 function readCarts() {
   try {
@@ -2026,8 +2078,8 @@ async function openCheckoutFor(business, products, opts = {}) {
     products,
     mode: 'guest',
     resident: null,
-    observations: '',
-    paymentMethod: 'Efectivo',
+    observations: opts.observations ? String(opts.observations).slice(0, 300) : '',
+    paymentMethod: opts.paymentMethod || 'Efectivo',
     fromCart: !!opts.fromCart
   };
 
@@ -2051,6 +2103,13 @@ async function openCheckoutFor(business, products, opts = {}) {
   }
 
   resetCheckoutPanels();
+  if (state.checkoutCtx.observations) {
+    document.getElementById('coGuestNotes').value = state.checkoutCtx.observations;
+  }
+  const paymentSel = document.getElementById('coGuestPayment');
+  if (paymentSel && [...paymentSel.options].some(o => o.value === state.checkoutCtx.paymentMethod)) {
+    paymentSel.value = state.checkoutCtx.paymentMethod;
+  }
   switchCheckoutMode('guest');
 
   const confirmBtn = document.getElementById('checkoutConfirmBtn');
@@ -2494,7 +2553,24 @@ async function handleCheckoutConfirm() {
     }
   };
   const created = await API.createOrder(orderPayload);
-  if (ctx.fromCart && created && created.success) clearCart(ctx.business.id);
+  if (created && created.success) {
+    saveLastOrder({
+      businessId: ctx.business.id,
+      businessName: ctx.business.name,
+      products: ctx.products.map(p => ({
+        id: p.id || null,
+        name: p.name,
+        price: p.price || null,
+        qty: Number(p.qty) || 1
+      })),
+      observations: observations || '',
+      paymentMethod: paymentMethod || 'Efectivo',
+      orderId: (created.data && created.data.orderId) || '',
+      createdAt: new Date().toISOString()
+    });
+    if (ctx.fromCart) clearCart(ctx.business.id);
+    updateRepeatOrderBar(ctx.business.id);
+  }
 
   // Abrir WhatsApp con los datos del residente y el producto
   document.getElementById('checkoutModal').classList.add('hidden');

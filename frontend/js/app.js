@@ -337,9 +337,11 @@ function setupEventListeners() {
 
   const productWaBtn = document.getElementById('productDetailWaBtn');
   if (productWaBtn) {
-    productWaBtn.addEventListener('click', () => {
+    productWaBtn.addEventListener('click', async () => {
       if (!state.selectedProduct) return;
       const { biz, product } = state.selectedProduct;
+      const shared = await WhatsAppHelper.shareProductWithPhoto(biz, product);
+      if (shared) return;
       const msg = WhatsAppHelper.buildProductMessage(biz, product);
       openWhatsAppPreview(biz.name, biz.phone, msg);
     });
@@ -863,10 +865,12 @@ async function handleOpenProfile(bizId) {
   });
 
   productsContainer.querySelectorAll('[data-prodwa]').forEach(btn => {
-    btn.addEventListener('click', (event) => {
+    btn.addEventListener('click', async (event) => {
       event.stopPropagation();
       const prod = prods[Number(btn.dataset.prodwa)];
       if (!prod) return;
+      const shared = await WhatsAppHelper.shareProductWithPhoto(biz, prod);
+      if (shared) return;
       const msg = WhatsAppHelper.buildProductMessage(biz, prod);
       openWhatsAppPreview(biz.name, biz.phone, msg);
     });

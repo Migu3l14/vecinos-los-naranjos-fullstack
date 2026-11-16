@@ -31,7 +31,9 @@ const state = {
   paymentPollTimer: null,
 
   // Estado del checkout dual (identidad + pedido)
-  checkoutCtx: null,           // { business, products: [...], mode: 'login'|'guest', resident: {...} }
+  checkoutCtx: null,           // { business, products: [...], mode: 'login'|'guest', resident: {...}, fromCart }
+  cartBizId: null,             // vitrina cuyo carrito está abierto
+  productCartMsgTimer: null,
   towersList: []
 };
 
@@ -323,6 +325,15 @@ function setupEventListeners() {
       const qty = clampQty(coQty.value);
       ctx.products[0].qty = qty;
       refreshCheckoutSummary();
+      if (ctx.fromCart) {
+        saveCartItems(ctx.business.id, [{
+          key: ctx.products[0].key || cartItemKey(ctx.products[0]),
+          id: ctx.products[0].id || '',
+          name: ctx.products[0].name || '',
+          price: ctx.products[0].price || '',
+          qty
+        }]);
+      }
     });
     coQty.addEventListener('blur', () => { coQty.value = clampQty(coQty.value); });
   }
@@ -361,6 +372,40 @@ function setupEventListeners() {
   const productShareBtn = document.getElementById('productDetailShareBtn');
   if (productShareBtn) {
     productShareBtn.addEventListener('click', shareSelectedProductLink);
+  }
+
+  const productAddBtn = document.getElementById('productDetailAddBtn');
+  if (productAddBtn) {
+    productAddBtn.addEventListener('click', () => {
+      if (!state.selectedProduct) return;
+      const { biz, product } = state.selectedProduct;
+      addToCart(biz, product, 1);
+      showProductCartMsg('Agregado al carrito');
+    });
+  }
+
+  const cartViewBtn = document.getElementById('cartViewBtn');
+  if (cartViewBtn) cartViewBtn.addEventListener('click', openCartModal);
+  const productViewCartBtn = document.getElementById('productDetailViewCartBtn');
+  if (productViewCartBtn) productViewCartBtn.addEventListener('click', openCartModal);
+  const cartCheckoutBtn = document.getElementById('cartCheckoutBtn');
+  if (cartCheckoutBtn) cartCheckoutBtn.addEventListener('click', continueCartCheckout);
+  const cartClearBtn = document.getElementById('cartClearBtn');
+  if (cartClearBtn) {
+    cartClearBtn.addEventListener('click', () => {
+      if (state.cartBizId) clearCart(state.cartBizId);
+    });
+  }
+  const cartItemsEl = document.getElementById('cartItems');
+  if (cartItemsEl) {
+    cartItemsEl.addEventListener('click', (event) => {
+      const btn = event.target.closest('[data-cart-action]');
+      if (!btn || !state.cartBizId) return;
+      const index = Number(btn.dataset.index);
+      const action = btn.dataset.cartAction;
+      if (action === 'remove') removeCartItem(state.cartBizId, index);
+      else adjustCartQty(state.cartBizId, index, action === 'plus' ? 1 : -1);
+    });
   }
 
   // Atajo "Renovar Vitrina" del panel del emprendedor (abre directamente el modal de gestión)
@@ -859,6 +904,9 @@ async function handleOpenProfile(bizId) {
               </div>
             </button>
             <div class="flex flex-col gap-1 flex-shrink-0">
+              ${agotado ? '' : `<button type="button" data-prodcart="${prod.index}" title="Agregar al carrito" aria-label="Agregar ${escHtml(prod.name)} al carrito" class="prod-cart-btn px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold rounded-lg flex items-center justify-center shadow">
+                <i class="fa-solid fa-cart-plus"></i>
+              </button>`}
               <button type="button" data-prodwa="${prod.index}" data-cat="${escHtml(cat)}" class="prod-wa-btn px-2.5 py-1 bg-[#25D366] hover:bg-[#1ebd59] text-white text-[10px] font-bold rounded-lg flex items-center space-x-1 shadow">
                 <i class="fa-brands fa-whatsapp"></i><span>${agotado ? 'Contactar' : 'Pedir'}</span>
               </button>
@@ -881,6 +929,16 @@ async function handleOpenProfile(bizId) {
     });
   });
 
+  productsContainer.querySelectorAll('[data-prodcart]').forEach(btn => {
+    btn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const prod = prods[Number(btn.dataset.prodcart)];
+      if (!prod) return;
+      addToCart(biz, prod, 1);
+      flashCartButton(btn);
+    });
+  });
+
   productsContainer.querySelectorAll('[data-prodwa]').forEach(btn => {
     btn.addEventListener('click', (event) => {
       event.stopPropagation();
@@ -896,6 +954,7 @@ async function handleOpenProfile(bizId) {
     openWhatsAppPreview(biz.name, biz.phone, msg);
   };
 
+  updateCartBar(biz.id);
   document.getElementById('profileModal').classList.remove('hidden');
 }
 
@@ -923,6 +982,16 @@ function openProductDetail(biz, product) {
 
   const waBtn = document.getElementById('productDetailWaBtn');
   waBtn.innerHTML = `<i class="fa-brands fa-whatsapp text-lg"></i><span>${agotado ? 'Consultar disponibilidad' : 'Pedir este producto'}</span>`;
+
+  const addBtn = document.getElementById('productDetailAddBtn');
+  if (addBtn) addBtn.classList.toggle('hidden', agotado);
+  const cartMsg = document.getElementById('productDetailCartMsg');
+  if (cartMsg) {
+    cartMsg.textContent = '';
+    cartMsg.classList.add('hidden');
+  }
+  const viewCartBtn = document.getElementById('productDetailViewCartBtn');
+  if (viewCartBtn) viewCartBtn.classList.add('hidden');
 
   // Solo se puede compartir si el producto tiene id público (enlaces /p/:id).
   const shareBtn = document.getElementById('productDetailShareBtn');
@@ -1724,6 +1793,222 @@ async function ensureTowers(selectIds, ops = {}) {
   });
 }
 
+// ============================================================
+// CARRITO POR VITRINA (un pedido por negocio, persistido en localStorage)
+// ============================================================
+const CART_KEY = 'vn_carts_v1';
+
+function readCarts() {
+  try {
+    return JSON.parse(localStorage.getItem(CART_KEY) || '{}') || {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function writeCarts(carts) {
+  try {
+    localStorage.setItem(CART_KEY, JSON.stringify(carts));
+  } catch (error) {
+    /* sin acción */
+  }
+}
+
+function cartItemKey(product) {
+  return String(product.id || product.name || '');
+}
+
+function getCartItems(bizId) {
+  const carts = readCarts();
+  const items = carts[String(bizId)];
+  return Array.isArray(items) ? items : [];
+}
+
+function saveCartItems(bizId, items) {
+  const carts = readCarts();
+  const key = String(bizId);
+  if (items && items.length > 0) carts[key] = items;
+  else delete carts[key];
+  writeCarts(carts);
+  updateCartBar(bizId);
+  if (state.cartBizId === key && !document.getElementById('cartModal').classList.contains('hidden')) {
+    renderCartModal(bizId);
+  }
+}
+
+function parsePrice(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  const raw = String(value == null ? '' : value).trim();
+  if (!raw) return null;
+  const cleaned = raw.replace(/[^\d.,-]/g, '');
+  if (!cleaned) return null;
+  const normalized = cleaned.includes(',')
+    ? cleaned.replace(/\./g, '').replace(',', '.')
+    : cleaned.replace(/\./g, '');
+  const n = Number(normalized);
+  return Number.isFinite(n) ? n : null;
+}
+
+function formatCOP(value) {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    maximumFractionDigits: 0
+  }).format(Number(value) || 0);
+}
+
+function cartTotal(items) {
+  return (items || []).reduce((acc, item) => {
+    const price = parsePrice(item.price);
+    return price == null ? acc : acc + price * (Number(item.qty) || 1);
+  }, 0);
+}
+
+function hasUnknownPrice(items) {
+  return (items || []).some(item => parsePrice(item.price) == null);
+}
+
+function addToCart(biz, product, qty = 1) {
+  if (!biz || !product) return;
+  const items = getCartItems(biz.id);
+  const key = cartItemKey(product);
+  const found = items.find(item => item.key === key);
+  if (found) {
+    found.qty = Math.min((Number(found.qty) || 1) + clampQty(qty), 99);
+  } else {
+    items.push({
+      key,
+      id: product.id || '',
+      name: product.name || '',
+      price: product.price || '',
+      qty: clampQty(qty)
+    });
+  }
+  saveCartItems(biz.id, items);
+}
+
+function adjustCartQty(bizId, index, delta) {
+  const items = getCartItems(bizId);
+  if (!items[index]) return;
+  const next = (Number(items[index].qty) || 1) + delta;
+  if (next < 1) {
+    removeCartItem(bizId, index);
+    return;
+  }
+  items[index].qty = Math.min(next, 99);
+  saveCartItems(bizId, items);
+}
+
+function removeCartItem(bizId, index) {
+  const items = getCartItems(bizId);
+  if (!items[index]) return;
+  items.splice(index, 1);
+  saveCartItems(bizId, items);
+}
+
+function clearCart(bizId) {
+  saveCartItems(bizId, []);
+}
+
+function updateCartBar(bizId) {
+  const bar = document.getElementById('cartBar');
+  if (!bar) return;
+  const items = getCartItems(bizId);
+  const count = items.reduce((acc, item) => acc + (Number(item.qty) || 1), 0);
+  if (count === 0) {
+    bar.classList.add('hidden');
+    return;
+  }
+  bar.classList.remove('hidden');
+  document.getElementById('cartBarText').textContent = `Ver pedido (${count})`;
+  const total = cartTotal(items);
+  document.getElementById('cartBarTotal').textContent = total > 0
+    ? `${formatCOP(total)}${hasUnknownPrice(items) ? ' +' : ''}`
+    : '';
+}
+
+function renderCartModal(bizId) {
+  const items = getCartItems(bizId);
+  const box = document.getElementById('cartItems');
+  const footer = document.getElementById('cartFooter');
+  const biz = state.selectedBusiness;
+  document.getElementById('cartBizName').textContent = biz ? biz.name : 'Pedido';
+
+  if (items.length === 0) {
+    box.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Tu carrito está vacío.<br><span class="text-xs">Agrega productos desde la vitrina.</span></p>';
+    footer.classList.add('hidden');
+    return;
+  }
+
+  box.innerHTML = items.map((item, index) => `
+    <div class="flex items-center gap-2 p-2 rounded-xl border border-slate-100 bg-slate-50">
+      <div class="min-w-0 flex-1">
+        <p class="text-xs font-bold text-slate-800 truncate">${escHtml(item.name)}</p>
+        <p class="text-[10px] font-semibold text-slate-500">${item.price ? escHtml(item.price) : 'Precio por coordinar'}</p>
+      </div>
+      <div class="flex items-center gap-1">
+        <button type="button" data-cart-action="minus" data-index="${index}" aria-label="Quitar una unidad de ${escHtml(item.name)}" class="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-700 font-extrabold touch-btn">−</button>
+        <span class="w-6 text-center text-xs font-extrabold text-slate-800">${Number(item.qty) || 1}</span>
+        <button type="button" data-cart-action="plus" data-index="${index}" aria-label="Agregar una unidad de ${escHtml(item.name)}" class="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-700 font-extrabold touch-btn">+</button>
+        <button type="button" data-cart-action="remove" data-index="${index}" aria-label="Quitar ${escHtml(item.name)} del carrito" class="w-7 h-7 rounded-lg text-red-500 hover:bg-red-50 touch-btn"><i class="fa-solid fa-trash-can text-xs"></i></button>
+      </div>
+    </div>`).join('');
+
+  footer.classList.remove('hidden');
+  const total = cartTotal(items);
+  document.getElementById('cartTotal').textContent = total > 0
+    ? `${formatCOP(total)}${hasUnknownPrice(items) ? ' + por cotizar' : ''}`
+    : 'Por coordinar';
+}
+
+function openCartModal() {
+  const biz = state.selectedBusiness;
+  if (!biz) return;
+  state.cartBizId = String(biz.id);
+  renderCartModal(biz.id);
+  const modal = document.getElementById('cartModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+window.closeCartModal = () => {
+  const modal = document.getElementById('cartModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+};
+
+function continueCartCheckout() {
+  const biz = state.selectedBusiness;
+  if (!biz || !state.cartBizId) return;
+  const items = getCartItems(state.cartBizId);
+  if (items.length === 0) return;
+  window.closeCartModal();
+  openCheckoutFor(biz, items, { fromCart: true });
+}
+
+function flashCartButton(btn) {
+  if (!btn || btn.dataset.flashing === '1') return;
+  const original = btn.innerHTML;
+  btn.dataset.flashing = '1';
+  btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+  window.setTimeout(() => {
+    btn.innerHTML = original;
+    btn.dataset.flashing = '0';
+  }, 900);
+}
+
+function showProductCartMsg(text) {
+  const el = document.getElementById('productDetailCartMsg');
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'text-[11px] font-bold text-center text-emerald-600';
+  el.classList.remove('hidden');
+  const viewCartBtn = document.getElementById('productDetailViewCartBtn');
+  if (viewCartBtn) viewCartBtn.classList.remove('hidden');
+  window.clearTimeout(state.productCartMsgTimer);
+  state.productCartMsgTimer = window.setTimeout(() => el.classList.add('hidden'), 2500);
+}
+
 // Inicia el pedido de un producto: checkout con identidad o contacto directo si está agotado
 function orderProduct(biz, product) {
   if (product.availability === 'agotado') {
@@ -1735,8 +2020,16 @@ function orderProduct(biz, product) {
 }
 
 // Abre el modal de checkout para un pedido de la vitrina
-async function openCheckoutFor(business, products) {
-  state.checkoutCtx = { business, products, mode: 'guest', resident: null, observations: '', paymentMethod: 'Efectivo' };
+async function openCheckoutFor(business, products, opts = {}) {
+  state.checkoutCtx = {
+    business,
+    products,
+    mode: 'guest',
+    resident: null,
+    observations: '',
+    paymentMethod: 'Efectivo',
+    fromCart: !!opts.fromCart
+  };
 
   // Cantidad editable solo cuando hay un único producto (el carrito llega después)
   const qtyRow = document.getElementById('checkoutQtyRow');
@@ -1783,6 +2076,14 @@ function refreshCheckoutSummary() {
   document.getElementById('checkoutOrderCount').innerText = `${totalQty} unidad${totalQty === 1 ? '' : 'es'}`;
   document.getElementById('checkoutOrderText').innerText =
     `${ctx.business.name} · ${ctx.products.map(p => `${p.name}${Number(p.qty) > 1 ? ` ×${p.qty}` : ''}`).join(', ')}`;
+  const total = cartTotal(ctx.products);
+  const totalEl = document.getElementById('checkoutOrderTotal');
+  if (totalEl) {
+    totalEl.textContent = total > 0
+      ? `Total: ${formatCOP(total)}${hasUnknownPrice(ctx.products) ? ' + por cotizar' : ''}`
+      : '';
+    totalEl.classList.toggle('hidden', total <= 0);
+  }
 }
 
 // Resuelve la torre guardada en el perfil (prefiere towerId para no confundir torres de otra manzana)
@@ -2192,7 +2493,8 @@ async function handleCheckoutConfirm() {
       authType: resident.authType || 'guest'
     }
   };
-  await API.createOrder(orderPayload);
+  const created = await API.createOrder(orderPayload);
+  if (ctx.fromCart && created && created.success) clearCart(ctx.business.id);
 
   // Abrir WhatsApp con los datos del residente y el producto
   document.getElementById('checkoutModal').classList.add('hidden');
@@ -2221,6 +2523,10 @@ function buildOrderMessage(ctx, resident) {
     const qty = Number(p.qty) || 1;
     lines.push(`• ${p.name} ×${qty}${p.price ? ` — ${p.price}` : ''}`);
   });
+  const total = cartTotal(ctx.products);
+  if (total > 0) {
+    lines.push(`Total: ${formatCOP(total)}${hasUnknownPrice(ctx.products) ? ' + productos por cotizar' : ''}`);
+  }
   lines.push('');
   if (ctx.observations) lines.push(`Observaciones: ${ctx.observations}`);
   lines.push(`Dirección de entrega: ${resident.deliveryAddress || 'Por coordinar'}`);

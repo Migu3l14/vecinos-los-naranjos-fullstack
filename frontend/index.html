@@ -334,6 +334,12 @@
       </div>
 
       <div class="p-4 bg-white border-t border-slate-100 flex-shrink-0">
+        <div id="cartBar" class="hidden mb-2">
+          <button id="cartViewBtn" type="button" class="w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow touch-btn">
+            <span class="flex items-center gap-2 text-xs font-extrabold"><i class="fa-solid fa-cart-shopping"></i><span id="cartBarText">Ver pedido</span></span>
+            <span id="cartBarTotal" class="text-xs font-extrabold text-orange-300"></span>
+          </button>
+        </div>
         <button id="modalMainWhatsAppBtn" class="w-full py-3 bg-[#25D366] hover:bg-[#1ebd59] text-white font-extrabold text-sm rounded-xl flex items-center justify-center space-x-2 shadow-lg touch-btn">
           <i class="fa-brands fa-whatsapp text-lg"></i>
           <span>Contactar por WhatsApp ahora</span>
@@ -361,6 +367,14 @@
           <p id="productDetailPrice" class="text-lg font-extrabold text-emerald-600 mt-1"></p>
         </div>
         <p id="productDetailDesc" class="text-sm text-slate-600 leading-relaxed whitespace-pre-line"></p>
+        <button id="productDetailAddBtn" type="button" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-sm rounded-xl flex items-center justify-center space-x-2 shadow-lg touch-btn">
+          <i class="fa-solid fa-cart-plus"></i>
+          <span>Agregar al carrito</span>
+        </button>
+        <p id="productDetailCartMsg" class="hidden text-[11px] font-bold text-center text-emerald-600"></p>
+        <button id="productDetailViewCartBtn" type="button" class="hidden w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl touch-btn">
+          <i class="fa-solid fa-cart-shopping mr-1"></i> Ver carrito
+        </button>
         <button id="productDetailWaBtn" type="button" class="w-full py-3 bg-[#25D366] hover:bg-[#1ebd59] text-white font-extrabold text-sm rounded-xl flex items-center justify-center space-x-2 shadow-lg touch-btn">
           <i class="fa-brands fa-whatsapp text-lg"></i>
           <span>Pedir este producto</span>
@@ -370,6 +384,35 @@
           <span>Compartir producto</span>
         </button>
         <p id="productDetailShareMsg" class="hidden text-[11px] font-bold text-center"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Carrito por vitrina: un pedido por negocio -->
+  <div id="cartModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[65] hidden items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-slide-up">
+      <div class="bg-slate-900 text-white p-4 flex items-center justify-between">
+        <div>
+          <span class="text-[10px] text-orange-400 font-extrabold uppercase tracking-wider">Tu carrito</span>
+          <h3 id="cartBizName" class="text-base font-extrabold leading-tight">Pedido</h3>
+        </div>
+        <button type="button" data-close="closeCartModal" class="text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div id="cartItems" class="p-4 overflow-y-auto flex-1 space-y-2"></div>
+      <div id="cartFooter" class="hidden p-4 bg-white border-t border-slate-100 space-y-2">
+        <div class="flex items-center justify-between text-sm font-extrabold">
+          <span class="text-slate-700">Total</span>
+          <span id="cartTotal" class="text-emerald-600"></span>
+        </div>
+        <button id="cartCheckoutBtn" type="button" class="w-full py-3 bg-[#25D366] hover:bg-[#1ebd59] text-white font-extrabold text-sm rounded-xl shadow-lg flex items-center justify-center space-x-2 touch-btn">
+          <i class="fa-solid fa-arrow-right"></i>
+          <span>Continuar pedido</span>
+        </button>
+        <button id="cartClearBtn" type="button" class="w-full py-2 text-slate-400 hover:text-red-500 text-[11px] font-bold touch-btn">
+          Vaciar carrito
+        </button>
       </div>
     </div>
   </div>
@@ -935,6 +978,7 @@
             <span id="checkoutOrderCount" class="bg-white px-2 py-0.5 rounded-full text-[10px] font-bold text-orange-700"></span>
           </div>
           <p id="checkoutOrderText" class="text-slate-700 font-semibold"></p>
+          <p id="checkoutOrderTotal" class="hidden font-extrabold text-emerald-700"></p>
           <div id="checkoutQtyRow" class="hidden items-center justify-between pt-1.5 border-t border-orange-200/70">
             <label for="checkoutQty" class="font-bold text-[11px] text-slate-600">Cantidad</label>
             <input type="number" id="checkoutQty" min="1" max="99" step="1" value="1" inputmode="numeric" class="w-20 p-1.5 text-center border border-slate-200 rounded-lg text-xs font-bold bg-white focus:ring-2 focus:ring-orange-500 focus:outline-none" />

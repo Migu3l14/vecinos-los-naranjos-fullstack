@@ -1044,6 +1044,14 @@ components:
           minItems: 1
           items:
             $ref: '#/components/schemas/OrderProduct'
+        observations:
+          type: string
+          maxLength: 300
+          nullable: true
+        paymentMethod:
+          type: string
+          maxLength: 40
+          nullable: true
         resident:
           $ref: '#/components/schemas/Resident'
 
@@ -1051,9 +1059,10 @@ components:
       type: object
       required: [name]
       properties:
+        id: { type: string, nullable: true }
         name: { type: string }
         price: { type: number, nullable: true }
-        qty: { type: integer, minimum: 1 }
+        qty: { type: integer, minimum: 1, maximum: 99 }
 
     OrderStatus:
       type: string
@@ -1071,6 +1080,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/OrderProduct'
+        observations: { type: string, nullable: true }
+        paymentMethod: { type: string, nullable: true }
         resident:
           $ref: '#/components/schemas/Resident'
         channel: { type: string, example: whatsapp }

@@ -315,6 +315,17 @@ function setupEventListeners() {
   if (coLoginSubmit) coLoginSubmit.addEventListener('click', handleCheckoutLogin);
   const coConfirm = document.getElementById('checkoutConfirmBtn');
   if (coConfirm) coConfirm.addEventListener('click', handleCheckoutConfirm);
+  const coQty = document.getElementById('checkoutQty');
+  if (coQty) {
+    coQty.addEventListener('input', () => {
+      const ctx = state.checkoutCtx;
+      if (!ctx || ctx.products.length !== 1) return;
+      const qty = clampQty(coQty.value);
+      ctx.products[0].qty = qty;
+      refreshCheckoutSummary();
+    });
+    coQty.addEventListener('blur', () => { coQty.value = clampQty(coQty.value); });
+  }
 
   // PQRS submit + tipo
   const pqrsSubmit = document.getElementById('pqrsSubmitBtn');
@@ -343,8 +354,7 @@ function setupEventListeners() {
     productWaBtn.addEventListener('click', () => {
       if (!state.selectedProduct) return;
       const { biz, product } = state.selectedProduct;
-      const msg = WhatsAppHelper.buildProductMessage(biz, product);
-      openWhatsAppPreview(biz.name, biz.phone, msg);
+      orderProduct(biz, product);
     });
   }
 
@@ -876,8 +886,7 @@ async function handleOpenProfile(bizId) {
       event.stopPropagation();
       const prod = prods[Number(btn.dataset.prodwa)];
       if (!prod) return;
-      const msg = WhatsAppHelper.buildProductMessage(biz, prod);
-      openWhatsAppPreview(biz.name, biz.phone, msg);
+      orderProduct(biz, prod);
     });
   });
 
@@ -1715,53 +1724,94 @@ async function ensureTowers(selectIds, ops = {}) {
   });
 }
 
-// Resuelve el valor del select (id de torre) a partir del nombre guardado en el perfil
-function towerOptionValue(towerName) {
-  const t = state.towersList.find(x => x.name === towerName);
-  return t ? t.id : towerName;
+// Inicia el pedido de un producto: checkout con identidad o contacto directo si está agotado
+function orderProduct(biz, product) {
+  if (product.availability === 'agotado') {
+    const msg = WhatsAppHelper.buildProductMessage(biz, product);
+    openWhatsAppPreview(biz.name, biz.phone, msg);
+    return;
+  }
+  openCheckoutFor(biz, [{ ...product, qty: 1 }]);
 }
 
-// Abre el modal de checkout dual para un pedido concreto
+// Abre el modal de checkout para un pedido de la vitrina
 async function openCheckoutFor(business, products) {
-  state.checkoutCtx = { business, products, mode: 'login', resident: null };
+  state.checkoutCtx = { business, products, mode: 'guest', resident: null, observations: '', paymentMethod: 'Efectivo' };
 
-  // Resumen del pedido
-  const totalQty = products.reduce((a, p) => a + (p.qty || 1), 0);
-  document.getElementById('checkoutOrderCount').innerText = `${products.length} producto${products.length === 1 ? '' : 's'}`;
-  document.getElementById('checkoutOrderText').innerText =
-    `${business.name} · ${products.map(p => `${p.name}${p.qty > 1 ? ` ×${p.qty}` : ''}`).join(', ')}`;
+  // Cantidad editable solo cuando hay un único producto (el carrito llega después)
+  const qtyRow = document.getElementById('checkoutQtyRow');
+  const qtyInput = document.getElementById('checkoutQty');
+  const single = products.length === 1;
+  if (qtyRow && qtyInput) {
+    qtyRow.classList.toggle('hidden', !single);
+    qtyRow.classList.toggle('flex', single);
+    qtyInput.value = single ? clampQty(products[0].qty || 1) : 1;
+    if (single) products[0].qty = Number(qtyInput.value);
+  }
+  refreshCheckoutSummary();
 
   // Precargar torres (todas las manzanas: "Torre N · Manzana M")
   await ensureTowers(['coGuestTower'], { useId: true });
-  document.getElementById('coGuestTower').insertAdjacentHTML('afterbegin', '<option value="">Selecciona tu torre</option>');
-
-  // Autocompletar si el residente ya se identificó antes (perfil guardado)
-  const existing = API.getStoredResidentProfile();
-  if (existing) {
-    document.getElementById('coGuestName').value = existing.fullName || '';
-    document.getElementById('coGuestPhone').value = (existing.phone || '').replace('57', '');
-    if (existing.tower) {
-      const sel = document.getElementById('coGuestTower');
-      const val = towerOptionValue(existing.tower);
-      if ([...sel.options].some(o => o.value === val)) sel.value = val;
-    }
-    document.getElementById('coGuestApt').value = existing.apartment || '';
-    document.getElementById('coGuestBirth').value = existing.birthDate || '';
-    document.getElementById('coGuestDelivery').value = existing.deliveryAddress || '';
+  const towerSel = document.getElementById('coGuestTower');
+  if (![...towerSel.options].some(o => o.value === '')) {
+    towerSel.insertAdjacentHTML('afterbegin', '<option value="">Selecciona tu torre</option>');
   }
 
   resetCheckoutPanels();
-  switchCheckoutMode('login');
+  switchCheckoutMode('guest');
+
+  const confirmBtn = document.getElementById('checkoutConfirmBtn');
+  if (confirmBtn) {
+    confirmBtn.disabled = false;
+    confirmBtn.innerHTML = '<i class="fa-brands fa-whatsapp text-lg"></i><span>Confirmar pedido y enviar por WhatsApp</span>';
+  }
+
   document.getElementById('checkoutError').classList.add('hidden');
   document.getElementById('checkoutModal').classList.remove('hidden');
 }
 
+function clampQty(value) {
+  const n = parseInt(value, 10);
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.min(n, 99);
+}
+
+function refreshCheckoutSummary() {
+  const ctx = state.checkoutCtx;
+  if (!ctx) return;
+  const totalQty = ctx.products.reduce((acc, p) => acc + (Number(p.qty) || 1), 0);
+  document.getElementById('checkoutOrderCount').innerText = `${totalQty} unidad${totalQty === 1 ? '' : 'es'}`;
+  document.getElementById('checkoutOrderText').innerText =
+    `${ctx.business.name} · ${ctx.products.map(p => `${p.name}${Number(p.qty) > 1 ? ` ×${p.qty}` : ''}`).join(', ')}`;
+}
+
+// Resuelve la torre guardada en el perfil (prefiere towerId para no confundir torres de otra manzana)
+function profileTowerValue(prof) {
+  if (!prof) return '';
+  if (prof.towerId && state.towersList.some(t => t.id === prof.towerId)) return prof.towerId;
+  let list = state.towersList;
+  if (prof.manzana) {
+    const filtered = list.filter(t => String(t.manzana) === String(prof.manzana));
+    if (filtered.length > 0) list = filtered;
+  }
+  const match = list.find(t => t.name === prof.tower || t.id === prof.tower);
+  return match ? match.id : (prof.tower || '');
+}
+
 function resetCheckoutPanels() {
-  document.getElementById('coLoginPhone').value = API.getStoredResidentProfile()?.phone?.replace('57', '') || '';
+  const prof = API.getStoredResidentProfile();
+  document.getElementById('coLoginPhone').value = prof?.phone?.replace('57', '') || '';
   document.getElementById('coLoginPassword').value = '';
-  document.getElementById('coGuestName').value = API.getStoredResidentProfile()?.fullName || '';
-  document.getElementById('coGuestPhone').value = API.getStoredResidentProfile()?.phone?.replace('57', '') || '';
-  document.getElementById('coGuestDelivery').value = '';
+  document.getElementById('coGuestName').value = prof?.fullName || '';
+  document.getElementById('coGuestPhone').value = prof?.phone?.replace('57', '') || '';
+  const towerSel = document.getElementById('coGuestTower');
+  const towerVal = profileTowerValue(prof);
+  towerSel.value = [...towerSel.options].some(o => o.value === towerVal) ? towerVal : '';
+  document.getElementById('coGuestApt').value = prof?.apartment || '';
+  document.getElementById('coGuestBirth').value = prof?.birthDate || '';
+  document.getElementById('coGuestDelivery').value = prof?.deliveryAddress || '';
+  document.getElementById('coGuestNotes').value = '';
+  document.getElementById('coGuestPayment').value = 'Efectivo';
   const guestTerms = document.getElementById('coGuestTerms');
   if (guestTerms) guestTerms.checked = false;
 }
@@ -2045,7 +2095,7 @@ async function handleCheckoutLogin() {
   // Autocompletar apartamento/torre
   if (profile.tower) {
     const sel = document.getElementById('coGuestTower');
-    const val = towerOptionValue(profile.tower);
+    const val = profileTowerValue(profile);
     if ([...sel.options].some(o => o.value === val)) sel.value = val;
   }
   document.getElementById('coGuestApt').value = profile.apartment || '';
@@ -2077,6 +2127,8 @@ async function handleCheckoutConfirm() {
   const apartment = document.getElementById('coGuestApt').value.trim();
   const birthDate = document.getElementById('coGuestBirth').value;
   const deliveryAddress = document.getElementById('coGuestDelivery').value.trim();
+  const observations = document.getElementById('coGuestNotes').value.trim().slice(0, 300);
+  const paymentMethod = document.getElementById('coGuestPayment').value;
   const termsAccepted = document.getElementById('coGuestTerms').checked;
 
   if (!fullName || !phone || !tower || !apartment || !birthDate) {
@@ -2112,10 +2164,25 @@ async function handleCheckoutConfirm() {
   }
   const resident = g.data.resident;
 
+  // Sincronizar la cantidad elegida en el resumen (pedido de un solo producto)
+  const qtyInput = document.getElementById('checkoutQty');
+  if (ctx.products.length === 1 && qtyInput) {
+    ctx.products[0].qty = clampQty(qtyInput.value);
+  }
+  ctx.observations = observations;
+  ctx.paymentMethod = paymentMethod;
+
   // Crear la orden (siempre se registra)
   const orderPayload = {
     businessId: ctx.business.id,
-    products: ctx.products.map(p => ({ name: p.name, price: p.price, qty: p.qty || 1 })),
+    products: ctx.products.map(p => ({
+      id: p.id || null,
+      name: p.name,
+      price: p.price || null,
+      qty: Number(p.qty) || 1
+    })),
+    observations: observations || null,
+    paymentMethod: paymentMethod || null,
     resident: {
       fullName: resident.fullName,
       phone: resident.phone,
@@ -2134,10 +2201,37 @@ async function handleCheckoutConfirm() {
   state.checkoutCtx = null;
 }
 
+// Devuelve "Manzana M · Torre N" a partir del nombre o id guardado en la torre
+function towerDisplay(value) {
+  if (!value) return '';
+  const t = state.towersList.find(x => x.id === value || x.name === value);
+  if (!t) return String(value);
+  return `Manzana ${t.manzana} · ${t.name}`;
+}
+
 // Construye el mensaje de WhatsApp del pedido con datos del residente
 function buildOrderMessage(ctx, resident) {
-  const products = ctx.products.map(p => `${p.name}${p.qty > 1 ? ` ×${p.qty}` : ''}`).join(', ');
-  return `Hola, soy ${resident.fullName}, vecino de Los Naranjos (Torre ${resident.tower}, Apartamento ${resident.apartment}).\n\nQuisiera pedir de tu vitrina:\n• ${products}\n\nDirección de entrega: ${resident.deliveryAddress || 'Por coordinar'}\n\nMi teléfono: ${resident.phone}`;
+  const where = towerDisplay(resident.tower);
+  const lines = [
+    `Hola *${ctx.business.name}*, soy ${resident.fullName}, vecino de Los Naranjos${where ? ` (${where} · Apto ${resident.apartment})` : ''}.`,
+    '',
+    'Quisiera pedir:'
+  ];
+  ctx.products.forEach(p => {
+    const qty = Number(p.qty) || 1;
+    lines.push(`• ${p.name} ×${qty}${p.price ? ` — ${p.price}` : ''}`);
+  });
+  lines.push('');
+  if (ctx.observations) lines.push(`Observaciones: ${ctx.observations}`);
+  lines.push(`Dirección de entrega: ${resident.deliveryAddress || 'Por coordinar'}`);
+  if (ctx.paymentMethod) lines.push(`Forma de pago: ${ctx.paymentMethod}`);
+  lines.push('');
+  lines.push(`Mi teléfono: ${resident.phone}`);
+  const withId = ctx.products.find(p => p.id);
+  if (withId) {
+    lines.push(`Producto: ${window.location.origin}/p/${encodeURIComponent(withId.id)}`);
+  }
+  return lines.join('\n');
 }
 
 // ============================================================

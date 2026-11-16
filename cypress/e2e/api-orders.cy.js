@@ -47,6 +47,32 @@ describe('API · crear pedido (contrato de API)', () => {
     });
   });
 
+  it('guarda cantidad, observaciones, pago y producto de forma opcional', () => {
+    cy.request({
+      method: 'POST',
+      url: '/api/orders',
+      body: {
+        businessId,
+        products: [{ id: 'p-test-1', name: 'Cafe de prueba', price: 8000, qty: 3 }],
+        observations: 'Sin azucar',
+        paymentMethod: 'Nequi',
+        resident: {
+          fullName: 'Residente Cypress',
+          phone: '3001234567',
+          tower: '1',
+          apartment: '101',
+          deliveryAddress: 'Manzana A Casa 1',
+        },
+      },
+    }).then((res) => {
+      expect(res.status).to.eq(201);
+      expect(res.body.data.products[0]).to.include({ id: 'p-test-1', qty: 3 });
+      expect(res.body.data).to.have.property('observations', 'Sin azucar');
+      expect(res.body.data).to.have.property('paymentMethod', 'Nequi');
+      cy.task('removeOrder', res.body.data.id || res.body.data.orderId);
+    });
+  });
+
   it('rechaza un pedido sin productos (400)', () => {
     cy.request({
       method: 'POST',

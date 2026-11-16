@@ -11,13 +11,14 @@ const generateOrderId = () => `ORD-${Date.now().toString().slice(-6)}`;
  *
  * body:
  * {
- *   businessId, products: [{name, price?, qty}],
+ *   businessId, products: [{id?, name, price?, qty}],
+ *   observations?, paymentMethod?,
  *   resident: { fullName, phone, tower, apartment, birthDate?, email?, authType? }
  * }
  */
 export const createOrder = async (req, res) => {
   try {
-    const { businessId, products, resident } = req.body;
+    const { businessId, products, resident, observations, paymentMethod } = req.body;
 
     if (!businessId) {
       return res.status(400).json({ success: false, message: 'businessId es obligatorio.' });
@@ -37,10 +38,17 @@ export const createOrder = async (req, res) => {
       businessId,
       businessName: business ? business.name : 'Vitrina',
       products: products.map(p => ({
+        id: p.id ? String(p.id) : null,
         name: p.name,
         price: p.price || null,
-        qty: p.qty || 1
+        qty: Math.min(Math.max(parseInt(p.qty, 10) || 1, 1), 99)
       })),
+      observations: typeof observations === 'string' && observations.trim()
+        ? observations.trim().slice(0, 300)
+        : null,
+      paymentMethod: typeof paymentMethod === 'string' && paymentMethod.trim()
+        ? paymentMethod.trim().slice(0, 40)
+        : null,
       resident: {
         fullName: resident.fullName,
         phone: String(resident.phone).replace(/\D/g, ''),

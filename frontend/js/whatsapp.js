@@ -21,12 +21,14 @@ export const WhatsAppHelper = {
   buildProductMessage(business, product) {
     const lines = [`Hola${business && business.name ? ` ${business.name}` : ''}, vi en *Vitrina Digital Los Naranjos* el producto *${product.name}* y me interesa pedirlo.`];
     if (product.price) lines.push(`Precio: ${product.price}`);
+    if (product.description) lines.push(`Detalle: ${product.description}`);
     return lines.join('\n');
   },
 
   buildProductShareText(business, product) {
     const lines = [`Hola${business && business.name ? ` ${business.name}` : ''}, vi en *Vitrina Digital Los Naranjos* el producto *${product.name}* y me interesa pedirlo.`];
     if (product.price) lines.push(`Precio: ${product.price}`);
+    if (product.description) lines.push(`Detalle: ${product.description}`);
     return lines.join('\n');
   },
 

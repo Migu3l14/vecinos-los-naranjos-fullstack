@@ -46,8 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // renderizamos la página pesada para que no compita por el hilo principal.
   const startHeavy = async () => {
     await loadInitialData();
-    await openSharedProductFromUrl();
-    maybeShowEntryModal();
+    const openedSharedProduct = await openSharedProductFromUrl();
+    // Si se llegó desde un enlace de producto, no tapamos el producto con el
+    // modal de ingreso: el usuario puede registrarse desde el header cuando quiera.
+    if (!openedSharedProduct) maybeShowEntryModal();
     renderMiManzana();
     bindMmDemoToggle();
     bindMmAccordion();
@@ -813,6 +815,7 @@ async function handleOpenProfile(bizId) {
 
   const prods = (biz.products || []).map((p, index) => ({
     index,
+    id: String(p.id || ''),
     name: String(p.name || ''),
     description: String(p.description || ''),
     photo: String(p.photo || p.image || biz.coverImage || ''),
@@ -911,6 +914,16 @@ function openProductDetail(biz, product) {
 
   const waBtn = document.getElementById('productDetailWaBtn');
   waBtn.innerHTML = `<i class="fa-brands fa-whatsapp text-lg"></i><span>${agotado ? 'Consultar disponibilidad' : 'Pedir este producto'}</span>`;
+
+  // Solo se puede compartir si el producto tiene id público (enlaces /p/:id).
+  const shareBtn = document.getElementById('productDetailShareBtn');
+  if (shareBtn) shareBtn.classList.toggle('hidden', !product.id);
+  const shareMsg = document.getElementById('productDetailShareMsg');
+  if (shareMsg) {
+    shareMsg.textContent = '';
+    shareMsg.classList.add('hidden');
+  }
+
   document.getElementById('productDetailModal').classList.remove('hidden');
   document.getElementById('productDetailModal').classList.add('flex');
 }
@@ -978,17 +991,17 @@ async function openSharedProductFromUrl() {
     productId = params.get('producto');
     businessId = params.get('vitrina');
   } catch (e) {
-    return;
+    return false;
   }
-  if (!productId || !businessId) return;
+  if (!productId || !businessId) return false;
 
   try {
     await handleOpenProfile(businessId);
     const biz = state.selectedBusiness;
-    if (!biz || String(biz.id) !== String(businessId)) return;
+    if (!biz || String(biz.id) !== String(businessId)) return false;
 
     const raw = (biz.products || []).find(p => String(p.id) === String(productId));
-    if (!raw) return;
+    if (!raw) return false;
 
     openProductDetail(biz, {
       id: raw.id,
@@ -1001,8 +1014,10 @@ async function openSharedProductFromUrl() {
     });
 
     window.history.replaceState({}, '', `${window.location.pathname}${window.location.hash}`);
+    return true;
   } catch (e) {
     console.error('No se pudo abrir el producto compartido:', e);
+    return false;
   }
 }
 

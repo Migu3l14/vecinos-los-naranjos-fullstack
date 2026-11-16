@@ -23,6 +23,7 @@ import statsRoutes from './routes/statsRoutes.js';
 import supportRoutes from './routes/supportRoutes.js';
 import announcementRoutes from './routes/announcementRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import { renderProductPage } from './controllers/productPageController.js';
 import { runSeeds } from './db/seed.js';
 import { noStore } from './middleware/cache.js';
 
@@ -199,6 +200,10 @@ try {
 app.use('/api', (req, res) => {
   res.status(404).json({ success: false, message: 'Recurso no encontrado.' });
 });
+
+// Enlace público de un producto: HTML con metadatos Open Graph para la
+// vista previa en WhatsApp. Debe ir antes del catch-all del frontend.
+app.get('/p/:id', renderProductPage);
 
 // Redirigir cualquier otra ruta no-API al Frontend
 app.get('*', (req, res) => {

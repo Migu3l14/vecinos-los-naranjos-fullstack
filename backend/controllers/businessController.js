@@ -603,3 +603,17 @@ export const deleteMyProduct = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error al eliminar el producto', error: error.message });
   }
 };
+
+// Busca un producto público por id dentro de las vitrinas activas.
+// Se usa para el enlace compartible /p/:id (vista previa en WhatsApp).
+export const findActiveProductById = async (productId) => {
+  const id = String(productId || '').trim();
+  if (!id) return null;
+  const businesses = await loadAndValidateBusinesses();
+  for (const business of businesses) {
+    if (business.status !== 'active') continue;
+    const product = (business.products || []).find(p => String(p.id) === id);
+    if (product) return { business, product };
+  }
+  return null;
+};

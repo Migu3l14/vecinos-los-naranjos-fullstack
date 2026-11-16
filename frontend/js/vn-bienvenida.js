@@ -9,7 +9,10 @@
   var TREE=(script&&script.getAttribute('data-tree'))||'images/arbol-naranjos-hd.webp';
   var force=/[?&]bienvenida=1/.test(location.search);
   var noGL=/[?&]nogl=1/.test(location.search);
-  try{if(!force&&localStorage.getItem(KEY))return}catch(e){}
+  // Si se llega desde un enlace compartido de producto, no bloqueamos con la
+  // bienvenida: el usuario debe ver la vitrina y el producto de inmediato.
+  var deepLink=/[?&]producto=/.test(location.search);
+  try{if(!force&&(deepLink||localStorage.getItem(KEY)))return}catch(e){if(deepLink&&!force)return}
 
   var CATS=[['🍲','Comidas','Almuerzos caseros'],['💅','Belleza y uñas','Con cita'],['🧁','Postres','Por encargo'],
             ['🛠️','Técnicos','Arreglos en casa'],['🐶','Mascotas','Cuidado y baño'],['🛒','Minimercados','Cerca de ti']];

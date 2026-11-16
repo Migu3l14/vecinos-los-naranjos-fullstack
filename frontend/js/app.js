@@ -46,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // renderizamos la página pesada para que no compita por el hilo principal.
   const startHeavy = async () => {
     await loadInitialData();
+    await openSharedProductFromUrl();
     maybeShowEntryModal();
     renderMiManzana();
     bindMmDemoToggle();
@@ -343,6 +344,11 @@ function setupEventListeners() {
       const msg = WhatsAppHelper.buildProductMessage(biz, product);
       openWhatsAppPreview(biz.name, biz.phone, msg);
     });
+  }
+
+  const productShareBtn = document.getElementById('productDetailShareBtn');
+  if (productShareBtn) {
+    productShareBtn.addEventListener('click', shareSelectedProductLink);
   }
 
   // Atajo "Renovar Vitrina" del panel del emprendedor (abre directamente el modal de gestión)
@@ -915,6 +921,89 @@ function closeProductDetail() {
   modal.classList.add('hidden');
   modal.classList.remove('flex');
   state.selectedProduct = null;
+}
+
+// Copia el enlace público /p/:id del producto abierto (vista previa en WhatsApp)
+async function shareSelectedProductLink() {
+  const selected = state.selectedProduct;
+  const msg = document.getElementById('productDetailShareMsg');
+  if (!selected || !selected.product || !selected.product.id) return;
+
+  const url = `${window.location.origin}/p/${encodeURIComponent(String(selected.product.id))}`;
+  let copied = false;
+
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(url);
+      copied = true;
+    }
+  } catch (e) {
+    copied = false;
+  }
+
+  if (!copied) {
+    try {
+      const helper = document.createElement('textarea');
+      helper.value = url;
+      helper.setAttribute('readonly', '');
+      helper.style.position = 'fixed';
+      helper.style.top = '-1000px';
+      helper.style.opacity = '0';
+      document.body.appendChild(helper);
+      helper.select();
+      copied = document.execCommand('copy');
+      helper.remove();
+    } catch (e) {
+      copied = false;
+    }
+  }
+
+  if (!msg) return;
+  msg.textContent = copied
+    ? 'Enlace copiado. Pégalo en tu chat de WhatsApp.'
+    : `No se pudo copiar. Mantén presionado este enlace: ${url}`;
+  msg.className = `text-[11px] font-bold text-center ${copied ? 'text-emerald-600' : 'text-red-600 break-all'}`;
+  msg.classList.remove('hidden');
+  window.clearTimeout(state.shareMsgTimer);
+  state.shareMsgTimer = window.setTimeout(() => msg.classList.add('hidden'), copied ? 3500 : 12000);
+}
+
+// Abre el producto cuando se llega desde un enlace compartido /p/:id
+// (la página pública redirige a /?producto=<pid>&vitrina=<bizId>).
+async function openSharedProductFromUrl() {
+  let productId = null;
+  let businessId = null;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    productId = params.get('producto');
+    businessId = params.get('vitrina');
+  } catch (e) {
+    return;
+  }
+  if (!productId || !businessId) return;
+
+  try {
+    await handleOpenProfile(businessId);
+    const biz = state.selectedBusiness;
+    if (!biz || String(biz.id) !== String(businessId)) return;
+
+    const raw = (biz.products || []).find(p => String(p.id) === String(productId));
+    if (!raw) return;
+
+    openProductDetail(biz, {
+      id: raw.id,
+      name: String(raw.name || ''),
+      description: String(raw.description || ''),
+      photo: String(raw.photo || raw.image || biz.coverImage || ''),
+      price: String(raw.price || ''),
+      category: String(raw.category || 'General'),
+      availability: raw.availability === 'agotado' ? 'agotado' : 'activo'
+    });
+
+    window.history.replaceState({}, '', `${window.location.pathname}${window.location.hash}`);
+  } catch (e) {
+    console.error('No se pudo abrir el producto compartido:', e);
+  }
 }
 
 // Modal Oferta

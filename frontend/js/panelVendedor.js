@@ -301,25 +301,27 @@ function switchPanel(name) {
     const active = t.dataset.mvtPanel === name;
     t.className = 'mvt-tab py-3 text-xs font-extrabold border-b-2 ' + (active ? 'border-orange-500 text-orange-600' : 'border-transparent text-slate-500');
   });
+  const panels = ['mvtPerfil', 'mvtProductos', 'mvtOfertas', 'mvtPedidos', 'mvtVentas'];
+  hide(...panels);
   if (name === 'perfil') {
     show('mvtPerfil');
-    hide('mvtProductos', 'mvtOfertas', 'mvtPedidos');
   } else if (name === 'productos') {
     show('mvtProductos');
-    hide('mvtPerfil', 'mvtOfertas', 'mvtPedidos');
   } else if (name === 'ofertas') {
     show('mvtOfertas');
-    hide('mvtPerfil', 'mvtProductos', 'mvtPedidos');
     renderOffersList();
-  } else {
+  } else if (name === 'pedidos') {
     show('mvtPedidos');
-    hide('mvtPerfil', 'mvtProductos', 'mvtOfertas');
     renderOrdersList();
+  } else {
+    show('mvtVentas');
+    renderSalesPanel();
   }
   if ($('mvOfferForm')) $('mvOfferForm').classList.add('hidden');
   showMsg(null, true);
   showOfferMsg(null, true);
   showOrderMsg(null, true);
+  showSalesMsg(null, true);
 }
 
 // ---------- Sub-vista PEDIDOS ----------
@@ -346,12 +348,16 @@ function formatOrderMoney(value) {
   }).format(value);
 }
 
-function orderTotalLabel(order) {
+function orderTotalValue(order) {
   const products = Array.isArray(order.products) ? order.products : [];
   const prices = products.map(p => parseOrderPrice(p.price));
-  if (prices.length === 0 || prices.some(p => p === null)) return 'Por cotizar';
-  const total = products.reduce((sum, p, i) => sum + prices[i] * (Number(p.qty) || 1), 0);
-  return formatOrderMoney(total);
+  if (prices.length === 0 || prices.some(p => p === null)) return null;
+  return products.reduce((sum, p, i) => sum + prices[i] * (Number(p.qty) || 1), 0);
+}
+
+function orderTotalLabel(order) {
+  const total = orderTotalValue(order);
+  return total === null ? 'Por cotizar' : formatOrderMoney(total);
 }
 
 function buyerWhatsAppLink(order) {
@@ -375,6 +381,104 @@ function showOrderMsg(msg, ok = true) {
   el.classList.remove('hidden');
   el.textContent = msg;
   if (ok) setTimeout(() => el.classList.add('hidden'), 3500);
+}
+
+function showSalesMsg(msg, ok = true) {
+  const el = $('mvSalesMsg');
+  if (!el) return;
+  if (!msg) {
+    el.classList.add('hidden');
+    return;
+  }
+  el.className = `mb-3 text-xs font-bold p-2.5 rounded-xl ${ok ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-600'}`;
+  el.classList.remove('hidden');
+  el.textContent = msg;
+  if (ok) setTimeout(() => el.classList.add('hidden'), 3500);
+}
+
+function salesCard(label, value, sub, accent = 'text-slate-800') {
+  return `
+    <div class="bg-white border border-slate-200 rounded-xl p-3">
+      <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">${esc(label)}</p>
+      <p class="text-lg font-extrabold ${accent} mt-1 leading-tight">${esc(String(value))}</p>
+      ${sub ? `<p class="text-[10px] text-slate-500 mt-0.5">${esc(sub)}</p>` : ''}
+    </div>`;
+}
+
+async function renderSalesPanel() {
+  const cards = $('mvSalesCards');
+  const top = $('mvSalesTop');
+  const recent = $('mvSalesRecent');
+  if (!cards) return;
+  cards.innerHTML = '<p class="col-span-2 text-center text-xs text-slate-400 py-4">Cargando ventas...</p>';
+  top.innerHTML = '';
+  recent.innerHTML = '';
+  showSalesMsg(null, true);
+  const res = await API.getMyOrders();
+  if (!res || !res.success) {
+    cards.innerHTML = '';
+    showSalesMsg('No se pudieron cargar las ventas.', false);
+    return;
+  }
+  const orders = res.data || [];
+  if (orders.length === 0) {
+    cards.innerHTML = '';
+    top.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">Aún no hay productos pedidos.</p>';
+    recent.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">Aún no tienes pedidos. Cuando un vecino compre, aparecerán aquí.</p>';
+    return;
+  }
+
+  const notCancelled = orders.filter(o => o.estado !== 'Cancelado');
+  const totals = notCancelled.map(orderTotalValue).filter(v => v !== null);
+  const revenue = totals.reduce((sum, v) => sum + v, 0);
+  const activeCount = orders.filter(o => ['Recibido', 'En Preparación', 'En Camino'].includes(o.estado)).length;
+  const delivered = orders.filter(o => o.estado === 'Entregado').length;
+  const cancelled = orders.filter(o => o.estado === 'Cancelado').length;
+  const units = orders.reduce((sum, o) => {
+    const products = Array.isArray(o.products) ? o.products : [];
+    return sum + products.reduce((s, p) => s + (Number(p.qty) || 1), 0);
+  }, 0);
+  const avgTicket = totals.length ? revenue / totals.length : 0;
+
+  cards.innerHTML = [
+    salesCard('Pedidos', orders.length, `${activeCount} activo(s)`),
+    salesCard('Ingresos estimados', formatOrderMoney(revenue), `${totals.length} pedido(s) con precio`, 'text-green-600'),
+    salesCard('Ticket promedio', totals.length ? formatOrderMoney(avgTicket) : 'Sin datos', 'Solo pedidos con precio'),
+    salesCard('Unidades pedidas', units, `${delivered} entregado(s) · ${cancelled} cancelado(s)`)
+  ].join('');
+
+  const counts = new Map();
+  orders.forEach(o => {
+    const products = Array.isArray(o.products) ? o.products : [];
+    products.forEach(p => {
+      const name = p.name || 'Producto';
+      counts.set(name, (counts.get(name) || 0) + (Number(p.qty) || 1));
+    });
+  });
+  const topList = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  top.innerHTML = topList.length
+    ? topList.map(([name, qty], i) => `
+        <div class="flex items-center justify-between gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
+          <span class="text-xs font-bold text-slate-700 truncate">${i + 1}. ${esc(name)}</span>
+          <span class="text-[11px] font-extrabold text-orange-600 whitespace-nowrap">${qty} u.</span>
+        </div>`).join('')
+    : '<p class="text-center text-xs text-slate-400 py-4">Aún no hay productos pedidos.</p>';
+
+  recent.innerHTML = orders.slice(0, 5).map(o => {
+    const badge = ORDER_BADGE[o.estado] || 'bg-slate-100 text-slate-600';
+    const created = o.createdAt ? new Date(o.createdAt).toLocaleString('es-CO') : '';
+    return `
+      <div class="flex items-center justify-between gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
+        <div class="min-w-0">
+          <p class="text-xs font-extrabold text-slate-800 truncate">${esc(o.orderId || o.id)}</p>
+          <p class="text-[10px] text-slate-400">${esc(created)}</p>
+        </div>
+        <div class="text-right whitespace-nowrap">
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badge}">${esc(o.estado || 'Recibido')}</span>
+          <p class="text-[11px] font-extrabold text-slate-700 mt-0.5">${orderTotalLabel(o)}</p>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 async function renderOrdersList() {
@@ -721,6 +825,7 @@ function bindEvents() {
   $('mvoSaveBtn').addEventListener('click', saveOffer);
 
   $('mvRefreshOrdersBtn').addEventListener('click', renderOrdersList);
+  $('mvRefreshSalesBtn').addEventListener('click', renderSalesPanel);
   $('mvOrdersList').addEventListener('change', (e) => {
     const select = e.target.closest('[data-order-status]');
     if (!select) return;

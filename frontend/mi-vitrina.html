@@ -123,11 +123,12 @@
     <div id="mvDashView" class="hidden">
 
       <!-- Tabs -->
-      <div class="grid grid-cols-4 border-b border-slate-200">
+      <div class="grid grid-cols-5 border-b border-slate-200">
         <button data-mvt-panel="perfil" class="mvt-tab py-3 text-xs font-extrabold border-b-2 border-orange-500 text-orange-600">Perfil</button>
         <button data-mvt-panel="productos" class="mvt-tab py-3 text-xs font-extrabold border-b-2 border-transparent text-slate-500">Productos</button>
         <button data-mvt-panel="ofertas" class="mvt-tab py-3 text-xs font-extrabold border-b-2 border-transparent text-slate-500">Ofertas</button>
         <button data-mvt-panel="pedidos" class="mvt-tab py-3 text-xs font-extrabold border-b-2 border-transparent text-slate-500">Pedidos</button>
+        <button data-mvt-panel="ventas" class="mvt-tab py-3 text-xs font-extrabold border-b-2 border-transparent text-slate-500">Ventas</button>
       </div>
 
       <!-- ===== Sub-vista: PERFIL ===== -->
@@ -292,6 +293,29 @@
         </div>
         <div id="mvOrderMsg" class="hidden mb-3"></div>
         <div id="mvOrdersList" class="space-y-3"></div>
+      </div>
+
+      <!-- ===== Sub-vista: VENTAS (solo lectura) ===== -->
+      <div id="mvtVentas" class="p-4 hidden">
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <h3 class="text-sm font-extrabold text-slate-800">Resumen de ventas</h3>
+            <p class="text-[11px] text-slate-500">Indicadores calculados con los pedidos recibidos.</p>
+          </div>
+          <button id="mvRefreshSalesBtn" class="px-3 py-2 border border-slate-200 text-slate-600 text-[11px] font-bold rounded-xl bg-white hover:bg-slate-50">
+            <i class="fa-solid fa-rotate mr-1"></i> Actualizar
+          </button>
+        </div>
+        <div id="mvSalesMsg" class="hidden mb-3"></div>
+        <div id="mvSalesCards" class="grid grid-cols-2 gap-2"></div>
+        <div class="mt-4">
+          <h4 class="text-xs font-extrabold text-slate-700 mb-2">Productos más pedidos</h4>
+          <div id="mvSalesTop" class="space-y-2"></div>
+        </div>
+        <div class="mt-4">
+          <h4 class="text-xs font-extrabold text-slate-700 mb-2">Últimos pedidos</h4>
+          <div id="mvSalesRecent" class="space-y-2"></div>
+        </div>
       </div>
 
       <!-- ===== Formulario de oferta (modal-lite) ===== -->

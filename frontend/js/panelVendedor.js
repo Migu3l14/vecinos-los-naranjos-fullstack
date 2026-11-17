@@ -335,6 +335,21 @@ const ORDER_BADGE = {
   'Cancelado': 'bg-red-100 text-red-600'
 };
 
+const orderFilter = { q: '', estado: 'all' };
+
+function setOrdersBadge(orders) {
+  const badge = $('mvPedidosBadge');
+  if (!badge) return;
+  const active = (orders || []).filter(o => ['Recibido', 'En Preparación', 'En Camino'].includes(o.estado)).length;
+  badge.textContent = String(active);
+  badge.classList.toggle('hidden', active === 0);
+}
+
+async function refreshOrdersBadge() {
+  const res = await API.getMyOrders();
+  if (res && res.success) setOrdersBadge(res.data || []);
+}
+
 function parseOrderPrice(value) {
   const raw = String(value == null ? '' : value).replace(/[^\d]/g, '');
   return raw ? Number(raw) : null;
@@ -486,13 +501,26 @@ async function renderOrdersList() {
   if (!list) return;
   list.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">Cargando pedidos...</p>';
   const res = await API.getMyOrders();
-  const orders = res && res.success ? (res.data || []) : [];
+  const allOrders = res && res.success ? (res.data || []) : [];
   if (!res || !res.success) {
     list.innerHTML = '<p class="text-center text-xs text-red-500 py-6">No se pudieron cargar los pedidos.</p>';
     return;
   }
-  if (orders.length === 0) {
+  setOrdersBadge(allOrders);
+  if (allOrders.length === 0) {
     list.innerHTML = '<p class="text-center text-xs text-slate-400 py-6">Aún no tienes pedidos. Cuando un vecino compre, aparecerá aquí.</p>';
+    return;
+  }
+  const q = orderFilter.q.trim().toLowerCase();
+  const orders = allOrders.filter(o => {
+    if (orderFilter.estado !== 'all' && o.estado !== orderFilter.estado) return false;
+    if (!q) return true;
+    const resident = o.resident || {};
+    return [o.orderId, o.id, o.businessName, resident.fullName, resident.phone]
+      .join(' ').toLowerCase().includes(q);
+  });
+  if (orders.length === 0) {
+    list.innerHTML = '<p class="text-center text-xs text-slate-400 py-6">No hay pedidos con ese filtro.</p>';
     return;
   }
   list.innerHTML = orders.map(o => {
@@ -826,6 +854,14 @@ function bindEvents() {
 
   $('mvRefreshOrdersBtn').addEventListener('click', renderOrdersList);
   $('mvRefreshSalesBtn').addEventListener('click', renderSalesPanel);
+  $('mvOrderSearch').addEventListener('input', (e) => {
+    orderFilter.q = e.target.value;
+    renderOrdersList();
+  });
+  $('mvOrderStatusFilter').addEventListener('change', (e) => {
+    orderFilter.estado = e.target.value;
+    renderOrdersList();
+  });
   $('mvOrdersList').addEventListener('change', (e) => {
     const select = e.target.closest('[data-order-status]');
     if (!select) return;
@@ -888,6 +924,7 @@ async function initAuth() {
   }
   await loadCategories();
   await loadMyBusiness();
+  refreshOrdersBadge();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

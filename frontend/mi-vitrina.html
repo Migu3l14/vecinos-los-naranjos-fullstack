@@ -127,7 +127,7 @@
         <button data-mvt-panel="perfil" class="mvt-tab py-3 text-xs font-extrabold border-b-2 border-orange-500 text-orange-600">Perfil</button>
         <button data-mvt-panel="productos" class="mvt-tab py-3 text-xs font-extrabold border-b-2 border-transparent text-slate-500">Productos</button>
         <button data-mvt-panel="ofertas" class="mvt-tab py-3 text-xs font-extrabold border-b-2 border-transparent text-slate-500">Ofertas</button>
-        <button data-mvt-panel="pedidos" class="mvt-tab py-3 text-xs font-extrabold border-b-2 border-transparent text-slate-500">Pedidos</button>
+        <button data-mvt-panel="pedidos" class="mvt-tab py-3 text-xs font-extrabold border-b-2 border-transparent text-slate-500">Pedidos<span id="mvPedidosBadge" class="hidden ml-1 px-1.5 py-0.5 rounded-full bg-orange-500 text-white text-[9px]">0</span></button>
         <button data-mvt-panel="ventas" class="mvt-tab py-3 text-xs font-extrabold border-b-2 border-transparent text-slate-500">Ventas</button>
       </div>
 
@@ -290,6 +290,17 @@
           <button id="mvRefreshOrdersBtn" class="px-3 py-2 border border-slate-200 text-slate-600 text-[11px] font-bold rounded-xl bg-white hover:bg-slate-50">
             <i class="fa-solid fa-rotate mr-1"></i> Actualizar
           </button>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <input id="mvOrderSearch" type="text" placeholder="Buscar pedido o cliente" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none" />
+          <select id="mvOrderStatusFilter" class="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold bg-white focus:ring-2 focus:ring-orange-500 focus:outline-none">
+            <option value="all">Todos los estados</option>
+            <option value="Recibido">Recibido</option>
+            <option value="En Preparación">En Preparación</option>
+            <option value="En Camino">En Camino</option>
+            <option value="Entregado">Entregado</option>
+            <option value="Cancelado">Cancelado</option>
+          </select>
         </div>
         <div id="mvOrderMsg" class="hidden mb-3"></div>
         <div id="mvOrdersList" class="space-y-3"></div>

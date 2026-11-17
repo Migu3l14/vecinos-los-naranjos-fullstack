@@ -824,6 +824,16 @@ export const API = {
     }
   },
 
+  // GET /api/orders/my-purchases - pedidos hechos con mi celular
+  async getMyPurchases() {
+    try {
+      return await this.fetchResident(`${API_BASE}/orders/my-purchases`);
+    } catch (error) {
+      console.error('Error al obtener mis compras:', error);
+      return { success: false, data: [], message: error.message };
+    }
+  },
+
   // PUT /api/orders/mine/:id/status - actualizar estado de un pedido propio
   async updateMyOrderStatus(id, estado) {
     try {

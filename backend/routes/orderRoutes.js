@@ -3,6 +3,7 @@ import {
   createOrder,
   getAllOrders,
   getMyOrders,
+  getMyPurchases,
   updateMyOrderStatus,
   updateOrderStatus
 } from '../controllers/orderController.js';
@@ -16,6 +17,9 @@ router.post('/', createOrder);
 // Rutas del vendedor (residente autenticado): solo sus propias vitrinas
 // GET /api/orders/mine — pedidos de mis vitrinas (filtro ?estado=)
 router.get('/mine', authResident, getMyOrders);
+
+// GET /api/orders/my-purchases — pedidos del comprador autenticado
+router.get('/my-purchases', authResident, getMyPurchases);
 
 // PUT /api/orders/mine/:id/status — actualizar estado de un pedido propio
 router.put('/mine/:id/status', authResident, updateMyOrderStatus);

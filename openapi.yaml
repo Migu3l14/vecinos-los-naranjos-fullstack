@@ -822,6 +822,34 @@ paths:
         '401': { description: No autorizado }
         '403': { description: Requiere super admin }
 
+  /api/orders/my-purchases:
+    get:
+      tags: [Orders]
+      summary: Listar pedidos hechos con mi celular (comprador)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: estado
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+      responses:
+        '200':
+          description: Pedidos del comprador autenticado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  count: { type: integer }
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Order'
+        '401': { description: No autorizado }
+
   /api/orders/mine:
     get:
       tags: [Orders]

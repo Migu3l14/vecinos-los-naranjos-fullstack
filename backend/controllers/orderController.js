@@ -117,6 +117,29 @@ export const getMyOrders = async (req, res) => {
   }
 };
 
+// GET /api/orders/my-purchases (comprador) — pedidos hechos con mi celular
+export const getMyPurchases = async (req, res) => {
+  try {
+    const phone = String((req.user && req.user.phone) || '').replace(/\D/g, '');
+    const tail = phone.slice(-10);
+    if (tail.length < 10) {
+      return res.json({ success: true, count: 0, data: [] });
+    }
+    const { estado } = req.query;
+    let orders = await Storage.read('orders');
+    orders = orders.filter(o =>
+      String((o.resident && o.resident.phone) || '').replace(/\D/g, '').slice(-10) === tail
+    );
+    if (estado && ESTADOS.includes(estado)) {
+      orders = orders.filter(o => o.estado === estado);
+    }
+    orders = [...orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json({ success: true, count: orders.length, data: orders });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al listar tus compras', error: error.message });
+  }
+};
+
 // PUT /api/orders/mine/:id/status (vendedor) — actualizar estado de un pedido propio
 export const updateMyOrderStatus = async (req, res) => {
   try {
@@ -159,4 +182,4 @@ export const updateOrderStatus = async (req, res) => {
   }
 };
 
-export default { createOrder, getAllOrders, getMyOrders, updateMyOrderStatus, updateOrderStatus };
+export default { createOrder, getAllOrders, getMyOrders, getMyPurchases, updateMyOrderStatus, updateOrderStatus };

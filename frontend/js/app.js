@@ -133,6 +133,7 @@ async function verifySession() {
 
 // Actualiza el botón del header: "Mi Vitrina" si el usuario tiene una, "Crear mi Vitrina" si no
 async function updateMyVitrinaButton() {
+  updateMyOrdersButton();
   const btn = document.getElementById('myVitrinaBtn');
   if (!btn) return;
   if (!API.isResidentLoggedIn()) return;
@@ -142,6 +143,14 @@ async function updateMyVitrinaButton() {
   } catch (e) {
     // sin cambios si falla la consulta
   }
+}
+
+function updateMyOrdersButton() {
+  const btn = document.getElementById('myOrdersHeaderBtn');
+  if (!btn) return;
+  const canUse = API.isResidentLoggedIn() && !isGuardProfile();
+  btn.classList.toggle('hidden', !canUse);
+  btn.classList.toggle('flex', canUse);
 }
 
 // Configurar escuchadores de eventos
@@ -251,6 +260,9 @@ function setupEventListeners() {
   // Botón abrir modal PQRS
   const openPqrsBtn = document.getElementById('openPqrsModalBtn');
   if (openPqrsBtn) openPqrsBtn.addEventListener('click', openPqrsModal);
+
+  const myOrdersHeaderBtn = document.getElementById('myOrdersHeaderBtn');
+  if (myOrdersHeaderBtn) myOrdersHeaderBtn.addEventListener('click', openMyOrders);
 
   // Botón abrir modal Soporte
   const openSupportBtn = document.getElementById('openSupportModalBtn');
@@ -518,6 +530,7 @@ function renderMiManzana() {
   if (!content) return;
 
   if (isGuardProfile()) mmState.mode = 'guest';
+  updateMyOrdersButton();
 
   const badge = document.getElementById('mmUnreadBadge');
   const unread = mmUnreadCount();
@@ -2022,6 +2035,89 @@ function openCartModal() {
   modal.classList.remove('hidden');
   modal.classList.add('flex');
 }
+
+const ORDER_FLOW = ['Recibido', 'En Preparación', 'En Camino', 'Entregado'];
+const MY_ORDER_BADGE = {
+  'Recibido': 'bg-blue-100 text-blue-700',
+  'En Preparación': 'bg-amber-100 text-amber-700',
+  'En Camino': 'bg-orange-100 text-orange-700',
+  'Entregado': 'bg-green-100 text-green-700',
+  'Cancelado': 'bg-red-100 text-red-600'
+};
+
+function myOrderTotal(order) {
+  const products = Array.isArray(order.products) ? order.products : [];
+  if (products.length === 0 || hasUnknownPrice(products)) return 'Por cotizar';
+  return formatCOP(cartTotal(products));
+}
+
+function myOrderTimeline(estado) {
+  if (estado === 'Cancelado') {
+    return '<p class="text-[10px] font-bold text-red-500 mt-2">Pedido cancelado</p>';
+  }
+  const idx = Math.max(ORDER_FLOW.indexOf(estado), 0);
+  return `<div class="flex items-start gap-1 mt-2">${ORDER_FLOW.map((s, i) => `
+    <div class="flex-1 text-center">
+      <div class="h-1.5 rounded-full ${i <= idx ? 'bg-orange-500' : 'bg-slate-200'}"></div>
+      <p class="text-[8px] font-bold mt-0.5 ${i <= idx ? 'text-orange-600' : 'text-slate-400'}">${escHtml(s)}</p>
+    </div>`).join('')}</div>`;
+}
+
+window.openMyOrders = async () => {
+  const modal = document.getElementById('myOrdersModal');
+  const list = document.getElementById('myOrdersList');
+  if (!modal || !list) return;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  list.innerHTML = '<p class="text-center text-xs text-slate-400 py-6">Cargando pedidos...</p>';
+  const res = await API.getMyPurchases();
+  if (!res || !res.success) {
+    list.innerHTML = '<p class="text-center text-xs text-red-500 py-6">No pudimos cargar tus pedidos.</p>';
+    return;
+  }
+  const orders = res.data || [];
+  if (orders.length === 0) {
+    list.innerHTML = `<div class="text-center py-8 space-y-2">
+      <p class="text-3xl">🛍️</p>
+      <p class="text-xs font-extrabold text-slate-700">Aún no tienes pedidos</p>
+      <p class="text-[11px] text-slate-500">Cuando pidas a una vitrina, aquí podrás seguir su estado.</p>
+    </div>`;
+    return;
+  }
+  list.innerHTML = orders.map(o => {
+    const badge = MY_ORDER_BADGE[o.estado] || 'bg-slate-100 text-slate-600';
+    const products = Array.isArray(o.products) ? o.products : [];
+    const items = products.map(p => {
+      const qty = Number(p.qty) || 1;
+      return `<li class="flex justify-between gap-2"><span>${escHtml(p.name)} × ${qty}</span><span class="text-slate-500">${p.price ? escHtml(p.price) : ''}</span></li>`;
+    }).join('');
+    const created = o.createdAt ? new Date(o.createdAt).toLocaleString('es-CO') : '';
+    return `
+      <div class="border border-slate-200 rounded-xl p-3 space-y-2">
+        <div class="flex items-start justify-between gap-2">
+          <div class="min-w-0">
+            <p class="text-xs font-extrabold text-slate-800">${escHtml(o.businessName || 'Vitrina')}</p>
+            <p class="text-[10px] text-slate-400">${escHtml(o.orderId || o.id)} · ${escHtml(created)}</p>
+          </div>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${badge}">${escHtml(o.estado || 'Recibido')}</span>
+        </div>
+        ${myOrderTimeline(o.estado)}
+        <ul class="text-[11px] text-slate-600 space-y-0.5">${items}</ul>
+        <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
+          <span class="text-slate-500">Pago: <span class="font-bold text-slate-700">${escHtml(o.paymentMethod || 'Por coordinar')}</span></span>
+          <span class="font-extrabold text-slate-800">${myOrderTotal(o)}</span>
+        </div>
+        ${o.observations ? `<p class="text-[10px] text-slate-500 bg-slate-50 rounded-lg p-2">${escHtml(o.observations)}</p>` : ''}
+      </div>`;
+  }).join('');
+};
+
+window.closeMyOrders = () => {
+  const modal = document.getElementById('myOrdersModal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+};
 
 window.closeCartModal = () => {
   const modal = document.getElementById('cartModal');

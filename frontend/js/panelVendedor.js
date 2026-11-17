@@ -496,6 +496,60 @@ async function renderSalesPanel() {
   }).join('');
 }
 
+function csvCell(value) {
+  let text = String(value == null ? '' : value);
+  if (/^[=+\-@]/.test(text)) text = `'${text}`;
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function buildSalesCsv(orders) {
+  const headers = ['Pedido', 'Fecha', 'Estado', 'Cliente', 'Celular', 'Dirección', 'Productos', 'Observaciones', 'Pago', 'Total'];
+  const rows = (orders || []).map(o => {
+    const resident = o.resident || {};
+    const products = (Array.isArray(o.products) ? o.products : [])
+      .map(p => `${p.name} x${Number(p.qty) || 1}`)
+      .join(' | ');
+    const total = orderTotalValue(o);
+    return [
+      o.orderId || o.id,
+      o.createdAt ? new Date(o.createdAt).toLocaleString('es-CO') : '',
+      o.estado || '',
+      resident.fullName || '',
+      String(resident.phone || '').replace(/^57/, ''),
+      resident.deliveryAddress || '',
+      products,
+      o.observations || '',
+      o.paymentMethod || '',
+      total == null ? '' : total
+    ];
+  });
+  return '\uFEFF' + [headers, ...rows].map(r => r.map(csvCell).join(',')).join('\r\n');
+}
+
+async function exportSalesCsv() {
+  showSalesMsg(null, true);
+  const res = await API.getMyOrders();
+  if (!res || !res.success) {
+    showSalesMsg('No se pudieron exportar las ventas.', false);
+    return;
+  }
+  const orders = res.data || [];
+  if (orders.length === 0) {
+    showSalesMsg('No hay ventas para exportar.', false);
+    return;
+  }
+  const blob = new Blob([buildSalesCsv(orders)], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `ventas-los-naranjos-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  showSalesMsg('Archivo CSV generado.', true);
+}
+
 async function renderOrdersList() {
   const list = $('mvOrdersList');
   if (!list) return;
@@ -854,6 +908,7 @@ function bindEvents() {
 
   $('mvRefreshOrdersBtn').addEventListener('click', renderOrdersList);
   $('mvRefreshSalesBtn').addEventListener('click', renderSalesPanel);
+  $('mvExportSalesBtn').addEventListener('click', exportSalesCsv);
   $('mvOrderSearch').addEventListener('input', (e) => {
     orderFilter.q = e.target.value;
     renderOrdersList();

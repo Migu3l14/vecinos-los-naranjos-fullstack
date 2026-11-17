@@ -105,7 +105,7 @@ export const UI = {
   },
 
   // Renderizar listado de vitrinas (tarjetas comerciales verticales)
-  renderBusinesses(businesses, categories, offerByBiz, onOpenProfile, onQuickWhatsApp) {
+  renderBusinesses(businesses, categories, offerByBiz, onOpenProfile, onQuickWhatsApp, favorites, emptyState) {
     const container = document.getElementById('businessList');
     const countBadge = document.getElementById('businessCountBadge');
     if (!container) return;
@@ -115,17 +115,18 @@ export const UI = {
     }
 
     if (businesses.length === 0) {
+      const empty = emptyState || {};
       container.innerHTML = `
         <div class="col-span-full p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-          <span class="text-3xl">🔍</span>
-          <h4 class="font-bold text-slate-700 text-sm mt-2">No encontramos vitrinas disponibles</h4>
-          <p class="text-xs text-slate-500 mt-1">Prueba con otra palabra clave o selecciona otra manzana.</p>
+          <span class="text-3xl">${empty.icon || '🔍'}</span>
+          <h4 class="font-bold text-slate-700 text-sm mt-2">${esc(empty.title || 'No encontramos vitrinas disponibles')}</h4>
+          <p class="text-xs text-slate-500 mt-1">${esc(empty.text || 'Prueba con otra palabra clave o selecciona otra manzana.')}</p>
         </div>
       `;
       return;
     }
 
-    container.innerHTML = businesses.map(biz => UI.businessCard(biz, categories, offerByBiz, onOpenProfile, onQuickWhatsApp)).join('');
+    container.innerHTML = businesses.map(biz => UI.businessCard(biz, categories, offerByBiz, onOpenProfile, onQuickWhatsApp, favorites)).join('');
 
     container.querySelectorAll('.open-profile-trigger, .btn-profile').forEach(el => {
       el.addEventListener('click', () => onOpenProfile(el.dataset.id));
@@ -138,9 +139,9 @@ export const UI = {
 
   // Renderizar listado de vitrinas intercalando tarjetas promocionales de
   // comunicados oficiales cada "every" tarjetas (requisito de segmentación).
-  renderBusinessesWithPromos(businesses, announcements, categories, offerByBiz, onOpenProfile, onQuickWhatsApp, onOpenAnn, every = 4) {
+  renderBusinessesWithPromos(businesses, announcements, categories, offerByBiz, onOpenProfile, onQuickWhatsApp, onOpenAnn, every = 4, favorites) {
     const blockSize = Math.max(1, Number(every) || 4);
-    const cards = businesses.map(biz => UI.businessCard(biz, categories, offerByBiz, onOpenProfile, onQuickWhatsApp));
+    const cards = businesses.map(biz => UI.businessCard(biz, categories, offerByBiz, onOpenProfile, onQuickWhatsApp, favorites));
     const promos = (announcements || []).map(ann => UI.annPromoCard(ann, onOpenAnn));
 
     const grid = [];
@@ -175,11 +176,12 @@ export const UI = {
   },
 
   // Tarjeta individual de vitrina (comercial, vertical, reutilizable)
-  businessCard(biz, categories, offerByBiz, onOpenProfile, onQuickWhatsApp) {
+  businessCard(biz, categories, offerByBiz, onOpenProfile, onQuickWhatsApp, favorites) {
     const info = catInfo(categories, biz.category);
     const color = catColor(biz.category);
     const offer = offerByBiz && biz.id ? offerByBiz[biz.id] : null;
     const ratingCount = Number(biz.ratingCount || biz.reviewsCount || 0);
+    const isFavorite = favorites && favorites.has(String(biz.id));
 
     // Etiquetas promocionales SOLO con datos reales: oferta activa, badge, envíos
     const tags = [];
@@ -196,6 +198,9 @@ export const UI = {
           <span class="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
             Mz ${esc(biz.manzana)}
           </span>
+          <button type="button" data-id="${esc(biz.id)}" aria-label="${isFavorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}" aria-pressed="${isFavorite ? 'true' : 'false'}" class="btn-favorite absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 text-rose-500 shadow flex items-center justify-center transition active:scale-90">
+            <i class="${isFavorite ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+          </button>
           <div class="absolute -bottom-4 left-3 w-10 h-10 rounded-full flex items-center justify-center text-white text-[14px] sm:text-[16px] shadow-md ring-2 ring-white"
             style="background-color:${color}">
             <i class="fa-solid ${info.icon}"></i>

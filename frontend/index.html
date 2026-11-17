@@ -151,14 +151,21 @@
 
     <!-- SECCIÓN: LISTADO DE VITRINAS -->
     <section class="p-4 flex-1">
-      <div class="flex items-center justify-between mb-3">
-        <div>
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="min-w-0">
           <h2 class="text-base font-extrabold text-slate-900" id="listTitle">⭐ Negocios destacados</h2>
           <p class="text-xs text-slate-500 font-medium" id="listSubtitle">Los vecinos mejor valorados de Los Naranjos</p>
         </div>
-        <span id="businessCountBadge" class="bg-orange-100 text-orange-800 text-xs font-bold px-2.5 py-1 rounded-full">
-          Cargando...
-        </span>
+        <div class="flex items-center gap-2 shrink-0">
+          <button id="favoritesToggleBtn" type="button" aria-pressed="false" title="Ver solo mis favoritos" class="border border-rose-200 bg-white text-rose-600 hover:bg-rose-50 text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 transition active:scale-95">
+            <i class="fa-regular fa-heart"></i>
+            <span class="hidden sm:inline">Favoritos</span>
+            <span id="favoritesCountBadge" class="bg-rose-100 text-rose-700 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">0</span>
+          </button>
+          <span id="businessCountBadge" class="bg-orange-100 text-orange-800 text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap">
+            Cargando...
+          </span>
+        </div>
       </div>
 
       <!-- SECCIÓN "MI MANZANA": espacio comunitario privado (antes "Comunicados oficiales"), acordeón completo -->

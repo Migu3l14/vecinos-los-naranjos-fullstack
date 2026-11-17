@@ -16,6 +16,7 @@ const state = {
   currentCategory: 'all',
   currentManzana: 'all',
   currentSearch: '',
+  favoritesOnly: false,
   selectedBusiness: null,
   selectedOffer: null,
   selectedProduct: null,
@@ -100,6 +101,7 @@ async function loadInitialData() {
     UI.renderCategories(state.categories, state.currentCategory, handleCategorySelect);
     UI.renderOffers(state.offers, handleOpenOffer, handleContactOffer);
     await fetchFilteredBusinesses();
+    updateFavoritesUi();
 
     const todayLabel = document.getElementById('offersDateLabel');
     if (todayLabel) {
@@ -184,6 +186,15 @@ function setupEventListeners() {
       state.currentSearch = '';
       clearBtn.classList.add('hidden');
       fetchFilteredBusinesses();
+    });
+  }
+
+  const favoritesToggleBtn = document.getElementById('favoritesToggleBtn');
+  if (favoritesToggleBtn) {
+    favoritesToggleBtn.addEventListener('click', () => {
+      state.favoritesOnly = !state.favoritesOnly;
+      updateFavoritesUi();
+      renderBusinessList();
     });
   }
 
@@ -433,6 +444,88 @@ function setupEventListeners() {
 // FILTROS Y NAVEGACIÓN DEL DIRECTORIO
 // ==========================================
 // Directorio comercial (los comunicados ahora viven en el módulo privado "Mi Manzana")
+// ==========================================
+// FAVORITOS DE VITRINAS (persistidos en el navegador)
+// ==========================================
+const FAVORITES_KEY = 'vn_favorites_v1';
+
+function readFavoriteIds() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
+    return Array.isArray(raw) ? raw.map(String) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function writeFavoriteIds(ids) {
+  try {
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(ids));
+  } catch (e) {
+    console.warn('No se pudieron guardar los favoritos:', e);
+  }
+}
+
+function toggleFavorite(bizId) {
+  const id = String(bizId);
+  const ids = readFavoriteIds();
+  const index = ids.indexOf(id);
+  if (index >= 0) ids.splice(index, 1);
+  else ids.push(id);
+  writeFavoriteIds(ids);
+  updateFavoritesUi();
+  renderBusinessList();
+}
+
+function updateFavoritesUi() {
+  const count = readFavoriteIds().length;
+  const countBadge = document.getElementById('favoritesCountBadge');
+  const button = document.getElementById('favoritesToggleBtn');
+  if (countBadge) countBadge.textContent = count;
+  if (!button) return;
+  button.setAttribute('aria-pressed', state.favoritesOnly ? 'true' : 'false');
+  button.classList.toggle('bg-rose-600', state.favoritesOnly);
+  button.classList.toggle('border-rose-600', state.favoritesOnly);
+  button.classList.toggle('text-white', state.favoritesOnly);
+  button.classList.toggle('hover:bg-rose-700', state.favoritesOnly);
+  button.classList.toggle('bg-white', !state.favoritesOnly);
+  button.classList.toggle('border-rose-200', !state.favoritesOnly);
+  button.classList.toggle('text-rose-600', !state.favoritesOnly);
+  button.classList.toggle('hover:bg-rose-50', !state.favoritesOnly);
+  const icon = button.querySelector('i');
+  if (icon) {
+    icon.classList.toggle('fa-solid', state.favoritesOnly);
+    icon.classList.toggle('fa-regular', !state.favoritesOnly);
+  }
+}
+
+function bindFavoriteButtons() {
+  document.querySelectorAll('#businessList .btn-favorite').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleFavorite(el.dataset.id);
+    });
+  });
+}
+
+function updateListHeading() {
+  const listTitle = document.getElementById('listTitle');
+  const listSubtitle = document.getElementById('listSubtitle');
+  const catObj = state.categories.find(c => c.id === state.currentCategory);
+  if (state.favoritesOnly) {
+    if (listTitle) listTitle.innerText = '❤️ Mis favoritos';
+    if (listSubtitle) listSubtitle.innerText = 'Las vitrinas que guardaste en este dispositivo';
+    return;
+  }
+  if (listTitle) listTitle.innerText = state.currentCategory === 'all' ? '⭐ Negocios destacados' : `Categoría: ${catObj ? catObj.name : state.currentCategory}`;
+  if (listSubtitle) {
+    listSubtitle.innerText = state.currentCategory === 'all'
+      ? 'Los vecinos mejor valorados de Los Naranjos'
+      : `Vitrinas de ${catObj ? catObj.name.toLowerCase() : 'esta categoría'} en tu conjunto`;
+  }
+}
+
 async function fetchFilteredBusinesses() {
   const params = {};
   if (state.currentCategory !== 'all') params.category = state.currentCategory;
@@ -454,8 +547,13 @@ async function fetchFilteredBusinesses() {
 }
 
 function renderBusinessList() {
+  const favoriteIds = new Set(readFavoriteIds());
+  const visible = state.favoritesOnly
+    ? state.businesses.filter(biz => favoriteIds.has(String(biz.id)))
+    : state.businesses;
+
   // "Destacados": mejor calificados primero; a igual rating, los que tienen badge
-  const sorted = [...state.businesses].sort((a, b) => {
+  const sorted = [...visible].sort((a, b) => {
     const ra = parseFloat(a.rating) || 0;
     const rb = parseFloat(b.rating) || 0;
     if (rb !== ra) return rb - ra;
@@ -466,7 +564,13 @@ function renderBusinessList() {
   const offerByBiz = {};
   (state.offers || []).forEach(o => { if (o.bizId) offerByBiz[o.bizId] = o; });
 
-  UI.renderBusinesses(sorted, state.categories, offerByBiz, handleOpenProfile, handleQuickWhatsApp);
+  const emptyState = state.favoritesOnly
+    ? { icon: '❤️', title: 'Aún no tienes favoritos', text: 'Toca el corazón de una vitrina para guardarla aquí.' }
+    : null;
+
+  updateListHeading();
+  UI.renderBusinesses(sorted, state.categories, offerByBiz, handleOpenProfile, handleQuickWhatsApp, favoriteIds, emptyState);
+  bindFavoriteButtons();
 }
 
 window.closeAnnStory = () => document.getElementById('annStoryModal').classList.add('hidden');
@@ -706,20 +810,7 @@ function openMmDetail(id) {
 function handleCategorySelect(catId) {
   state.currentCategory = catId;
   UI.renderCategories(state.categories, state.currentCategory, handleCategorySelect);
-
-  const catObj = state.categories.find(c => c.id === catId);
-  const listTitle = document.getElementById('listTitle');
-  const listSubtitle = document.getElementById('listSubtitle');
-
-  if (listTitle && catObj) {
-    listTitle.innerText = catId === 'all' ? '⭐ Negocios destacados' : `Categoría: ${catObj.name}`;
-  }
-  if (listSubtitle && catObj) {
-    listSubtitle.innerText = catId === 'all' 
-      ? 'Los vecinos mejor valorados de Los Naranjos' 
-      : `Vitrinas de ${catObj.name.toLowerCase()} en tu conjunto`;
-  }
-
+  updateListHeading();
   fetchFilteredBusinesses();
 }
 

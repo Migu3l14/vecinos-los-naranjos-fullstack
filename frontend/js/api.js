@@ -798,9 +798,13 @@ export const API = {
   // ============================================================
   async createOrder(payload) {
     try {
+      const token = this.getResidentToken();
       const res = await fetch(`${API_BASE}/orders`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify(payload)
       });
       return await res.json();

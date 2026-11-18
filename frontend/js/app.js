@@ -31,8 +31,9 @@ const state = {
   currentPayment: null,        // { transactionId, reference, widgetActive, ... }
   paymentPollTimer: null,
 
-  // Estado del checkout dual (identidad + pedido)
-  checkoutCtx: null,           // { business, products: [...], mode: 'login'|'guest', resident: {...}, fromCart }
+  // Estado del checkout (identidad ya capturada + pedido)
+  checkoutCtx: null,           // { business, products: [...], mode, resident, fromCart }
+  pendingCheckout: null,       // pedido que espera a que el comprador ingrese
   cartBizId: null,             // vitrina cuyo carrito está abierto
   productCartMsgTimer: null,
   towersList: []
@@ -2258,17 +2259,33 @@ function orderProduct(biz, product) {
   openCheckoutFor(biz, [{ ...product, qty: 1 }]);
 }
 
-// Abre el modal de checkout para un pedido de la vitrina
+// Abre el modal de checkout para un pedido de la vitrina.
+// Si el comprador aún no ingresó, deja el pedido pendiente y abre UNA vez la entrada.
 async function openCheckoutFor(business, products, opts = {}) {
+  const profile = API.getStoredResidentProfile();
+  if (!profile || !profile.phone || !API.getResidentToken()) {
+    state.pendingCheckout = {
+      business,
+      products: products.map(p => ({ ...p })),
+      opts: { ...opts }
+    };
+    openEntryModal();
+    return;
+  }
+
+  const preferredPayment = CHECKOUT_PAYMENTS.includes(opts.paymentMethod)
+    ? opts.paymentMethod
+    : getSavedCheckoutPayment();
   state.checkoutCtx = {
     business,
     products,
     mode: 'guest',
-    resident: null,
+    resident: profile,
     observations: opts.observations ? String(opts.observations).slice(0, 300) : '',
-    paymentMethod: opts.paymentMethod || 'Efectivo',
+    paymentMethod: preferredPayment,
     fromCart: !!opts.fromCart
   };
+  state.pendingCheckout = null;
 
   // Cantidad editable solo cuando hay un único producto (el carrito llega después)
   const qtyRow = document.getElementById('checkoutQtyRow');
@@ -2282,27 +2299,13 @@ async function openCheckoutFor(business, products, opts = {}) {
   }
   refreshCheckoutSummary();
 
-  // Precargar torres (todas las manzanas: "Torre N · Manzana M")
-  await ensureTowers(['coGuestTower'], { useId: true });
-  const towerSel = document.getElementById('coGuestTower');
-  if (![...towerSel.options].some(o => o.value === '')) {
-    towerSel.insertAdjacentHTML('afterbegin', '<option value="">Selecciona tu torre</option>');
-  }
-
   resetCheckoutPanels();
-  if (state.checkoutCtx.observations) {
-    document.getElementById('coGuestNotes').value = state.checkoutCtx.observations;
-  }
-  const paymentSel = document.getElementById('coGuestPayment');
-  if (paymentSel && [...paymentSel.options].some(o => o.value === state.checkoutCtx.paymentMethod)) {
-    paymentSel.value = state.checkoutCtx.paymentMethod;
-  }
-  switchCheckoutMode('guest');
+  updateCheckoutForProfile(profile);
 
   const confirmBtn = document.getElementById('checkoutConfirmBtn');
   if (confirmBtn) {
     confirmBtn.disabled = false;
-    confirmBtn.innerHTML = '<i class="fa-brands fa-whatsapp text-lg"></i><span>Confirmar pedido y enviar por WhatsApp</span>';
+    confirmBtn.innerHTML = '<i class="fa-brands fa-whatsapp text-lg"></i><span>Continuar por WhatsApp</span>';
   }
 
   document.getElementById('checkoutError').classList.add('hidden');
@@ -2332,6 +2335,57 @@ function refreshCheckoutSummary() {
   }
 }
 
+const CHECKOUT_PAYMENT_KEY = 'vn_checkout_payment_v1';
+const CHECKOUT_PAYMENTS = ['Efectivo', 'Transferencia'];
+
+function normalizeCheckoutPayment(value) {
+  return CHECKOUT_PAYMENTS.includes(value) ? value : 'Efectivo';
+}
+
+function getSavedCheckoutPayment() {
+  try {
+    return normalizeCheckoutPayment(localStorage.getItem(CHECKOUT_PAYMENT_KEY));
+  } catch (error) {
+    return 'Efectivo';
+  }
+}
+
+function saveCheckoutPayment(value) {
+  try {
+    localStorage.setItem(CHECKOUT_PAYMENT_KEY, normalizeCheckoutPayment(value));
+  } catch (error) {
+    /* sin acción */
+  }
+}
+
+function isExternalProfile(profile) {
+  return !!profile && (profile.role === 'guard' || !profile.tower || !profile.apartment);
+}
+
+function profileManzana(profile) {
+  if (!profile) return '';
+  if (profile.manzana != null && String(profile.manzana).trim() !== '') return String(profile.manzana).trim();
+  const fromTowerId = /^torre-m(\d+)-/i.exec(String(profile.towerId || '').trim());
+  if (fromTowerId) return fromTowerId[1];
+  const tower = state.towersList.find(t => t.id === profile.towerId || t.name === profile.tower);
+  return tower && tower.manzana ? String(tower.manzana) : '';
+}
+
+function checkoutLocationPart(value, label) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  return new RegExp(`^${label}\\b`, 'i').test(raw) ? raw : `${label} ${raw}`;
+}
+
+function checkoutLocation(profile) {
+  const manzana = profileManzana(profile);
+  return [
+    manzana ? checkoutLocationPart(manzana, 'Manzana') : '',
+    checkoutLocationPart(profile && profile.tower, 'Torre'),
+    checkoutLocationPart(profile && profile.apartment, 'Apto')
+  ].filter(Boolean).join(' · ');
+}
+
 // Resuelve la torre guardada en el perfil (prefiere towerId para no confundir torres de otra manzana)
 function profileTowerValue(prof) {
   if (!prof) return '';
@@ -2357,10 +2411,47 @@ function resetCheckoutPanels() {
   document.getElementById('coGuestApt').value = prof?.apartment || '';
   document.getElementById('coGuestBirth').value = prof?.birthDate || '';
   document.getElementById('coGuestDelivery').value = prof?.deliveryAddress || '';
-  document.getElementById('coGuestNotes').value = '';
-  document.getElementById('coGuestPayment').value = 'Efectivo';
+  document.getElementById('coGuestNotes').value = state.checkoutCtx?.observations || '';
+  document.getElementById('coGuestPayment').value = normalizeCheckoutPayment(state.checkoutCtx?.paymentMethod || getSavedCheckoutPayment());
   const guestTerms = document.getElementById('coGuestTerms');
   if (guestTerms) guestTerms.checked = false;
+}
+
+function updateCheckoutForProfile(profile) {
+  const external = isExternalProfile(profile);
+  const phone = String(profile?.phone || '').replace(/^57/, '');
+  const location = checkoutLocation(profile);
+
+  const guestPanel = document.getElementById('checkoutGuestPanel');
+  const loginPanel = document.getElementById('checkoutLoginPanel');
+  if (guestPanel) guestPanel.classList.remove('hidden');
+  if (loginPanel) loginPanel.classList.add('hidden');
+
+  const addressField = document.getElementById('coGuestAddressField');
+  if (addressField) addressField.classList.toggle('hidden', !external);
+  const identityFields = document.getElementById('coGuestIdentityFields');
+  if (identityFields) identityFields.classList.add('hidden');
+
+  const intro = document.getElementById('coGuestIntro');
+  if (intro) {
+    intro.textContent = external
+      ? 'Indica dónde entregamos tu pedido. El resto de tus datos ya está confirmado.'
+      : 'Confirma la cantidad y el pago. Enviamos tu pedido directo por WhatsApp.';
+  }
+
+  const identityText = document.getElementById('checkoutIdentityText');
+  if (identityText) {
+    const name = profile?.fullName || (external ? 'Comprador externo' : 'Vecino de Los Naranjos');
+    identityText.textContent = external
+      ? `${name} · ${phone}`
+      : `${name} · ${phone}${location ? ` · ${location}` : ''}`;
+    identityText.classList.remove('hidden');
+  }
+
+  const delivery = document.getElementById('coGuestDelivery');
+  if (delivery) {
+    delivery.value = external ? (profile?.deliveryAddress || '') : '';
+  }
 }
 
 function switchCheckoutMode(mode) {
@@ -2446,7 +2537,10 @@ function openEntryModal() {
   document.getElementById('entryModal').classList.remove('hidden');
 }
 
-window.closeEntryModal = () => document.getElementById('entryModal').classList.add('hidden');
+window.closeEntryModal = () => {
+  document.getElementById('entryModal').classList.add('hidden');
+  state.pendingCheckout = null;
+};
 window.openEntryModal = openEntryModal;
 
 function updateEntryRoleUI() {
@@ -2591,6 +2685,14 @@ async function handleEntrySubmit() {
   mmState.mode = role === 'guard' ? 'guest' : 'resident';
   renderMiManzana();
 
+  // Si el ingreso vino desde un pedido, volvemos al mismo checkout (misma cantidad).
+  const pending = state.pendingCheckout;
+  if (pending) state.pendingCheckout = null;
+  if (pending && role !== 'seller') {
+    await openCheckoutFor(pending.business, pending.products, pending.opts);
+    return;
+  }
+
   if (role === 'seller') {
     if (entryKnown && entryKnown.hasBusiness) {
       // Emprendedor ya registrado → lo llevamos a gestionar su vitrina
@@ -2660,7 +2762,7 @@ async function handleCheckoutLogin() {
   switchCheckoutMode('guest');
 }
 
-// Confirmar el pedido: crea la orden y abre WhatsApp con datos del residente
+// Confirmar el pedido: usa la identidad ya registrada, crea la orden y abre WhatsApp.
 async function handleCheckoutConfirm() {
   const ctx = state.checkoutCtx;
   if (!ctx) return;
@@ -2668,28 +2770,38 @@ async function handleCheckoutConfirm() {
   errEl.classList.add('hidden');
   errEl.className = 'bg-red-50 border border-red-200 text-red-600 text-xs font-bold p-2.5 rounded-xl';
 
-  const fullName = document.getElementById('coGuestName').value.trim();
-  const phone = document.getElementById('coGuestPhone').value.trim();
-  const tower = document.getElementById('coGuestTower').value;
-  const apartment = document.getElementById('coGuestApt').value.trim();
-  const birthDate = document.getElementById('coGuestBirth').value;
-  const deliveryAddress = document.getElementById('coGuestDelivery').value.trim();
-  const observations = document.getElementById('coGuestNotes').value.trim().slice(0, 300);
-  const paymentMethod = document.getElementById('coGuestPayment').value;
-  const termsAccepted = document.getElementById('coGuestTerms').checked;
-
-  if (!fullName || !phone || !tower || !apartment || !birthDate) {
-    errEl.textContent = 'Completa nombre, teléfono, torre, apartamento y fecha de nacimiento.';
-    errEl.classList.remove('hidden');
+  let profile = API.getStoredResidentProfile();
+  if (!profile || !profile.phone || !API.getResidentToken()) {
+    state.pendingCheckout = {
+      business: ctx.business,
+      products: ctx.products.map(p => ({ ...p })),
+      opts: {
+        observations: ctx.observations || '',
+        paymentMethod: ctx.paymentMethod || getSavedCheckoutPayment(),
+        fromCart: !!ctx.fromCart
+      }
+    };
+    document.getElementById('checkoutModal').classList.add('hidden');
+    state.checkoutCtx = null;
+    openEntryModal();
     return;
   }
-  if (!deliveryAddress) {
+
+  const external = isExternalProfile(profile);
+  const deliveryInput = document.getElementById('coGuestDelivery');
+  const deliveryAddress = external
+    ? String(deliveryInput?.value || '').trim()
+    : (checkoutLocation(profile) || profile.deliveryAddress || '');
+  const observations = document.getElementById('coGuestNotes').value.trim().slice(0, 300);
+  const paymentMethod = normalizeCheckoutPayment(document.getElementById('coGuestPayment').value);
+
+  if (external && !deliveryAddress) {
     errEl.textContent = 'Indica la dirección de entrega de tu pedido.';
     errEl.classList.remove('hidden');
     return;
   }
-  if (!termsAccepted) {
-    errEl.textContent = 'Debes aceptar los Términos y Condiciones para continuar.';
+  if (!deliveryAddress) {
+    errEl.textContent = 'No pudimos determinar tu ubicación. Vuelve a ingresar tus datos.';
     errEl.classList.remove('hidden');
     return;
   }
@@ -2698,19 +2810,6 @@ async function handleCheckoutConfirm() {
   confirmBtn.disabled = true;
   confirmBtn.innerHTML = '<span>Guardando...</span>';
 
-  // Registrar/actualizar la identidad como vecino (guest checkout usa los datos del formulario,
-  // que ya vienen autocompletados tras el login del residente cuando aplica)
-  const guestData = { fullName, phone, tower, apartment, birthDate, deliveryAddress };
-  const g = await API.guestCheckout(guestData);
-  if (!g.success) {
-    errEl.textContent = g.message || 'No pudimos guardar tus datos.';
-    errEl.classList.remove('hidden');
-    confirmBtn.disabled = false;
-    confirmBtn.innerHTML = '<i class="fa-brands fa-whatsapp"></i><span>Confirmar pedido y enviar por WhatsApp</span>';
-    return;
-  }
-  const resident = g.data.resident;
-
   // Sincronizar la cantidad elegida en el resumen (pedido de un solo producto)
   const qtyInput = document.getElementById('checkoutQty');
   if (ctx.products.length === 1 && qtyInput) {
@@ -2718,6 +2817,22 @@ async function handleCheckoutConfirm() {
   }
   ctx.observations = observations;
   ctx.paymentMethod = paymentMethod;
+  saveCheckoutPayment(paymentMethod);
+
+  if (external) {
+    profile = { ...profile, deliveryAddress };
+    API.saveStoredResidentProfile(profile);
+  }
+
+  const resident = {
+    fullName: profile.fullName || null,
+    phone: profile.phone,
+    tower: external ? null : (profile.tower || null),
+    apartment: external ? null : (profile.apartment || null),
+    manzana: profileManzana(profile),
+    deliveryAddress,
+    authType: profile.authType || 'entry'
+  };
 
   // Crear la orden (siempre se registra)
   const orderPayload = {
@@ -2730,55 +2845,52 @@ async function handleCheckoutConfirm() {
     })),
     observations: observations || null,
     paymentMethod: paymentMethod || null,
-    resident: {
-      fullName: resident.fullName,
-      phone: resident.phone,
-      tower: resident.tower,
-      apartment: resident.apartment,
-      deliveryAddress: resident.deliveryAddress,
-      authType: resident.authType || 'guest'
-    }
+    resident
   };
   const created = await API.createOrder(orderPayload);
-  if (created && created.success) {
-    saveLastOrder({
-      businessId: ctx.business.id,
-      businessName: ctx.business.name,
-      products: ctx.products.map(p => ({
-        id: p.id || null,
-        name: p.name,
-        price: p.price || null,
-        qty: Number(p.qty) || 1
-      })),
-      observations: observations || '',
-      paymentMethod: paymentMethod || 'Efectivo',
-      orderId: (created.data && created.data.orderId) || '',
-      createdAt: new Date().toISOString()
-    });
-    if (ctx.fromCart) clearCart(ctx.business.id);
-    updateRepeatOrderBar(ctx.business.id);
+  if (!created || !created.success) {
+    errEl.textContent = (created && created.message) || 'No pudimos registrar el pedido. Intenta de nuevo.';
+    errEl.classList.remove('hidden');
+    confirmBtn.disabled = false;
+    confirmBtn.innerHTML = '<i class="fa-brands fa-whatsapp text-lg"></i><span>Continuar por WhatsApp</span>';
+    return;
   }
 
-  // Abrir WhatsApp con los datos del residente y el producto
+  saveLastOrder({
+    businessId: ctx.business.id,
+    businessName: ctx.business.name,
+    products: ctx.products.map(p => ({
+      id: p.id || null,
+      name: p.name,
+      price: p.price || null,
+      qty: Number(p.qty) || 1
+    })),
+    observations: observations || '',
+    paymentMethod: paymentMethod || 'Efectivo',
+    orderId: (created.data && created.data.orderId) || '',
+    createdAt: new Date().toISOString()
+  });
+  if (ctx.fromCart) clearCart(ctx.business.id);
+  updateRepeatOrderBar(ctx.business.id);
+
+  // Abrir WhatsApp con los datos de identidad y el producto
   document.getElementById('checkoutModal').classList.add('hidden');
   const msg = buildOrderMessage(ctx, resident);
   openWhatsAppPreview(ctx.business.name, ctx.business.phone, msg);
   state.checkoutCtx = null;
 }
 
-// Devuelve "Manzana M · Torre N" a partir del nombre o id guardado en la torre
-function towerDisplay(value) {
-  if (!value) return '';
-  const t = state.towersList.find(x => x.id === value || x.name === value);
-  if (!t) return String(value);
-  return `Manzana ${t.manzana} · ${t.name}`;
-}
-
-// Construye el mensaje de WhatsApp del pedido con datos del residente
+// Construye el mensaje de WhatsApp del pedido con datos del residente.
+// Para vecinos usa siempre la ubicación completa; para externos, la dirección.
 function buildOrderMessage(ctx, resident) {
-  const where = towerDisplay(resident.tower);
+  const external = !resident.tower || !resident.apartment;
+  const location = external ? '' : checkoutLocation(resident);
+  const who = resident.fullName || (external ? 'un visitante' : 'un vecino');
+  const greeting = external
+    ? `Hola *${ctx.business.name}*, soy ${who}.`
+    : `Hola *${ctx.business.name}*, soy ${who}, de Los Naranjos${location ? ` (${location})` : ''}.`;
   const lines = [
-    `Hola *${ctx.business.name}*, soy ${resident.fullName}, vecino de Los Naranjos${where ? ` (${where} · Apto ${resident.apartment})` : ''}.`,
+    greeting,
     '',
     'Quisiera pedir:'
   ];
@@ -2792,7 +2904,7 @@ function buildOrderMessage(ctx, resident) {
   }
   lines.push('');
   if (ctx.observations) lines.push(`Observaciones: ${ctx.observations}`);
-  lines.push(`Dirección de entrega: ${resident.deliveryAddress || 'Por coordinar'}`);
+  lines.push(`Dirección de entrega: ${external ? (resident.deliveryAddress || 'Por coordinar') : location}`);
   if (ctx.paymentMethod) lines.push(`Forma de pago: ${ctx.paymentMethod}`);
   lines.push('');
   lines.push(`Mi teléfono: ${resident.phone}`);

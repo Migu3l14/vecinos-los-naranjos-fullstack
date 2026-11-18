@@ -775,7 +775,14 @@ paths:
         '403': { description: Requiere super admin }
     post:
       tags: [Orders]
-      summary: Crear pedido (público)
+      summary: Crear pedido (público o residente autenticado)
+      description: >
+        Con un token Bearer de residente válido, el servidor toma la identidad del
+        perfil guardado; los compradores externos (rol guard) solo necesitan enviar
+        `resident.deliveryAddress`. Sin token se mantiene el contrato anterior.
+      security:
+        - bearerAuth: []
+        - {}
       requestBody:
         required: true
         content:
@@ -1106,15 +1113,20 @@ components:
 
     Resident:
       type: object
+      description: >
+        Sin token los campos son obligatorios. Con token de residente, `fullName`,
+        `tower` y `apartment` pueden omitirse porque se toman del perfil guardado;
+        los externos (guard) no tienen torre/apartamento.
       required: [fullName, phone, tower, apartment, deliveryAddress]
       properties:
-        fullName: { type: string }
+        fullName: { type: string, nullable: true }
         phone: { type: string, description: Solo dígitos. }
-        tower: { type: string }
-        apartment: { type: string }
+        tower: { type: string, nullable: true }
+        apartment: { type: string, nullable: true }
+        manzana: { type: string, nullable: true }
         deliveryAddress: { type: string }
         email: { type: string, nullable: true }
-        authType: { type: string, enum: [guest, registered], default: guest }
+        authType: { type: string, enum: [guest, registered, entry], default: guest }
 
     OrderRequest:
       type: object

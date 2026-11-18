@@ -7,12 +7,13 @@ import {
   updateMyOrderStatus,
   updateOrderStatus
 } from '../controllers/orderController.js';
-import { authResident, authSuperAdmin } from '../middleware/auth.js';
+import { authResident, authSuperAdmin, optionalAuthResident } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// POST /api/orders (público) — crea pedido tras capturar identidad del residente
-router.post('/', createOrder);
+// POST /api/orders (público o residente autenticado) — crea pedido tras capturar
+// identidad. Con token válido se usa el perfil guardado en el servidor.
+router.post('/', optionalAuthResident, createOrder);
 
 // Rutas del vendedor (residente autenticado): solo sus propias vitrinas
 // GET /api/orders/mine — pedidos de mis vitrinas (filtro ?estado=)

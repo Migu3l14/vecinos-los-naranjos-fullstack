@@ -11,21 +11,46 @@ const ownedBusinessIds = async (user) => {
 
 const generateOrderId = () => `ORD-${Date.now().toString().slice(-6)}`;
 
+const formatLocationPart = (value, label) => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  return new RegExp(`^${label}\\b`, 'i').test(raw) ? raw : `${label} ${raw}`;
+};
+
+const resolveManzana = (resident) => {
+  if (resident.manzana != null && String(resident.manzana).trim() !== '') {
+    return String(resident.manzana).trim();
+  }
+  const fromTowerId = /^torre-m(\d+)-/i.exec(String(resident.towerId || '').trim());
+  return fromTowerId ? fromTowerId[1] : '';
+};
+
+const formatResidentLocation = (resident) => {
+  const manzana = resolveManzana(resident);
+  return [
+    manzana ? formatLocationPart(manzana, 'Manzana') : '',
+    formatLocationPart(resident.tower, 'Torre'),
+    formatLocationPart(resident.apartment, 'Apto')
+  ].filter(Boolean).join(' · ');
+};
+
 /**
  * POST /api/orders
  * Crea un pedido de un producto/servicio de una vitrina.
  * Se crea SIEMPRE tras capturar la identidad del residente (registrado o invitado).
+ * Si llega un token de residente válido, la identidad se toma del perfil guardado
+ * en el servidor y se permiten compradores externos (sin torre/apartamento).
  *
  * body:
  * {
  *   businessId, products: [{id?, name, price?, qty}],
  *   observations?, paymentMethod?,
- *   resident: { fullName, phone, tower, apartment, birthDate?, email?, authType? }
+ *   resident: { fullName, phone, tower?, apartment?, deliveryAddress, birthDate?, email?, authType? }
  * }
  */
 export const createOrder = async (req, res) => {
   try {
-    const { businessId, products, resident, observations, paymentMethod } = req.body;
+    const { businessId, products, resident: bodyResident, observations, paymentMethod } = req.body;
 
     if (!businessId) {
       return res.status(400).json({ success: false, message: 'businessId es obligatorio.' });
@@ -33,11 +58,46 @@ export const createOrder = async (req, res) => {
     if (!products || !Array.isArray(products) || products.length === 0) {
       return res.status(400).json({ success: false, message: 'Debe incluir al menos un producto.' });
     }
-    if (!resident || !resident.fullName || !resident.phone || !resident.tower || !resident.apartment || !resident.deliveryAddress) {
-      return res.status(400).json({ success: false, message: 'Datos de identidad del residente incompletos (incluye la dirección de entrega).' });
+
+    const provided = bodyResident && typeof bodyResident === 'object' ? bodyResident : {};
+    let profile = null;
+    if (req.user && req.user.role === 'resident' && req.user.residentId) {
+      profile = await Storage.findById('residents', req.user.residentId);
+      if (!profile) {
+        return res.status(401).json({ success: false, message: 'La sesión del residente no es válida. Ingresa nuevamente.' });
+      }
+    }
+
+    const external = !!profile && (profile.role === 'guard' || !profile.tower || !profile.apartment);
+    let resident;
+    if (profile) {
+      resident = {
+        fullName: profile.fullName || provided.fullName || (external ? 'Visitante' : 'Vecino'),
+        phone: profile.phone || provided.phone,
+        tower: profile.tower || null,
+        apartment: profile.apartment || null,
+        deliveryAddress: provided.deliveryAddress || profile.deliveryAddress || (external ? '' : formatResidentLocation(profile)),
+        email: profile.email || provided.email || null,
+        authType: profile.authType || provided.authType || 'entry'
+      };
+      if (!resident.phone || !resident.deliveryAddress) {
+        return res.status(400).json({ success: false, message: 'Datos de identidad del residente incompletos (incluye la dirección de entrega).' });
+      }
+    } else {
+      resident = provided;
+      if (!resident.fullName || !resident.phone || !resident.tower || !resident.apartment || !resident.deliveryAddress) {
+        return res.status(400).json({ success: false, message: 'Datos de identidad del residente incompletos (incluye la dirección de entrega).' });
+      }
     }
 
     const business = await Storage.findById('businesses', businessId);
+
+    if (profile && external && resident.deliveryAddress !== profile.deliveryAddress) {
+      await Storage.updateById('residents', profile.id, {
+        deliveryAddress: resident.deliveryAddress,
+        lastOrderAt: new Date().toISOString()
+      });
+    }
 
     const order = {
       id: `order-${Date.now()}`,

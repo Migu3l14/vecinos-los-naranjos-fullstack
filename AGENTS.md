@@ -47,8 +47,8 @@ npm run cypress:open
 ```
 
 ## Estado actual (dónde quedamos)
-- **HEAD / GitHub `main`: `6fbbeb7`** — "feat(checkout): pedido en dos toques".
-  Copia local **sincronizada** con GitHub. (Antes: `cef0cca`.)
+- **Último cambio funcional en `main`: `6fbbeb7`** — "feat(checkout): pedido en dos toques".
+  Copia local **sincronizada** con GitHub. (Antes: `cef0cca`.) El HEAD puede avanzar con commits de contexto (`docs(context)`); este bloque describe el trabajo del proyecto, no ese meta-commit.
 - **Última sesión de OpenCode**: `ses_f9b3c3ef0ffeE9A3v4gr9JxD7t` — *Checkout Autenticación Dual 2,160 Apartamentos*. Al iniciar Windows se reabre con `scripts/abrir-ultimo-chat.cmd` (`opencode --continue`). A mano: `cd "<proyecto>" && opencode --continue`.
 - **Checkout en dos toques, ya en `main`** — commit `6fbbeb7`: si el comprador ya ingresó, el checkout muestra identidad y ubicación sin volver a pedirlas; si no, se guarda el pedido pendiente, se abre **una sola vez** `#entryModal` y se vuelve al mismo checkout con la cantidad elegida (`frontend/js/app.js:2264`, `frontend/js/app.js:2689`, `frontend/js/app.js:2766`). El vecino ve `Manzana X · Torre Y · Apto Z` en el saludo y en "Dirección de entrega"; el externo (rol `guard`) solo ve el campo de dirección (`frontend/js/app.js:2885`). Pago solo `Efectivo`/`Transferencia`, última elección en `vn_checkout_payment_v1`. `POST /api/orders` acepta token opcional y usa el perfil del servidor (`backend/controllers/orderController.js:51`, `backend/routes/orderRoutes.js:11`, `frontend/js/api.js:799`); sin token conserva el contrato anterior. Contrato actualizado en `openapi.yaml:776`. Prueba nueva: `cypress/e2e/api-checkout-identity.cy.js`. Verificado: **12/12 tests pasan**.
 - **Guarda de seguridad (rol `guard`), ya en `main`** — commit `f1580ff`: tercer rol "Guarda" en el
